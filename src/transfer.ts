@@ -58,6 +58,23 @@ export class Transfer extends DurableObject<Env> {
   /** Set once the record is known to be stored; its tables are created on the first write, not on reads. */
   private stored = false;
 
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    // A clean record keeps no name, fingerprint or download session, and every closed link but a takedown has a purge
+    // date. Cleanups until 2026-10-27 kept the name and fingerprint and set no purge date, so no alarm ever reaches such
+    // a record; cleanups before 2026-10-30 16:40 UTC kept a one-time link's session, and takedowns keep theirs for good.
+    // Such a record is fixed when a request next reaches it, so this stays for good (docs/ARCHITECTURE.md).
+    const previous = this.read();
+    if (previous?.clean && (previous.name || previous.fingerprint || previous.session || (!previous.purgeAt && previous.status !== 'removed'))) {
+      previous.name = ''; previous.fingerprint = ''; delete previous.session;
+      if (!previous.purgeAt && previous.status !== 'removed') {
+        previous.purgeAt = Date.now() + TOMBSTONE_TTL_MS;
+        if (!previous.verifyAt) this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
+      }
+      this.save(previous);
+    }
+  }
+
   // Probing a random ID must not materialise storage, so reads tolerate a missing table.
   private read(): TransferRecord | null {
     let row: { payload: string } | undefined;
@@ -130,7 +147,8 @@ export class Transfer extends DurableObject<Env> {
    * one is taken: a late write can't replace a newer confirmed part unless the part used all its slots.
    */
   private slot(record: TransferRecord, number: number) {
-    // Every upload has its slots (init()); a record without them (a takedown placeholder) is never uploaded to.
+    // Every upload has its slots (init()); a record without them (a takedown placeholder, or closed before slots
+    // existed) is never uploaded to.
     const slots = record.slots as number, sql = this.ctx.storage.sql, lease = Date.now() - ATTEMPT_LEASE_MS;
     // An attempt whose lease ended before the Budget admitted it never got its slot: nothing of it can arrive.
     sql.exec('DELETE FROM attempts WHERE number=? AND seq=0 AND at<=?', number, lease);
@@ -160,8 +178,8 @@ export class Transfer extends DurableObject<Env> {
 
   /**
    * The record if `key` is its management key or, with `resume` (the upload routes), its resume token;
-   * `owner` is true for the key only. A record without resumeHash (a takedown of an id nothing was stored for)
-   * takes the key only.
+   * `owner` is true for the key only. A record without resumeHash (a takedown placeholder, or a record closed before
+   * 2026-10-28 16:55 UTC that a takedown keeps for good) takes the key only.
    */
   private async access(key: string, resume: boolean) {
     const hash = await digest(key);
