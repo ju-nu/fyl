@@ -16,9 +16,12 @@ stay English.
   marker (served pages have no HTML comments; the build drops the templates' comments). `node scripts/build_i18n.mjs --check` lists
   every problem without writing.
 
-Routing (`src/index.ts`): `/` answers 302 to `/<lang>/` by `Accept-Language` (`Vary: Accept-Language`,
-`Cache-Control: no-store`, query kept); it is hreflang's `x-default`. Only `/` (and the report host's `/`) redirects.
-Old addresses (`/privacy`, `/index.html`, `/report`, `/download`, `*.html`) answer 301 to English. Download links
+Routing (`src/index.ts`): `/` answers a browser 302 to `/<lang>/` by `Accept-Language` (`Vary: Accept,
+Accept-Language`, `Cache-Control: no-store`, query kept); it is hreflang's `x-default`. A request to `/` that doesn't
+ask for HTML (curl, agents) gets `llms.txt` instead. Only `/` (and the report host's `/`) redirects by language; a
+browser opening a page address that doesn't exist goes to the home page of its language. Old addresses (`/privacy`,
+`/index.html`, `/download`, `*.html`) answer 301 to English; `/report` and `/<lang>/report` answer 302 to the report
+host, `report.fyl.at/` and `report.fyl.at/<lang>/`. Download links
 `/d/<id>` and their closed pages keep their address and pick the language from `?lang=` (their language menu) or
 `Accept-Language`. No cookie is set.
 

@@ -29,7 +29,7 @@
 <nav aria-label="On this page"><ul class="toc"><li><a href="#files">Files you share</a></li><li><a href="#encrypted">Encrypted files</a></li><li><a href="#previews">Link previews</a></li><li><a href="#networks">Networks</a></li><li><a href="#counts">Usage counts</a></li><li><a href="#logs">Request logs</a></li><li><a href="#reports">Reports</a></li><li><a href="#browser">In your browser</a></li><li><a href="#cli">The fyl command</a></li><li><a href="#contact">Contact</a></li></ul></nav>
 <h2 id="files">Files you share</h2>
 <p>The file is stored in Cloudflare R2, and its name in the file’s record at Cloudflare, until the link expires, its one download is used, or the sender or the operator deletes it. Then the file and its name are deleted. Unfinished uploads are deleted after 24 hours. As a safety net, storage deletes any file still there after 8 days.</p>
-<p>A small record without the file name (size, dates and why the link closed) stays for 7 days, so the link can say what happened. A file the operator removed keeps that record for good, so its link stays blocked.</p>
+<p>A small record without the file name (its id, size, dates, lifetime settings, download count, why the link closed, and hashes of its management key, resume token and completion) stays for 7 days, so the link can say what happened. A file the operator removed keeps that record for good, so its link stays blocked.</p>
 <p>For a password, only a salted PBKDF2 hash is stored (<span class="num">100,000</span> rounds), plus a keyed checksum that recognises a repeated upload request; never the password itself. Both are deleted with the file. The private management key is stored only as a hash too.</p>
 
 <h2 id="encrypted">Encrypted files</h2>
