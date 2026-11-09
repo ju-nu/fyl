@@ -328,7 +328,8 @@ The cache ruleset (`<ruleset-id>`) has the rule `fyl_private_no_cache`, which di
 a cached one-time download would bypass the access policy. The image preview sends `public, max-age` of at most 300
 seconds and never past the expiry, which the cache rule still keeps out of Cloudflare's cache. Static assets stay
 cacheable: `/cli/<version>/` files, fonts and the vendored QR and MD5 scripts for a year as immutable, `/cli/latest`,
-`/cli/version.json` and `/cli/install` for 60 seconds, `/llms.txt` for an hour. The download page's code revalidates on
+`/cli/version.json` and `/cli/install` for 60 seconds, `/llms.txt` for an hour. A `/cli/` path that doesn't exist (a
+version not published yet) answers a plain-text 404 with `no-store`, never the immutable caching. The download page's code revalidates on
 every load (`no-cache`): `download.js`, `theme.js`, `e2ee/`, `_dl/` and the vendored ChaCha20-Poly1305
 (`vendor/noble-ciphers-2.4.0/`), so a fixed deployment takes effect on the next page load (`dist/_headers`,
 [E2EE.md §9.5](E2EE.md#95-page-rules)). Re-check these rules after zone-wide security or cache changes. For an
