@@ -35,7 +35,7 @@
 <h2 id="encrypted">Verschlüsselte Dateien</h2>
 <p>Bei Ende-zu-Ende-Verschlüsselung wird die Datei vor dem Upload auf deinem Gerät verschlüsselt. Der Schlüssel ist der Teil des Links nach dem #, den Browser nicht an fyl.at senden. fyl.at speichert die verschlüsselte Datei, ihre Größe und wann sie abgerufen wird, nicht aber ihren Namen oder Inhalt: Es behält einen generischen Namen („fyl-“ plus den Anfang der Link-ID), die genaue Größe, zwei kurze verschlüsselte Header und eine Prüfsumme jedes hochgeladenen Teils, bis die Datei wie jede andere gelöscht wird.</p>
 <p>Jeder mit dem vollständigen Link kann die Datei öffnen, und ein verlorener Schlüssel lässt sich nicht wiederherstellen. fyl.at kann verschlüsselte Dateien und ihre Absender nicht prüfen, öffne also nur Dateien, die du erwartet hast. Im Browser verlässt sich das auf den Code, den fyl.at ausliefert; die fyl-CLI führt stattdessen einen festen, versionierten Build auf deinem Computer aus.</p>
-<p>Der Quellcode von fyl.at und der fyl-CLI ist öffentlich auf <a href="https://github.com/ju-nu/fyl">GitHub</a> (AGPL-3.0), und jede Version nennt die SHA-256-Prüfsummen ihrer Dateien auf der <a href="https://github.com/ju-nu/fyl/releases">Release-Seite</a>, damit du prüfen kannst, was du ausführst.</p>
+<p>Der Quellcode von fyl.at und der fyl-CLI ist öffentlich auf <a href="https://github.com/ju-nu/fyl-at">GitHub</a> (AGPL-3.0), und jede Version nennt die SHA-256-Prüfsummen ihrer Dateien auf der <a href="https://github.com/ju-nu/fyl-at/releases">Release-Seite</a>, damit du prüfen kannst, was du ausführst.</p>
 <p>Ein Link ohne Verschlüsselung trägt den Namen der Datei in seinem Pfad, den jede Anfrage dafür an fyl.at sendet; Links mit Passwort tragen keinen Namen. Ein verschlüsselter Einmal-Link bleibt nach der Auslieferung der Datei bis zu 15 Minuten aus demselben Netzwerk geöffnet, damit ein fehlgeschlagenes Speichern wiederholt werden kann. Meldungen mit Details, die einen Schlüssel enthalten, werden abgelehnt.</p>
 
 <h2 id="previews">Link-Vorschauen</h2>
@@ -83,7 +83,7 @@
 </article>
 </main>
 
-<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Über fyl.at"><a href="https://report.fyl.at/de/">Datei melden</a><a href="/de/privacy" aria-current="page">Datenschutz</a><a href="/llms.txt">Für KI-Agenten</a><a href="https://github.com/ju-nu/fyl">Quellcode</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Sprache: Deutsch"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Deutsch</span></button></nav></footer>
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Über fyl.at"><a href="https://report.fyl.at/de/">Datei melden</a><a href="/de/privacy" aria-current="page">Datenschutz</a><a href="/llms.txt">Für KI-Agenten</a><a href="https://github.com/ju-nu/fyl-at">Quellcode</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Sprache: Deutsch"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Deutsch</span></button></nav></footer>
 </div>
 
 <div class="menu" id="theme-menu" popover role="menu" aria-label="Farbschema">

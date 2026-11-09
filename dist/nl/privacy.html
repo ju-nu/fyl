@@ -35,7 +35,7 @@
 <h2 id="encrypted">Versleutelde bestanden</h2>
 <p>Bij end-to-end-versleuteling wordt het bestand vóór het uploaden op je apparaat versleuteld. De sleutel is het deel van de link na de #, dat browsers niet naar fyl.at sturen. fyl.at slaat het versleutelde bestand op, de grootte en wanneer het wordt opgehaald, maar niet de naam of de inhoud: het bewaart een algemene naam (“fyl-” en het begin van de ID van de link), de exacte grootte, twee korte versleutelde headers en een checksum van elk geüpload deel, tot het bestand net als elk ander bestand wordt verwijderd.</p>
 <p>Wie de volledige link heeft, kan het bestand openen, en een kwijtgeraakte sleutel krijg je niet terug. fyl.at kan versleutelde bestanden en hun afzenders niet controleren, dus open alleen bestanden die je verwachtte. In de browser hangt dit af van de code die fyl.at levert; de fyl CLI draait in plaats daarvan een vaste build met versienummer op je computer.</p>
-<p>De broncode van fyl.at en de fyl CLI is openbaar op <a href="https://github.com/ju-nu/fyl">GitHub</a> (AGPL-3.0), en elke release vermeldt de SHA-256-checksums van zijn bestanden op <a href="https://github.com/ju-nu/fyl/releases">de releasepagina</a>, zodat je kunt controleren wat je draait.</p>
+<p>De broncode van fyl.at en de fyl CLI is openbaar op <a href="https://github.com/ju-nu/fyl-at">GitHub</a> (AGPL-3.0), en elke release vermeldt de SHA-256-checksums van zijn bestanden op <a href="https://github.com/ju-nu/fyl-at/releases">de releasepagina</a>, zodat je kunt controleren wat je draait.</p>
 <p>Een link zonder versleuteling bevat de naam van het bestand in zijn pad, en dat pad gaat bij elk verzoek naar fyl.at; links met een wachtwoord bevatten geen naam. Een eenmalige versleutelde link blijft na de levering van het bestand nog tot 15 minuten open vanaf hetzelfde netwerk, zodat je het opnieuw kunt proberen als het opslaan mislukt. Meldingen met details die een sleutel bevatten, worden geweigerd.</p>
 
 <h2 id="previews">Linkvoorbeelden</h2>
@@ -83,7 +83,7 @@
 </article>
 </main>
 
-<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Over fyl.at"><a href="https://report.fyl.at/nl/">Bestand melden</a><a href="/nl/privacy" aria-current="page">Privacy</a><a href="/llms.txt">Voor AI-agents</a><a href="https://github.com/ju-nu/fyl">Broncode</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Taal: Nederlands"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Nederlands</span></button></nav></footer>
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Over fyl.at"><a href="https://report.fyl.at/nl/">Bestand melden</a><a href="/nl/privacy" aria-current="page">Privacy</a><a href="/llms.txt">Voor AI-agents</a><a href="https://github.com/ju-nu/fyl-at">Broncode</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Taal: Nederlands"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Nederlands</span></button></nav></footer>
 </div>
 
 <div class="menu" id="theme-menu" popover role="menu" aria-label="Kleurthema">

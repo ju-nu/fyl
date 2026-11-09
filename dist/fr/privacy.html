@@ -35,7 +35,7 @@
 <h2 id="encrypted">Fichiers chiffrés</h2>
 <p>Avec le chiffrement de bout en bout, le fichier est chiffré sur votre appareil avant l’envoi. La clé est la partie du lien après le #, que les navigateurs n’envoient pas à fyl.at. fyl.at stocke le fichier chiffré, sa taille et le moment où il est récupéré, mais ni son nom ni son contenu : il conserve un nom générique (« fyl- » suivi du début de l’identifiant du lien), la taille exacte, deux courts en-têtes chiffrés et une somme de contrôle de chaque partie envoyée, jusqu’à ce que le fichier soit supprimé comme n’importe quel autre.</p>
 <p>Quiconque a le lien complet peut ouvrir le fichier, et une clé perdue ne peut pas être récupérée. fyl.at ne peut vérifier ni les fichiers chiffrés ni leur expéditeur : n’ouvrez donc que les fichiers que vous attendiez. Dans le navigateur, tout repose sur le code que fournit fyl.at ; la CLI fyl, elle, exécute sur votre ordinateur une version figée et numérotée.</p>
-<p>Le code source de fyl.at et de la CLI fyl est public sur <a href="https://github.com/ju-nu/fyl">GitHub</a> (AGPL-3.0), et chaque version publie les sommes SHA-256 de ses fichiers sur <a href="https://github.com/ju-nu/fyl/releases">la page des versions</a> : vous pouvez ainsi vérifier ce que vous exécutez.</p>
+<p>Le code source de fyl.at et de la CLI fyl est public sur <a href="https://github.com/ju-nu/fyl-at">GitHub</a> (AGPL-3.0), et chaque version publie les sommes SHA-256 de ses fichiers sur <a href="https://github.com/ju-nu/fyl-at/releases">la page des versions</a> : vous pouvez ainsi vérifier ce que vous exécutez.</p>
 <p>Un lien sans chiffrement porte le nom du fichier dans son chemin, que chaque requête vers ce lien transmet à fyl.at ; les liens avec mot de passe ne portent aucun nom. Un lien chiffré à usage unique reste ouvert depuis le même réseau jusqu’à 15 minutes après la remise du fichier, pour qu’un enregistrement raté puisse être retenté. Les signalements dont les détails contiennent une clé sont refusés.</p>
 
 <h2 id="previews">Aperçus de liens</h2>
@@ -83,7 +83,7 @@
 </article>
 </main>
 
-<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="À propos de fyl.at"><a href="https://report.fyl.at/fr/">Signaler un fichier</a><a href="/fr/privacy" aria-current="page">Confidentialité</a><a href="/llms.txt">Pour les agents IA</a><a href="https://github.com/ju-nu/fyl">Code source</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Langue : Français"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Français</span></button></nav></footer>
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="À propos de fyl.at"><a href="https://report.fyl.at/fr/">Signaler un fichier</a><a href="/fr/privacy" aria-current="page">Confidentialité</a><a href="/llms.txt">Pour les agents IA</a><a href="https://github.com/ju-nu/fyl-at">Code source</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Langue : Français"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Français</span></button></nav></footer>
 </div>
 
 <div class="menu" id="theme-menu" popover role="menu" aria-label="Thème">
