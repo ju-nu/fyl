@@ -60,8 +60,12 @@ and the Worker; [i18n/README.md](../i18n/README.md) has the catalog rules and th
   and catalogs, never `dist/<lang>/`. A missing key falls back to English; `tests/i18n.test.ts` fails while a present
   catalog misses or adds a key, changes a placeholder or markup, or a generated file is stale
   (`node scripts/build_i18n.mjs --check` says which).
-- **Routing** (`src/index.ts`, `src/i18n.ts`): `/` only picks a language, 302 (never 301) to `/<lang>/` by
-  `Accept-Language` with `Vary: Accept-Language` and `no-store`, keeping the query; it is hreflang's x-default.
+- **Routing** (`src/index.ts`, `src/i18n.ts`): `/` picks a language for browsers, 302 (never 301) to `/<lang>/` by
+  `Accept-Language` with `Vary: Accept, Accept-Language` and `no-store`, keeping the query; it is hreflang's
+  x-default. A request to `/` that doesn't ask for HTML (curl, most agents' fetch tools) gets `llms.txt` itself
+  (`text/markdown`, with `Link` headers `rel="describedby"` and `rel="alternate"`); crawlers and link-preview bots
+  always get the switch. A browser navigation to a page address that doesn't exist (not a file, `/api`, `/cli`,
+  `/d` or `/.well-known`) answers 302 to the home page of its language.
   `/<lang>/`, `/<lang>/privacy`, `/<lang>/report` (302 to `report.fyl.at/<lang>/` where the report host is set) and the
   bare `/<lang>/download` never redirect by language. Old addresses (`/index.html`, `/privacy`, `/report` without a
   report host, `/download`, any `*.html`, `/<lang>`) answer 301 to the English (or the locale's) page. Download links

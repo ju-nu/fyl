@@ -109,7 +109,7 @@ function rotatedAt(env: Env) {
  * `off`, or `incomplete` (only one of TURNSTILE_SITE_KEY and TURNSTILE_SECRET set, so it doesn't). `e2ee` says whether
  * new encrypted uploads are taken (`on`, or `off` while the E2EE_ENABLED switch is off), `paused` whether the operator
  * paused uploads (`null` when the Budget didn't answer); none of the three is a health check. `version` is the live
- * deploy's tag (`v2.4.0`, as `npm run deploy` names it) and when it was uploaded, from the version metadata binding
+ * deploy's tag (`v1.0.1`, as `npm run deploy` names it) and when it was uploaded, from the version metadata binding
  * (null without it).
  * Counts and percentages only, never ids, names or keys. With `sample` (the owner's read on the local dashboard, see
  * admin()) the stored bytes are made up and marked `capacity.sample`, so "Storage in use" shows filled like the sample

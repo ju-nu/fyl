@@ -235,20 +235,8 @@ Rotation (each `wrangler secret put` deploys a new version at once):
   `npx wrangler secret put TURNSTILE_SECRET` and paste the new key. A new site key goes into `wrangler.jsonc` and is
   deployed like code.
 
-**Moving `ADMIN_EMAILS` from a var to the secret** (once, for a Worker deployed with `ADMIN_EMAILS` in `vars`).
-wrangler refuses `wrangler secret put NAME` while the deployed Worker has a plain var of that name, so the order is
-fixed:
-
-1. Deploy the release that drops the var (the normal flow, or `npm run deploy`). The deploy prints
-   "Warning: ADMIN_EMAILS is not set". Until step 2 the operator's browser sign-in reads nothing on the dashboard
-   (`/api/admin/ready`, `/api/admin/uploads`, `/api/admin/reports`, `/api/stats` and `/api/billing` answer 401 there),
-   because `src/access.ts` fails closed; the operator token with the service token (`npm run admin`), the monitor and
-   the public site keep working. Do it in a quiet window and run step 2 right after.
-2. `npx wrangler secret put ADMIN_EMAILS` and type the address (comma-separated for several). No redeploy is needed:
-   the secret put creates a new version itself.
-3. Verify: `npx wrangler secret list` names `ADMIN_EMAILS`; the dashboard on `https://admin.fyl.at` shows readiness,
-   uploads and reports in the operator's browser; `npm run admin -- ready` still works; a later `npm run deploy`
-   prints no `ADMIN_EMAILS` warning.
+`ADMIN_EMAILS` was a plain var before 1.0.0 and moved to the secret then (wrangler refuses `secret put` while a var of
+that name is deployed); set it only as a secret.
 
 ## Turnstile
 
@@ -367,7 +355,7 @@ decisions until 183 days after closing. The web client keeps recent uploads with
 storage (up to 20, each until forgotten or a day after its link expires), passwords and encryption keys only in the
 tab's session storage unless the sender ticks "Remember the password on this device" or "Remember keys on this
 device", and an interrupted upload with its key (no password, no encryption key) until it finishes, is discarded or
-its 24-hour window ends. The CLI keeps no state on disk.
+its 24-hour window ends. The CLI keeps no settings; it stores only the time of its last update check, in its cache folder.
 
 ## Static assets
 
@@ -592,11 +580,12 @@ Structured log events: `request_failed`, `operation_failed`, `cleanup_retry_sche
 - **Analytics:** server-side events go to Workers Analytics Engine `fyl_events` ([METRICS.md](METRICS.md)). Cloudflare
   Web Analytics is not enabled for fyl.at, and the "Disable RUM" configuration rule keeps its beacon out
   ([E2EE](#end-to-end-encryption)). Cloudflare's Custom Dashboards can't chart Analytics Engine.
-- **E-mail DNS:** `TXT fyl.at "v=spf1 -all"`, `TXT _dmarc.fyl.at "v=DMARC1; p=reject; adkim=s; aspf=s"` and a null
-  `MX fyl.at 0 .`, since fyl.at sends no mail, so spoofed `@fyl.at` senders are rejected. The null MX also means the
-  zone receives no mail: the security contact `security@fyl.at` ([SECURITY.md](../SECURITY.md), `security.txt`)
-  needs a mail route first, for example Cloudflare Email Routing, which replaces the null MX with its own MX records
-  and forwards the address to the operator; SPF and DMARC stay as they are. DNSSEC is off.
+- **E-mail:** Cloudflare Email Routing receives mail for fyl.at (`MX` `route1.mx.cloudflare.net`,
+  `route2.mx.cloudflare.net`, `route3.mx.cloudflare.net`) and forwards the security contact `security@fyl.at`
+  ([SECURITY.md](../SECURITY.md), `security.txt`) to the operator. SPF is `TXT fyl.at "v=spf1
+  include:_spf.mx.cloudflare.net ~all"`, as Email Routing sets it; `TXT _dmarc.fyl.at "v=DMARC1; p=reject; adkim=s;
+  aspf=s"` still rejects spoofed `@fyl.at` senders, since fyl.at sends no mail of its own. Check the route after any
+  change with a test mail from an outside account (the read-only API token can't read Email Routing). DNSSEC is off.
 
 ## Verification
 
