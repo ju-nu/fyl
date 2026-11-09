@@ -1127,6 +1127,8 @@
     paintLink(shareURL(record), {secret: secret(record), keyless: encrypted(record) && !keyOf(record.id)});
     $('lo-actions').hidden = false; $('lo-actions').classList.remove('awaiting'); $('lo-actions').inert = false; $('lo-hint').hidden = true; $('upload-again').hidden = true; $('cancel-row').hidden = true; $('cancel-row').classList.remove('leaving');
     $('mt-then').hidden = true; $('mt-change').hidden = false; $('lo-meter').setAttribute('aria-label', t('home.timeLeft')); $('progressbar').hidden = true;
+    // The hint names this page's origin, like the command its copy button copies (managementURL()).
+    $('file-rm-row').querySelector('code').innerHTML = "fyl rm '" + escapeHTML(siteURL()) + "<wbr>#manage/…'";
     $('file-rm-row').hidden = false;
     const pausedNow = paused(record);
     $('receipt-view').innerHTML =
