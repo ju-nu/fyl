@@ -69,8 +69,8 @@ REASONS = {"open_reports": "reports wait for a decision: npm run admin -- report
            "daily_60": "today's upload volume reached 60 % of MAX_DAILY_UPLOAD_BYTES: npm run admin -- status"}
 
 
-# The one-off tombstone sweep (temporary): the Cloudflare API (FYL_CLOUDFLARE_API sets another, e.g. a test's fake on
-# loopback), the Worker and account of wrangler.jsonc, the class whose objects it reaches, and the ids per request.
+# The one-off tombstone sweep (temporary): the Cloudflare API (FYL_CLOUDFLARE_API may point at a test's fake on loopback;
+# any other host is refused), the Worker and account of wrangler.jsonc, the class whose objects it reaches, and the ids per request.
 CLOUDFLARE_API = os.environ.get("FYL_CLOUDFLARE_API", "https://api.cloudflare.com/client/v4").rstrip("/")
 WRANGLER = Path(__file__).resolve().parents[1] / "wrangler.jsonc"
 SWEEP_CLASS, SWEEP_BATCH = "Transfer", 50
@@ -528,9 +528,11 @@ def worker():
 def cloudflare(path, query=None):
     """A GET of the Cloudflare API with CLOUDFLARE_API_TOKEN; its `result` and `result_info`. Errors exit with
     Cloudflare's messages, never the token."""
+    # The token is the account's: it goes to Cloudflare's API, or to a test's fake on loopback, and nowhere else.
     parsed = urllib.parse.urlsplit(CLOUDFLARE_API)
-    if parsed.scheme != "https" and not (parsed.scheme == "http" and local(parsed.hostname)):
-        sys.exit("FYL_CLOUDFLARE_API must start with https:// (http:// only on loopback).")
+    if not ((parsed.scheme == "https" and parsed.hostname == "api.cloudflare.com" and parsed.port in (None, 443))
+            or (parsed.scheme in ("http", "https") and local(parsed.hostname))):
+        sys.exit("FYL_CLOUDFLARE_API must be https://api.cloudflare.com/... or a loopback address; the token is sent nowhere else.")
     secret = setting("CLOUDFLARE_API_TOKEN") or sys.exit("Set CLOUDFLARE_API_TOKEN (or add it to .env): sweep lists the "
                                                           "Durable Objects with it (Workers Scripts Read).")
     url = CLOUDFLARE_API + path + ("?" + urllib.parse.urlencode(query) if query else "")

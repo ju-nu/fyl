@@ -624,11 +624,17 @@ class SweepTests(unittest.TestCase):
         self.assertEqual(bad.returncode, 1)
         self.assertIn('not 64 lowercase hex digits. Nothing was sent.', bad.stderr)
         self.assertEqual(self.server.requests, [])
-        # The token only travels over HTTPS, or plain HTTP on loopback.
-        module.CLOUDFLARE_API = 'http://api.cloudflare.com/client/v4'
-        with mock.patch.dict(os.environ, {'CLOUDFLARE_API_TOKEN': CF_TOKEN}), self.assertRaises(SystemExit) as plain:
-            module.cloudflare('/x')
-        self.assertIn('must start with https://', str(plain.exception))
+        # The token only travels to https://api.cloudflare.com, or to loopback: never plain HTTP to Cloudflare, never
+        # another host, whatever the scheme.
+        for api in ('http://api.cloudflare.com/client/v4', 'https://api.cloudflare.com.evil.example/client/v4',
+                    'https://evil.example/client/v4', 'https://api.cloudflare.com@evil.example/client/v4',
+                    'https://api.cloudflare.com:8443/client/v4', 'http://10.0.0.1/client/v4'):
+            module.CLOUDFLARE_API = api
+            with mock.patch.dict(os.environ, {'CLOUDFLARE_API_TOKEN': CF_TOKEN}), \
+                    mock.patch.object(module.urllib.request, 'build_opener') as opener, self.assertRaises(SystemExit) as foreign:
+                module.cloudflare('/x')
+            self.assertIn('must be https://api.cloudflare.com/', str(foreign.exception))
+            opener.assert_not_called()
 
     def test_a_rate_limited_batch_is_sent_again(self):
         self.answers((429, {'error': 'Too many requests. Please try again shortly.', 'code': 'rate_limited'}),
