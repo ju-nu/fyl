@@ -177,7 +177,7 @@ describe('part attempts and final transfer states', () => {
     const session = await (await create()).json<Session>();
     const receipt = await finish(session, [await part(session, payload)]);
     expect(await (await takedown(receipt.id)).json()).toEqual({ removed: true, existed: true });
-    // It gets no purge date, and one an older version set is ignored.
+    // It gets no purge date, and one set on it is ignored.
     expect(await record(receipt.id)).not.toHaveProperty('purgeAt');
     await edit(receipt.id, record => { record.purgeAt = Date.now() - 1; });
     const stub = env.TRANSFERS.getByName(receipt.id);

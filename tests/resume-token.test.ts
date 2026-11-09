@@ -83,7 +83,7 @@ describe('resume token', () => {
     expect((await owner(receipt.id, session.key, { method: 'DELETE' })).status).toBe(200);
   });
 
-  it('does not open records created before it existed, which keep resuming with the key', async () => {
+  it('refuses the resume token on a record without resumeHash', async () => {
     const session = await init(payload.length), resume = await resumable(session);
     await edit(session.uploadId, record => { delete record.resumeHash; });
     for (const response of [await status(resume), await put(resume, payload), await post('/api/upload/complete', { ...resume, parts: [{ partNumber: 1, etag: 'x' }] }),

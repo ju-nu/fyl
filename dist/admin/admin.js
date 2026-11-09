@@ -409,8 +409,7 @@
   const languages = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['en'], {type: 'language'}) : null;
   const named = (display, code) => { try { return display ? display.of(code) || code : code; } catch { return code; } };
   const PAGES = {home: 'Home', report: 'Report form', privacy: 'Privacy', download: 'Download pages', gone: 'Closed links'};
-  // `internal` is fyl.at itself in a body from before the kinds of its pages were told apart (src/stats.ts referrerOf()).
-  const REFERRERS = {direct: 'Direct or hidden', internal: 'fyl.at itself', ip: 'An IP address', private: 'A private network', other: 'Not a web address'};
+  const REFERRERS = {direct: 'Direct or hidden', ip: 'An IP address', private: 'A private network', other: 'Not a web address'};
   const DEVICES = {desktop: 'Desktop', mobile: 'Mobile', tablet: 'Tablet'};
   const CLIENTS = {browser: 'Browser', cli: 'fyl CLI', curl: 'curl', wget: 'wget', bot: 'Bot', script: 'Browser-named scripts', other: 'Other tools and scripts',
     own: "fyl's own checks"};
@@ -452,7 +451,7 @@
   const baseOf = (kind, totals) => {
     if (kind === 'downloadsByClient') return [totals.downloads || 0, 'of ' + count(totals.downloads) + ' downloads'];
     if (kind === 'uploadSizes') return [totals.uploads || 0, 'of ' + count(totals.uploads) + ' uploads completed'];
-    // Only uploads whose kind of client, or options, were recorded (since the release after 2.4.0).
+    // Only uploads whose kind of client, or options, were recorded (since 2026-11-01).
     if (kind === 'uploadsByClient') return [totals.uploadsWithClient || 0, 'of ' + count(totals.uploadsWithClient) + ' uploads with a recorded client'];
     if (kind === 'uploadOptions') return [totals.uploadsWithOptions || 0, 'of ' + count(totals.uploadsWithOptions) + ' uploads; options combine'];
     // Download requests that started, a resumed one counting again, of every transfer closed in the range; the median and

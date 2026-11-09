@@ -616,7 +616,7 @@ describe('statistics shape', () => {
     // The bucket of the release itself holds both: it is the first counted (the first bucket: nothing before to leave out).
     expect(clients([upload(2, ''), upload(2, 'browser')])).toBe(hour(2));
     expect(clients([upload(0, ''), upload(0, 'cli'), upload(7, 'browser')])).toBeNull();
-    // Under a rollback to 2.4.0 uploads carry no kind again: counting starts over after it.
+    // Uploads without a kind after labelled ones: counting starts over after the last of them.
     expect(clients([upload(1, 'browser'), upload(5, ''), upload(7, ''), upload(10, 'cli')])).toBe(hour(10));
     // No labelled upload yet since the last one without: the next bucket (the running one at most).
     expect(clients([upload(3, '')])).toBe(hour(4));

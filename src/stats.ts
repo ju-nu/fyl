@@ -283,9 +283,9 @@ export function shape(range: string, rows: Rows, now: number, since: Since = COU
     } else if (row.event === 'upload_started') { labelled.add(point.t); if (row.code === 'browser') point.webStarted += num(row.n); }
     else if (row.event === 'download_started' && row.code !== 'own') point.downloads += num(row.n);
   }
-  // Uploads are counted by kind of client since the release after 2.4.0: from then on every completed upload names it
+  // Uploads are counted by kind of client since 2026-11-01: from then on every completed upload names it
   // in blob3 (fyl's own `own`, one begun before `unknown`) and every admitted one writes upload_started. So only an
-  // upload without one (written before, or under a rollback to 2.4.0) shows a bucket wasn't counted by client; a quiet
+  // upload without one (written before the kind was recorded) shows a bucket wasn't counted by client; a quiet
   // stretch, or one of CLI uploads only, never does. Counting began in the first bucket from the last such one on that
   // has a labelled upload or a start (the next bucket when none followed yet); the funnel and the lists by client say
   // since when. Null when the range holds no upload without a kind, or counting began in its first bucket.

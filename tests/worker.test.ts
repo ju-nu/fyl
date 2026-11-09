@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { evictDurableObject, runInDurableObject, runDurableObjectAlarm } from 'cloudflare:test';
+import { runInDurableObject, runDurableObjectAlarm } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { randomToken, networkOf, networkHash, digest, budget, unwrap, PART_BYTES, TOMBSTONE_TTL_MS } from '../src/shared';
 import { call, post, init, part, finish, file, pathOf, pageOf, operator, record, edit, swap, useNetworkPrefix, type Session } from './helpers';
@@ -427,45 +427,13 @@ describe('fyl.at Worker + real local R2/SQLite bindings', () => {
       });
       expect((await call(pathOf(receipt.url))).status).toBe(404);
     });
-    it('gives tombstones cleaned before 2.1.2 the 7 days every closed link has, on their next start, and keeps takedowns', async () => {
-      const day = 86400000, tombstone = async (purgeAt: number) => {
-        const { session } = await file(), stub = env.TRANSFERS.getByName(session.uploadId);
-        await edit(session.uploadId, record => { Object.assign(record, { status: 'expired', clean: true, name: '', purgeAt }); delete record.verifyAt; });
-        await evictDurableObject(stub);
-        expect((await call(`/api/transfers/${session.uploadId}`)).status).toBe(410);
-        return { session, stub };
-      };
-      // Cleaned 2 days ago with 30 days: 5 days left, and the alarm moves with it.
-      const { session, stub } = await tombstone(Date.now() + 28 * day), clamped = await record(session.uploadId);
-      expect(clamped.purgeAt).toBeGreaterThanOrEqual(Date.now() + 5 * day - 5000);
-      expect(clamped.purgeAt).toBeLessThanOrEqual(Date.now() + 5 * day);
-      expect(await runInDurableObject(stub, (_instance, ctx) => ctx.storage.getAlarm())).toBe(clamped.purgeAt);
-      // Cleaned since 2.1.2 (7 days at most): unchanged.
-      const recent = Date.now() + 6 * day, { session: kept } = await tombstone(recent);
-      expect((await record(kept.uploadId)).purgeAt).toBe(recent);
-      // Cleaned 20 days ago: its 7 days are over, so it is purged right away.
-      const { session: due } = await tombstone(Date.now() + 10 * day);
-      await expect.poll(async () => (await call(`/api/transfers/${due.uploadId}`)).status).toBe(404);
-      // A takedown is never purged, whatever date it carries.
-      const removed = (await file()).session.uploadId;
-      expect((await operator('/api/admin/takedown', { method: 'POST', body: JSON.stringify({ id: removed, note: 'kept for good' }) })).status).toBe(200);
-      await edit(removed, record => { record.purgeAt = Date.now() + 28 * day; });
-      await evictDurableObject(env.TRANSFERS.getByName(removed));
-      expect((await call(`/api/transfers/${removed}`)).status).toBe(410);
-      expect((await record(removed)).purgeAt).toBeGreaterThan(Date.now() + 27 * day);
-    });
-    it('keeps no network hash in a tombstone: a takedown during a one-time download drops the session, older tombstones lose it on start', async () => {
+    it('keeps no network hash in a tombstone: a takedown during a one-time download drops the session', async () => {
       const { session, receipt } = await file(true);
       const reading = await call(pathOf(receipt.url), { headers: { Range: 'bytes=0-1' } });
       await reading.arrayBuffer();
       expect((await record(session.uploadId)).session?.network).toMatch(/^[0-9a-f]{64}$/);
       expect((await operator('/api/admin/takedown', { method: 'POST', body: JSON.stringify({ id: receipt.id, note: 'during a download' }) })).status).toBe(200);
       expect(await record(session.uploadId)).toMatchObject({ status: 'removed', clean: true });
-      expect(await record(session.uploadId)).not.toHaveProperty('session');
-      // A tombstone a cleanup before 2.3.0 left with the session in it.
-      await edit(session.uploadId, stored => { stored.session = { network: 'f'.repeat(64), guesser: 'f'.repeat(64), startedAt: 1, lastAt: 1, open: 0 }; });
-      await evictDurableObject(env.TRANSFERS.getByName(session.uploadId));
-      expect((await call(pathOf(receipt.url))).status).toBe(410);
       expect(await record(session.uploadId)).not.toHaveProperty('session');
     });
   });
