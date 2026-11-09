@@ -994,7 +994,7 @@ key check on head and meta; every part rebuilt from the producer's head with equ
 and full bytes where C ≤ 4096; decryption to the plaintext, streamed with the verified head and whole with the
 identity. All 24 pass in both suites; one changed digit in a recorded part MD5 fails both.
 
-**CLI 1.0.0** (and the 2.5.1 bridge, the same source). Re-checked 2026-11-09 after the Rust core moved to `chacha20poly1305` 0.11.0, `x25519-dalek` 3.0.0
+**CLI 1.0.0.** Re-checked 2026-11-09 after the Rust core moved to `chacha20poly1305` 0.11.0, `x25519-dalek` 3.0.0
 (`curve25519-dalek` 5.0.0), `hkdf` 0.13.0, `hmac` 0.13.0, `sha2` 0.11.1 and `md-5` 0.11.0: `cargo test --locked`
 passes every vector above (cross, CCTV, content, decrypt, key check, layout, link, meta, name) and the folder-zip
 vectors with the files unchanged. The oracle and 1 GiB runs below were not repeated.

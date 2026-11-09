@@ -76,7 +76,7 @@
 <p>To clear them, use “Forget this device” under Recent uploads, or clear this site’s data in your browser. The site sets no cookies and loads no scripts, fonts or trackers from other sites, except Turnstile on the report form when it is enabled; the form has its own address, report.fyl.at, so Turnstile never runs where this site keeps your data.</p>
 
 <h2 id="cli">The fyl command</h2>
-<p><code>fyl</code> asks fyl.at for <code>/cli/version.json</code> at most once a day, after a command that worked, to tell you when a newer version is out. The request sends only fyl’s User-Agent (such as <code>fyl-cli/2.5.0</code>), nothing about you or your files. On your computer, fyl stores only the time of that check, in its cache folder. <code>FYL_NO_UPDATE_CHECK=1</code> turns the check off; it is also skipped in CI and when fyl’s messages don’t go to a terminal. <code>fyl update</code> downloads a new version only when you run it. Apart from that, the CLI stores nothing on your computer.</p>
+<p><code>fyl</code> asks fyl.at for <code>/cli/version.json</code> at most once a day, after a command that worked, to tell you when a newer version is out. The request sends only fyl’s User-Agent (such as <code>fyl-cli/1.0.1</code>), nothing about you or your files. On your computer, fyl stores only the time of that check, in its cache folder. <code>FYL_NO_UPDATE_CHECK=1</code> turns the check off; it is also skipped in CI and when fyl’s messages don’t go to a terminal. <code>fyl update</code> downloads a new version only when you run it. Apart from that, the CLI stores nothing on your computer.</p>
 
 <h2 id="contact">Contact</h2>
 <p>To report a file, use the <a href="https://report.fyl.at/en/">report form</a>.</p>

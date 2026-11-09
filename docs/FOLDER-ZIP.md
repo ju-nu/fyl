@@ -1,6 +1,6 @@
 # Folder upload as one zip, profile `fyl-folder-zip-1`
 
-Status: specification for the browser (`dist/app.js`, `dist/api.js`, `dist/zip.js`, §12) and the Rust CLI (`cli-rs/src/folder.rs`, [CLI.md](CLI.md#folders)). Both implement it (since 2.5.0, a release before the numbering started over at 1.0.0) and are checked against the vectors.
+Status: specification for the browser (`dist/app.js`, `dist/api.js`, `dist/zip.js`, §12) and the Rust CLI (`cli-rs/src/folder.rs`, [CLI.md](CLI.md#folders)). Both implement it and are checked against the vectors.
 MUST/SHOULD/MAY as in RFC 2119/8174. Reference implementation: `scripts/folder_zip.py` (stdlib only); test vectors:
 [tests/vectors/folder-zip/](../tests/vectors/folder-zip/README.md); CLI: [CLI.md](CLI.md#folders).
 

@@ -12,7 +12,7 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md), the protocol in [CLI-API.md](CLI-API.m
 | --- | --- |
 | Worker | `fyl-at`; `src/index.ts`; compatibility date in `wrangler.jsonc`; `nodejs_compat` |
 | Domains | `fyl.at`, `admin.fyl.at` (the admin host, behind Cloudflare Access) and `report.fyl.at` (the report form, [Turnstile](#turnstile)), custom domains on `fyl-at` (`routes` in `wrangler.jsonc`; the deploy creates their DNS records); workers.dev and preview URLs disabled, so every request goes through a configured domain and its policies |
-| Static assets | `dist/`, deployed as `.build/assets` with the site's own scripts and stylesheets minified ([below](#static-assets)), `ASSETS` binding; every request runs the Worker first (`run_worker_first: true`), so the admin host checks Cloudflare Access before any file and `/admin`, `/admin/*` (the dashboard, served on the admin host only) never leave on `fyl.at`; on `fyl.at` the Worker answers `/api/*`, `/d/*` and `/config.js`, sets the Content-Security-Policy of the pages (scripts and workers from fyl's own paths only; [E2EE](#end-to-end-encryption)), answers `/report` with a 302 to `report.fyl.at`, counts the page views and hands every other path to the asset binding; `dist/_headers` sets the policy of every other file and the cache rules, `dist/_redirects` the old CLI paths; `dist/llms.txt` tells agents how to use the site and is served as `text/markdown` |
+| Static assets | `dist/`, deployed as `.build/assets` with the site's own scripts and stylesheets minified ([below](#static-assets)), `ASSETS` binding; every request runs the Worker first (`run_worker_first: true`), so the admin host checks Cloudflare Access before any file and `/admin`, `/admin/*` (the dashboard, served on the admin host only) never leave on `fyl.at`; on `fyl.at` the Worker answers `/api/*`, `/d/*` and `/config.js`, sets the Content-Security-Policy of the pages (scripts and workers from fyl's own paths only; [E2EE](#end-to-end-encryption)), answers `/report` with a 302 to `report.fyl.at`, counts the page views and hands every other path to the asset binding; `dist/_headers` sets the policy of every other file and the cache rules; `dist/llms.txt` tells agents how to use the site and is served as `text/markdown` |
 | R2 | `fyl-at-files`, binding `FILES`, Standard, location hint WEUR, private ([below](#r2-bucket)) |
 | Durable Objects (SQLite) | `Transfer` (binding `TRANSFERS`, one object per transfer), `Budget` (binding `BUDGET`, object `admission-v1`), `Reports` (binding `REPORTS`, object `reports-v1`); exports declared in `wrangler.jsonc`, namespaces (`<namespace-id>`) created by the deploy |
 | Metrics | Workers Analytics Engine dataset `fyl_events`, binding `METRICS`; event names, codes, numbers and coarse dimensions only, kept three months ([METRICS.md](METRICS.md)) |
@@ -132,24 +132,22 @@ release, and 2.0.0 to 2.5.1 are never used again.
 1. Update the version in `package.json` and the lockfile, `cli-rs/Cargo.toml` and `cli-rs/Cargo.lock`
    (`cargo update --workspace --offline` in `cli-rs/`), and the smoke User-Agent in `scripts/smoke.py`.
 2. `npm run build:native` builds the binaries into `dist/cli/<version>/` and keeps the previous version's folder (an
-   installer that read an older `/cli/latest` still finds its files) and the bridge `dist/cli/2.5.1/`; `build_cli.py`
-   writes `SHA256SUMS`, `dist/cli/latest`, `dist/cli/version.json`, `dist/cli/bridge.json` and `dist/_redirects`, and
-   `scripts/cli_licenses.py` the license texts of the linked crates, `cli-rs/THIRD-PARTY-LICENSES.txt`.
+   installer that read an older `/cli/latest` still finds its files); `build_cli.py` writes `SHA256SUMS`,
+   `dist/cli/latest` and `dist/cli/version.json`, and `scripts/cli_licenses.py` the license texts of the linked
+   crates, `cli-rs/THIRD-PARTY-LICENSES.txt`.
 3. Add the `## <version> — <date>` section to `CHANGELOG.md`, open a pull request and merge it once `Checks` passes.
 4. The Deploy gate moves production; Workers Builds deploys it. `.github/workflows/release.yml` then runs
    `scripts/release.sh`: only for the commit production has, it waits until `https://fyl.at/cli/latest` serves the new
    version (60 tries, 20 s apart) and publishes the GitHub release `v<version>` with the four binaries and
    `SHA256SUMS`, its notes being only that version's CHANGELOG section (`scripts/release_notes.py`). An existing
-   release must carry exactly the committed `SHA256SUMS`; it is never overwritten. The bridge 2.5.1 gets no release
-   (fyl.at serves it from `dist/cli/2.5.1/`); its binary must still report its version.
+   release must carry exactly the committed `SHA256SUMS`; it is never overwritten.
 5. Check that `/cli/latest` and `/cli/<version>/SHA256SUMS` match the release assets, run `npm run admin -- ready` and
    `npm run smoke` (`-- --multipart` after any change to the upload or download path).
 
 Published CLI files never change: once production has `dist/cli/<version>/`, `Checks` fails on any change in that
 folder (`scripts/cli_published.sh`), so a rebuild needs a version bump. The native job of `Checks` (RustSec audit,
 clippy, `cargo test`, reproducible rebuild compared byte for byte) runs when the CLI, its build inputs or
-`tests/vectors/` changed since what production has (`scripts/cli_changed.sh`), and weekly; it rebuilds and compares
-the bridge only while a change adds or changes `dist/cli/2.5.1/`. The Release workflow hangs off the Deploy gate
+`tests/vectors/` changed since what production has (`scripts/cli_changed.sh`), and weekly. The Release workflow hangs off the Deploy gate
 through `workflow_run`, which GitHub allows to chain only three levels deep: keep further automation out of that chain.
 
 Dependabot (`.github/dependabot.yml`) opens weekly update PRs for npm, Cargo (`cli-rs/`) and GitHub Actions (minor and
@@ -373,7 +371,7 @@ uploads a build of it: `npm run build:assets` regenerates the locale pages (`scr
 are current), then `scripts/minify_assets.mjs` empties `.build/assets` (only that folder), copies `dist/` there and
 minifies the site's own scripts and stylesheets with esbuild (a pinned dev dependency), and
 `wrangler deploy --assets .build/assets` uploads that folder. `--assets` replaces only the folder: the `ASSETS` binding
-and `run_worker_first` still come from `wrangler.jsonc`, `_headers` and `_redirects` from the copied files.
+and `run_worker_first` still come from `wrangler.jsonc`, `_headers` from the copied files.
 `npm run build`, the dry run at the end of `npm run ci`, builds and reads the same folder, so every deploy's path is
 tested first. `.build/` is ignored by git, biome and Vitest.
 
@@ -391,7 +389,7 @@ tested first. `.build/` is ignored by git, biome and Vitest.
   these files from the live site, fails when one differs from `dist/` by a single byte (naming it), and prints their
   SHA-256 sums in `sha256sum` form to the build log (`served_code()`; the list is `KEPT` of
   `scripts/minify_assets.mjs`, which `tests/test_smoke.py` compares). Everything that isn't JavaScript or CSS is
-  copied unchanged as well: HTML, `_headers`, `_redirects`, fonts, images and `dist/cli/`.
+  copied unchanged as well: HTML, `_headers`, fonts, images and `dist/cli/`.
 - **Size:** the nine minified files shrink by about a quarter (with brotli from about 74 to 52 KiB); the script prints
   the table.
 - **Tests:** every Vitest file that imports a minified file from `dist/` (found by its imports) runs a second time in
@@ -603,8 +601,7 @@ After each deployment run `npm run smoke` (with `FYL_ACCESS_CLIENT_ID` and `FYL_
 checks): it checks every page's policy and scripts and the kept code's bytes (as the deploy does), the report and
 privacy pages, that `fyl.at` answers 404 for `/admin` and `/api/stats`, that `admin.fyl.at` refuses requests without
 Access and serves the dashboard and readiness with the service token, that a report on an unknown link is refused,
-readiness (with `MONITOR_TOKEN` or `FYL_ADMIN_TOKEN`), the versioned CLI files against `SHA256SUMS` and the old paths'
-redirects, then makes small real transfers with the published CLI (regular, one-time, password and end-to-end
+readiness (with `MONITOR_TOKEN` or `FYL_ADMIN_TOKEN`), the versioned CLI files against `SHA256SUMS`, then makes small real transfers with the published CLI (regular, one-time, password and end-to-end
 encrypted uploads, `fyl download`, `fyl rm`), checks HTTPS, no-cache, filename, CORP and hotlink behaviour, the download
 page, ranges, private controls, one-time consumption, Basic Auth and the unlock form, and removes its files.
 `npm run smoke -- --multipart` uses four 52 MiB uploads (regular, one-time, password, end-to-end encrypted) and fails

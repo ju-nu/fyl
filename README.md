@@ -79,9 +79,8 @@ itself as fyl.at. Under the AGPL, a modified version offered as a network servic
 
 ## Release
 
-Current release: **1.0.1** ([CHANGELOG](CHANGELOG.md)). The version numbers started over at 1.0.0 with the public
-release; an installed fyl 2.x reaches it with `fyl update` (twice from 2.5.0) or by installing again
-([CLI](docs/CLI.md#install-and-update)).
+Current release: **1.0.1** ([CHANGELOG](CHANGELOG.md)). Install and update the CLI as in
+[CLI](docs/CLI.md#install-and-update).
 
 ## Documentation
 

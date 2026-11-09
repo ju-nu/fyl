@@ -94,10 +94,9 @@ read by the server, browser and Rust tests alike: change them together, and rege
   while the `TURNSTILE_SITE_KEY` var and the `TURNSTILE_SECRET` secret are both set, and fails closed (503) when
   siteverify gives no usable answer.
 - The User-Agent never grants access. Its only uses: known link-preview bots (`PREVIEW_BOTS` in `src/index.ts`) get
-  the download page instead of the file and are the only clients of the image preview route; `/cli/version.json`
-  offers CLIs of the old numbering the bridge ([version scheme](docs/ARCHITECTURE.md#version-scheme)); and
-  `download_started` and `page_view` count the kind of client (statistics only). Never classify statistics by a file
-  name, a size or an address.
+  the download page instead of the file and are the only clients of the image preview route; and `download_started`
+  and `page_view` count the kind of client (statistics only). Never classify statistics by a file name, a size or an
+  address.
 
 **Keys, passwords and links.**
 
