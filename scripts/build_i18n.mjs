@@ -4,7 +4,7 @@
 //
 // A template names a message as {{key}}, with arguments as {{key name:other.key count=3}} (another message, a number).
 // Keys ending in "Html" may hold the inline markup their English holds; every other value is plain text, escaped here.
-// {{@…}} are the page's own parts: @lang, @base (/<lang>), @seo (canonical, hreflang, og:url, og:locale), @strings
+// {{@…}} are the page's own parts: @lang, @base (/<lang>), @seo (canonical, hreflang, og:title, og:description, og:type, og:url, og:locale), @strings
 // (the JSON block #fyl-i18n with the messages the page's scripts use), @languageButton and @languageMenu (the footer's
 // language menu), @binding (the note on a translated privacy page that the English one is binding), @source (the public
 // repository, which the footer links to). Every message may name {base}, {report}, {source} and {releases}.
@@ -99,9 +99,14 @@ export function render(page, code, strings, english) {
     const html = key.endsWith('Html'), value = format(message(key), { base, report, source: SOURCE, releases: RELEASES, ...Object.fromEntries(Object.entries(vars).map(([name, value]) => [name, html ? escapeHTML(value) : value])) }, locale.intl);
     return html ? value : escapeHTML(value);
   };
+  // The page's own title and description keys (index: home.*); an og-specific key (`<prefix>.ogTitle`,
+  // `<prefix>.ogDescription`) wins where the page has one.
+  const prefix = page.name === 'index' ? 'home' : page.name;
+  const own = name => text(`${prefix}.og${name}` in english ? `${prefix}.og${name}` : `${prefix}.${name.toLowerCase()}`);
   // content-language names the page's language for tools that ignore <html lang>; every page carries it.
   const seo = () => `<meta http-equiv="content-language" content="${code}">` + (page.indexed ? [
     `<link rel="canonical" href="${url(page, code)}">`,
+    `<meta property="og:title" content="${own('Title')}"><meta property="og:description" content="${own('Description')}"><meta property="og:type" content="website">`,
     ...LOCALES.map(item => `<link rel="alternate" hreflang="${item.code}" href="${url(page, item.code)}">`),
     `<link rel="alternate" hreflang="x-default" href="${fallbackUrl(page)}">`,
     `<meta property="og:url" content="${url(page, code)}"><meta property="og:locale" content="${locale.og}">`,

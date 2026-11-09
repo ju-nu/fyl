@@ -89,6 +89,11 @@ describe('the pages in every language', () => {
       const alternates = [...text.matchAll(/<link rel="alternate" hreflang="([a-z-]+)" href="([^"]+)">/g)].map(match => [match[1], match[2]]);
       expect(alternates, where).toEqual([...LOCALES.map(other => [other, canonical(other, page)]), ['x-default', fallback]]);
       expect(text, where).toContain(`<meta property="og:url" content="${canonical(code, page)}"><meta property="og:locale" content="${OG[code]}">`);
+      // Link previews: exactly one og:title, og:description and og:type each, from the page's own strings.
+      for (const tag of ['og:title', 'og:description', 'og:type'])
+        expect([where, tag, text.match(new RegExp(`<meta property="${tag}" content="[^"]+">`, 'g'))?.length]).toEqual([where, tag, 1]);
+      expect(text, where).toContain('<meta property="og:type" content="website">');
+      expect(text, where).toContain(`<meta property="og:title" content="${(/<title>([^<]+)<\/title>/.exec(text) || [])[1]}">`);
       expect([...text.matchAll(/<meta property="og:locale:alternate" content="([a-z_A-Z]+)">/g)].map(match => match[1]), where).toEqual(LOCALES.filter(other => other !== code).map(other => OG[other]));
       expect(text, where).toMatch(/<title>[^<{}]+<\/title>/);
       // Every placeholder was filled: no {{…}} and no message key outside the scripts' JSON block.
