@@ -11,7 +11,7 @@ Report a vulnerability privately, in either of two ways:
 
 - **E-mail** `security@fyl.at`.
 - **GitHub private vulnerability reporting** on the source repository:
-  [Report a vulnerability](https://github.com/ju-nu/fyl/security/advisories/new).
+  [Report a vulnerability](https://github.com/ju-nu/fyl-at/security/advisories/new).
 
 Please don't open a public issue or pull request for a vulnerability. Include:
 

@@ -35,7 +35,7 @@
 <h2 id="encrypted">Encrypted files</h2>
 <p>With end-to-end encryption, the file is encrypted on your device before upload. The key is the part of the link after #, which browsers don’t send to fyl.at. fyl.at stores the encrypted file, its size and when it is fetched, not its name or contents: it keeps a generic name (“fyl-” and the start of the link’s ID), the exact size, two short encrypted headers and a checksum of each uploaded part, until the file is deleted like any other.</p>
 <p>Anyone with the full link can open the file, and a lost key can’t be recovered. fyl.at can’t check encrypted files or who sent them, so only open files you expected. In the browser, this relies on the code fyl.at serves; the fyl CLI runs a fixed, versioned build on your computer instead.</p>
-<p>The source code of fyl.at and the fyl CLI is public on <a href="https://github.com/ju-nu/fyl">GitHub</a> (AGPL-3.0), and each release lists the SHA-256 checksums of its files on <a href="https://github.com/ju-nu/fyl/releases">the releases page</a>, so you can check what you run.</p>
+<p>The source code of fyl.at and the fyl CLI is public on <a href="https://github.com/ju-nu/fyl-at">GitHub</a> (AGPL-3.0), and each release lists the SHA-256 checksums of its files on <a href="https://github.com/ju-nu/fyl-at/releases">the releases page</a>, so you can check what you run.</p>
 <p>A link without encryption carries the file’s name in its path, which every request for it sends to fyl.at; links with a password carry no name. A one-time encrypted link stays open from the same network for up to 15 minutes after the file was delivered, so a failed save can be retried. Reports refuse details that contain a key.</p>
 
 <h2 id="previews">Link previews</h2>
@@ -83,7 +83,7 @@
 </article>
 </main>
 
-<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="About fyl.at"><a href="https://report.fyl.at/en/">Report a file</a><a href="/en/privacy" aria-current="page">Privacy</a><a href="/llms.txt">For AI agents</a><a href="https://github.com/ju-nu/fyl">Source</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Language: English"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>English</span></button></nav></footer>
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="About fyl.at"><a href="https://report.fyl.at/en/">Report a file</a><a href="/en/privacy" aria-current="page">Privacy</a><a href="/llms.txt">For AI agents</a><a href="https://github.com/ju-nu/fyl-at">Source</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Language: English"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>English</span></button></nav></footer>
 </div>
 
 <div class="menu" id="theme-menu" popover role="menu" aria-label="Colour theme">

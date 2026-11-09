@@ -73,4 +73,4 @@ curl -fsS https://fyl.at/api/upload/complete -H 'Content-Type: application/json'
 - [Privacy](https://fyl.at/en/privacy): what fyl.at stores, for how long, and what encrypted files keep from the server (binding in English).
 - The pages also exist in German, Spanish, French and Dutch (https://fyl.at/de/, /es/, /fr/, /nl/); https://fyl.at/ picks one by the browser's language. This file, the CLI and the API stay English.
 - [Report a file](https://report.fyl.at/): the report form for abuse and rights holders.
-- [Source code](https://github.com/ju-nu/fyl): fyl.at and the `fyl` CLI (AGPL-3.0); [releases](https://github.com/ju-nu/fyl/releases) list each release's SHA-256 checksums. Report vulnerabilities to security@fyl.at (https://fyl.at/.well-known/security.txt).
+- [Source code](https://github.com/ju-nu/fyl-at): fyl.at and the `fyl` CLI (AGPL-3.0); [releases](https://github.com/ju-nu/fyl-at/releases) list each release's SHA-256 checksums. Report vulnerabilities to security@fyl.at (https://fyl.at/.well-known/security.txt).

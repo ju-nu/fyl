@@ -23,7 +23,7 @@ export const LOCALES = JSON.parse(readFileSync(join(I18N, 'locales.json'), 'utf8
 const config = JSON.parse(readFileSync(join(root, 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
 const PUBLIC = config.vars.PUBLIC_BASE_URL.replace(/\/$/, ''), REPORT_HOST = config.vars.REPORT_HOST || '';
 /** The public repository with fyl's source, and its releases with the checksums of each release's files. */
-export const SOURCE = 'https://github.com/ju-nu/fyl', RELEASES = SOURCE + '/releases';
+export const SOURCE = 'https://github.com/ju-nu/fyl-at', RELEASES = SOURCE + '/releases';
 
 /**
  * The pages: the template, the path inside a locale, whether search engines get it (canonical and hreflang; the

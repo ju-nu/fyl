@@ -5,7 +5,7 @@ change. Then read what the change touches: [docs/ARCHITECTURE.md](docs/ARCHITECT
 compatibility code), [docs/OPERATIONS.md](docs/OPERATIONS.md) (deploys, secrets, runbooks), [PRODUCT.md](PRODUCT.md) and
 [DESIGN.md](DESIGN.md) (product and interface decisions), and the protocol docs in `docs/`.
 
-- Public command and executable: `fyl`. Domain: `fyl.at`. Source repository: `ju-nu/fyl` on GitHub.
+- Public command and executable: `fyl`. Domain: `fyl.at`. Source repository: `ju-nu/fyl-at` on GitHub.
 - Merging into `main` is a production deploy: a green `Checks` run of a `main` commit lets the Deploy gate
   fast-forward `production`, and Cloudflare Workers Builds deploys it with `npm run deploy` (which checks the Worker
   secrets and tags the version `v<version>`). Work on a branch and open a pull request; never push to `main` or

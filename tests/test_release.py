@@ -241,7 +241,7 @@ class ReleaseTests(GitTestCase):
         self.site('9.9.9')
         self.env.update(PATH=os.pathsep.join([str(self.tools), os.environ['PATH']]), FAKE_GH_LOG=str(self.log), FAKE_PRODUCTION=self.sha,
                         FAKE_CURL_LOG=str(self.curl_log), FAKE_SLEEP_LOG=str(self.sleep_log), FAKE_SITE=str(self.served), FAKE_RELEASES=str(self.releases),
-                        GITHUB_REPOSITORY='ju-nu/fyl', GITHUB_SERVER_URL='https://github.com', RUNNER_TEMP=str(self.temp))
+                        GITHUB_REPOSITORY='ju-nu/fyl-at', GITHUB_SERVER_URL='https://github.com', RUNNER_TEMP=str(self.temp))
 
     def site(self, *answers):
         """What fyl.at/cli/latest answers, call by call; the last answer repeats."""
@@ -269,21 +269,21 @@ class ReleaseTests(GitTestCase):
         result, calls = self.release()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('Released v9.9.9.', result.stdout)
-        self.assertEqual(calls[:2], ['api repos/ju-nu/fyl/git/ref/heads/production --jq .object.sha', 'release view v9.9.9 --repo ju-nu/fyl'])
-        self.assertEqual(calls[2], 'release create v9.9.9 {} --repo ju-nu/fyl --target {} --title fyl.at v9.9.9 --notes-file {}/notes.md'.format(
+        self.assertEqual(calls[:2], ['api repos/ju-nu/fyl-at/git/ref/heads/production --jq .object.sha', 'release view v9.9.9 --repo ju-nu/fyl-at'])
+        self.assertEqual(calls[2], 'release create v9.9.9 {} --repo ju-nu/fyl-at --target {} --title fyl.at v9.9.9 --notes-file {}/notes.md'.format(
             self.assets('9.9.9'), self.sha, self.temp))
         self.assertEqual(Path(str(self.log) + '.notes.v9.9.9').read_text(),
-                         'See [the CLI](https://github.com/ju-nu/fyl/blob/{}/docs/CLI.md).\n'.format(self.sha))
+                         'See [the CLI](https://github.com/ju-nu/fyl-at/blob/{}/docs/CLI.md).\n'.format(self.sha))
         self.assertEqual((self.lines(self.curl_log), self.lines(self.sleep_log)), (['-fs --max-time 15 https://fyl.at/cli/latest'], []))
         # Then the bridge, which every fyl 2.5.0 updates to, once and never as Latest.
         bridge = self.bridge
-        self.assertEqual(calls[3:], ['release view v{} --repo ju-nu/fyl'.format(bridge),
-                                     'release create v{0} {1} --repo ju-nu/fyl --target {2} --title fyl.at v{0} --notes-file {3}/bridge.md --latest=false'.format(
+        self.assertEqual(calls[3:], ['release view v{} --repo ju-nu/fyl-at'.format(bridge),
+                                     'release create v{0} {1} --repo ju-nu/fyl-at --target {2} --title fyl.at v{0} --notes-file {3}/bridge.md --latest=false'.format(
                                          bridge, self.assets(bridge), self.sha, self.temp)])
         self.assertIn('Released v{}.'.format(bridge), result.stdout)
         notes = Path(str(self.log) + '.notes.v' + bridge).read_text()
         self.assertIn('fyl {} is the bridge from the old version numbers'.format(bridge), notes)
-        self.assertIn('(https://github.com/ju-nu/fyl/blob/{}/docs/CLI.md#install-and-update)'.format(self.sha), notes)
+        self.assertIn('(https://github.com/ju-nu/fyl-at/blob/{}/docs/CLI.md#install-and-update)'.format(self.sha), notes)
         # A later run finds both and creates nothing.
         self.publish('9.9.9')
         self.publish(bridge)

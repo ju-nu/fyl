@@ -18,7 +18,7 @@ describe('llms.txt', () => {
     // GitHub only as the public repository and its releases, nothing else there (no other repository, no raw files).
     const github = [...text.matchAll(/github[^\s)]*/gi)].map(match => match[0]);
     expect(github.length).toBeGreaterThan(0);
-    for (const mention of github) expect(['github.com/ju-nu/fyl', 'github.com/ju-nu/fyl/releases']).toContain(mention);
+    for (const mention of github) expect(['github.com/ju-nu/fyl-at', 'github.com/ju-nu/fyl-at/releases']).toContain(mention);
   });
 
   it('is announced to agents: a footer link, a describedby link in every page, and Link headers on every page', async () => {
@@ -66,10 +66,10 @@ describe('the public source', () => {
     for (const code of LOCALES) for (const page of ['/', '/privacy', '/report', '/download']) {
       const path = `/${code}${page}`, html = await (await direct(path, { REPORT_HOST: '' } as unknown as Partial<Env>, { headers: { Accept: 'text/html' } })).response.text();
       const footer = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
-      expect([path, (footer.match(/href="https:\/\/github\.com\/ju-nu\/fyl"/g) || []).length]).toEqual([path, 1]);
+      expect([path, (footer.match(/href="https:\/\/github\.com\/ju-nu\/fyl-at"/g) || []).length]).toEqual([path, 1]);
       const github = [...html.matchAll(/https?:\/\/(?:www\.)?github\.com[^"'\s<)]*/g)].map(match => match[0]);
-      expect([path, github.every(url => ['https://github.com/ju-nu/fyl', 'https://github.com/ju-nu/fyl/releases'].includes(url))]).toEqual([path, true]);
-      if (page === '/privacy') expect([path, html.includes('href="https://github.com/ju-nu/fyl/releases"')]).toEqual([path, true]);
+      expect([path, github.every(url => ['https://github.com/ju-nu/fyl-at', 'https://github.com/ju-nu/fyl-at/releases'].includes(url))]).toEqual([path, true]);
+      if (page === '/privacy') expect([path, html.includes('href="https://github.com/ju-nu/fyl-at/releases"')]).toEqual([path, true]);
     }
   });
 });
@@ -93,7 +93,7 @@ describe('robots.txt and sitemap.xml', () => {
     expect([response.status, response.headers.get('Content-Type')]).toEqual([200, 'text/plain; charset=utf-8']);
     const fields = Object.fromEntries(text.trim().split('\n').map(line => [line.slice(0, line.indexOf(':')), line.slice(line.indexOf(':') + 1).trim()]));
     expect(fields).toMatchObject({ Contact: 'mailto:security@fyl.at', 'Preferred-Languages': 'en, de', Canonical: 'https://fyl.at/.well-known/security.txt',
-      Policy: 'https://github.com/ju-nu/fyl/blob/main/SECURITY.md' });
+      Policy: 'https://github.com/ju-nu/fyl-at/blob/main/SECURITY.md' });
     // Expires must lie in the future and less than a year and a day ahead (RFC 9116 §2.5.5 recommends at most a year).
     const left = Date.parse(fields.Expires) - Date.now();
     expect(left > 0 && left < 366 * 86400000, fields.Expires).toBe(true);

@@ -127,6 +127,6 @@ public issue ([SECURITY.md](SECURITY.md)). Report an abusive file with the [repo
 
 ## Source and license
 
-The source is at https://github.com/ju-nu/fyl. fyl.at is free software under the
+The source is at https://github.com/ju-nu/fyl-at. fyl.at is free software under the
 [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). Vendored libraries, fonts and test vectors keep
 their own licenses ([THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).

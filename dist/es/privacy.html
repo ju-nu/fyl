@@ -35,7 +35,7 @@
 <h2 id="encrypted">Archivos cifrados</h2>
 <p>Con el cifrado de extremo a extremo, el archivo se cifra en tu dispositivo antes de subirlo. La clave es la parte del enlace que va después de #, que los navegadores no envían a fyl.at. fyl.at almacena el archivo cifrado, su tamaño y cuándo se descarga, pero no su nombre ni su contenido: guarda un nombre genérico («fyl-» y el comienzo del ID del enlace), el tamaño exacto, dos cabeceras cifradas breves y una suma de verificación de cada parte subida, hasta que el archivo se elimina como cualquier otro.</p>
 <p>Quien tenga el enlace completo puede abrir el archivo, y una clave perdida no se puede recuperar. fyl.at no puede comprobar los archivos cifrados ni quién los envió, así que abre solo los que esperabas. En el navegador, esto depende del código que sirve fyl.at; la CLI de fyl, en cambio, ejecuta en tu equipo una compilación fija y versionada.</p>
-<p>El código fuente de fyl.at y de la CLI de fyl es público en <a href="https://github.com/ju-nu/fyl">GitHub</a> (AGPL-3.0), y cada versión indica las sumas SHA-256 de sus archivos en <a href="https://github.com/ju-nu/fyl/releases">la página de versiones</a>, para que puedas comprobar lo que ejecutas.</p>
+<p>El código fuente de fyl.at y de la CLI de fyl es público en <a href="https://github.com/ju-nu/fyl-at">GitHub</a> (AGPL-3.0), y cada versión indica las sumas SHA-256 de sus archivos en <a href="https://github.com/ju-nu/fyl-at/releases">la página de versiones</a>, para que puedas comprobar lo que ejecutas.</p>
 <p>Un enlace sin cifrado lleva el nombre del archivo en su ruta, y cada solicitud a ese enlace lo envía a fyl.at; los enlaces con contraseña no llevan nombre. Un enlace cifrado de un solo uso sigue abierto desde la misma red hasta 15 minutos después de entregar el archivo, para poder reintentar si falla el guardado. Las denuncias no admiten detalles que contengan una clave.</p>
 
 <h2 id="previews">Vistas previas de enlaces</h2>
@@ -83,7 +83,7 @@
 </article>
 </main>
 
-<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Acerca de fyl.at"><a href="https://report.fyl.at/es/">Denunciar un archivo</a><a href="/es/privacy" aria-current="page">Privacidad</a><a href="/llms.txt">Para agentes de IA</a><a href="https://github.com/ju-nu/fyl">Código fuente</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Idioma: Español"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Español</span></button></nav></footer>
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Acerca de fyl.at"><a href="https://report.fyl.at/es/">Denunciar un archivo</a><a href="/es/privacy" aria-current="page">Privacidad</a><a href="/llms.txt">Para agentes de IA</a><a href="https://github.com/ju-nu/fyl-at">Código fuente</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Idioma: Español"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Español</span></button></nav></footer>
 </div>
 
 <div class="menu" id="theme-menu" popover role="menu" aria-label="Tema de color">
