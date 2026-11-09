@@ -188,7 +188,8 @@ evidence (deploy time, an Analytics query) in the change that removes it.
   that still has them, and gives a clean record other than a takedown a purge date if it has none. Cleanups until
   2026-10-27 kept the name and fingerprint and set no purge date, so no alarm reaches those records; cleanups before
   2026-10-30 16:40 UTC kept the session. Takedowns keep such records for good, and the others stay until a request
-  reaches them, so it cannot be shown that none is left.
+  reaches them, so it cannot be shown that none is left. The [one-off sweep](OPERATIONS.md#one-off-sweep-temporary)
+  reaches every object once; after its run the guard can go.
 
 Not compatibility code: a record without `client` stored none (takedown placeholders, and cleanup drops it), and a raw
 record stores no `mode`. Tombstones of the former 30-day rule stay as storage until their alarm, 2026-11-27 at the

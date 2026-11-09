@@ -19,15 +19,24 @@ the environment or the ignored ./.env file. A local Worker needs no service toke
   npm run admin -- report CASE                    one report and its history
   npm run admin -- decide CASE ACTION --note T [--yes]
                                                   ACTION: quarantine, restore, remove (= takedown), reject, note
+  npm run admin -- sweep [--all] [--dry-run]      temporary, one run: reach every stored Transfer object once so its
+                                                  constructor fixes old tombstones (needs CLOUDFLARE_API_TOKEN too)
 
 TARGET is a transfer id or its exact download link (https://fyl.at/d/<id> or https://fyl.at/d/<id>/<name>, or the
 same on FYL_BASE_URL); anything else is refused. CASE looks like R-7K3M9Q2XPA. A listing that has more cases
 prints the command for its next page (--after, the last case shown). Quarantine, restore, takedown, remove and
 reject record their reason (--note, at least 3 characters); a note on a case needs text. Every command that
 changes something takes --dry-run, which shows the exact target and changes nothing.
+
+sweep (temporary, removed after its one run; docs/OPERATIONS.md#one-off-sweep-temporary) lists the Transfer
+namespace's objects through the Cloudflare API with CLOUDFLARE_API_TOKEN (environment or .env), only those with
+stored data unless --all is given, and posts their ids in batches of 50 to /api/admin/sweep. It prints counts only
+and exits 1 when an object failed or a record is left over (still holds a name, fingerprint or session with no cleanup
+left to remove it); --dry-run lists and counts without posting. Running it again is harmless.
 """
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -59,6 +68,16 @@ REASONS = {"open_reports": "reports wait for a decision: npm run admin -- report
            "overdue_cleanups": "cleanups are overdue, files hold storage past their lifetime: npm run admin -- status",
            "storage_60": "stored bytes reached 60 % of MAX_STORED_BYTES: npm run admin -- status",
            "daily_60": "today's upload volume reached 60 % of MAX_DAILY_UPLOAD_BYTES: npm run admin -- status"}
+
+
+# The one-off tombstone sweep (temporary): the Cloudflare API (FYL_CLOUDFLARE_API may point at a test's fake on loopback;
+# any other host is refused), the Worker and account of wrangler.jsonc, the class whose objects it reaches, and the ids per request.
+CLOUDFLARE_API = os.environ.get("FYL_CLOUDFLARE_API", "https://api.cloudflare.com/client/v4").rstrip("/")
+WRANGLER = Path(__file__).resolve().parents[1] / "wrangler.jsonc"
+SWEEP_CLASS, SWEEP_BATCH = "Transfer", 50
+OBJECT_ID = re.compile(r"[0-9a-f]{64}")
+# ADMIN_RATE allows 10 operator requests a minute: a refused batch is sent again after this many seconds.
+SWEEP_RETRY_SECONDS, SWEEP_RETRIES = 15, 8
 
 
 def setting(name):
@@ -494,6 +513,118 @@ def reports(args):
             args.status, args.limit, " --transfer " + transfer if transfer else "", cursor))
 
 
+def worker():
+    """The Worker's name and account id from wrangler.jsonc (its // comment lines left out)."""
+    try:
+        text = "\n".join(line for line in WRANGLER.read_text().splitlines() if not line.lstrip().startswith("//"))
+        config = json.loads(text)
+    except (OSError, ValueError):
+        sys.exit("Could not read the Worker's name and account_id from {}.".format(WRANGLER))
+    name, account = config.get("name"), config.get("account_id")
+    if not isinstance(name, str) or not isinstance(account, str) or not re.fullmatch(r"[0-9a-f]{32}", account):
+        sys.exit("wrangler.jsonc names no Worker or account_id.")
+    return name, account
+
+
+def cloudflare(path, query=None):
+    """A GET of the Cloudflare API with CLOUDFLARE_API_TOKEN; its `result` and `result_info`. Errors exit with
+    Cloudflare's messages, never the token."""
+    # The token is the account's: it goes to Cloudflare's API, or to a test's fake on loopback, and nowhere else.
+    parsed = urllib.parse.urlsplit(CLOUDFLARE_API)
+    if not ((parsed.scheme == "https" and parsed.hostname == "api.cloudflare.com" and parsed.port in (None, 443))
+            or (parsed.scheme in ("http", "https") and local(parsed.hostname))):
+        sys.exit("FYL_CLOUDFLARE_API must be https://api.cloudflare.com/... or a loopback address; the token is sent nowhere else.")
+    secret = setting("CLOUDFLARE_API_TOKEN") or sys.exit("Set CLOUDFLARE_API_TOKEN (or add it to .env): sweep lists the "
+                                                          "Durable Objects with it (Workers Scripts Read).")
+    url = CLOUDFLARE_API + path + ("?" + urllib.parse.urlencode(query) if query else "")
+    request = urllib.request.Request(url, headers={"Authorization": "Bearer " + secret, "User-Agent": "fyl-admin"})
+    try:
+        with urllib.request.build_opener(Refuse).open(request, timeout=60) as response:
+            body = decode(response.read())
+    except urllib.error.HTTPError as error:
+        body = decode(error.read()) or {}
+        messages = "; ".join(str(item.get("message")) for item in body.get("errors") or [] if isinstance(item, dict))
+        sys.exit("Cloudflare API HTTP {}: {}".format(error.code, messages or "request failed"))
+    except urllib.error.URLError as error:
+        sys.exit("Could not reach the Cloudflare API: {}".format(error.reason))
+    if body is None or body.get("success") is False or "result" not in body:
+        sys.exit("The Cloudflare API's answer was not a successful JSON object.")
+    return body["result"], body.get("result_info") or {}
+
+
+def transfer_objects(everything):
+    """The ids of the Transfer namespace's objects (only those with stored data unless `everything`), and how many
+    objects the namespace lists in all."""
+    script, account = worker()
+    namespaces, page = [], 1
+    while True:
+        result, info = cloudflare("/accounts/{}/workers/durable_objects/namespaces".format(account), {"page": page, "per_page": 100})
+        if not isinstance(result, list):
+            sys.exit("The Cloudflare API's namespace listing was not a list. Nothing was sent.")
+        namespaces += result
+        if not result or page >= (info.get("total_pages") or page):
+            break
+        page += 1
+    found = [space for space in namespaces if isinstance(space, dict) and space.get("script") == script and space.get("class") == SWEEP_CLASS]
+    if len(found) != 1:
+        sys.exit("The Cloudflare API lists {} Durable Object namespaces of {} class {}; expected one.".format(len(found), script, SWEEP_CLASS))
+    ids, listed, cursor = [], 0, None
+    while True:
+        query = {"limit": 1000, **({"cursor": cursor} if cursor else {})}
+        result, info = cloudflare("/accounts/{}/workers/durable_objects/namespaces/{}/objects".format(account, found[0].get("id")), query)
+        if not isinstance(result, list):
+            sys.exit("The Cloudflare API's object listing was not a list. Nothing was sent.")
+        for item in result:
+            if not isinstance(item, dict):
+                sys.exit("The Cloudflare API listed an object that is not a JSON object. Nothing was sent.")
+            listed += 1
+            if everything or item.get("hasStoredData") is True:
+                if not OBJECT_ID.fullmatch(str(item.get("id"))):
+                    sys.exit("The Cloudflare API listed an object id that is not 64 lowercase hex digits. Nothing was sent.")
+                ids.append(item["id"])
+        cursor = info.get("cursor")
+        if not cursor or not result:
+            break
+    return ids, listed
+
+
+def sweep(args):
+    ids, listed = transfer_objects(args.all)
+    batches = math.ceil(len(ids) / SWEEP_BATCH)
+    which = "objects" if args.all else "objects with stored data"
+    print("Listed:    {} Transfer objects, {} {}".format(listed, len(ids), which))
+    if not ids:
+        # Never a clean run: a namespace that has served transfers has stored objects, so the account, the namespace or
+        # the API's answer is not what this command expects.
+        sys.exit("Nothing to sweep: the listing returned no {}. Check the account and namespace; nothing was sent.".format(which))
+    if args.dry_run:
+        print("Dry run: would sweep {} {} in {} batches of up to {}. Nothing was sent.".format(len(ids), which, batches, SWEEP_BATCH))
+        return
+    totals = {"checked": 0, "stored": 0, "fixed": 0, "leftover": 0, "failed": 0}
+    for number, start in enumerate(range(0, len(ids), SWEEP_BATCH), 1):
+        batch = ids[start:start + SWEEP_BATCH]
+        for attempt in range(SWEEP_RETRIES + 1):
+            answer = call("/api/admin/sweep", {"ids": batch}, accept=(429,))
+            if answer.get("code") != "rate_limited":
+                break
+            if attempt == SWEEP_RETRIES:
+                sys.exit("HTTP 429: still rate limited after {} tries; run sweep again later (it is harmless).".format(SWEEP_RETRIES + 1))
+            time.sleep(SWEEP_RETRY_SECONDS)
+        counts = {name: answer.get(name) for name in totals}
+        if not all(count(value) for value in counts.values()) or counts["checked"] != len(batch):
+            sys.exit("The Worker's sweep answer had no counts for this batch; is this command known to its version?")
+        for name, value in counts.items():
+            totals[name] += value
+        print("Batch {}/{}: {checked} checked · {stored} stored · {fixed} fixed · {leftover} leftover · {failed} failed".format(number, batches, **totals))
+    print("Swept {checked} objects: {stored} stored, {fixed} fixed, {leftover} leftover, {failed} failed.".format(**totals))
+    if totals["leftover"]:
+        print("{} stored records still hold a file name, fingerprint or session with no cleanup left to remove it; the "
+              "constructor's guard does not fix these. Keep the guard and look into them before removing it.".format(totals["leftover"]),
+              file=sys.stderr)
+    if totals["failed"] or totals["leftover"]:
+        sys.exit(1)
+
+
 def limit(text):
     if not text.isdigit() or not 1 <= int(text) <= 200:
         raise argparse.ArgumentTypeError("use 1 to 200")
@@ -530,6 +661,10 @@ def parser():
     listing.add_argument("--transfer", metavar="TARGET", help="only this transfer's cases")
     listing.add_argument("--after", metavar="CASE", help="the next page: the case a listing printed (the last one it showed)")
     commands.add_parser("report").add_argument("case")
+    # Temporary: the one-off tombstone sweep.
+    swept = commands.add_parser("sweep")
+    swept.add_argument("--all", action="store_true", help="every object of the namespace, not only those with stored data")
+    swept.add_argument("--dry-run", action="store_true", help="list and count the objects, send nothing")
     return root
 
 
@@ -560,6 +695,8 @@ def main(argv):
         show_case(data.get("case") if isinstance(data.get("case"), dict) else data, data.get("events") or [])
     elif args.command == "decide":
         decide(args)
+    elif args.command == "sweep":
+        sweep(args)
 
 
 if __name__ == "__main__":

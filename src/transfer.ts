@@ -57,6 +57,8 @@ const CHANGED = 'This part differs from the one this upload pinned: the file cha
 export class Transfer extends DurableObject<Env> {
   /** Set once the record is known to be stored; its tables are created on the first write, not on reads. */
   private stored = false;
+  /** Temporary, for the one-off tombstone sweep (sweep()): whether this instance's construction fixed a stale record. */
+  private repaired = false;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -72,7 +74,28 @@ export class Transfer extends DurableObject<Env> {
         if (!previous.verifyAt) this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
       }
       this.save(previous);
+      this.repaired = true;
     }
+  }
+
+  /**
+   * Temporary, for the one-off tombstone sweep (POST /api/admin/sweep, to be removed after its run): does nothing itself.
+   * Reaching the object constructed it, and the constructor fixed a stale record; this reports whether a record is
+   * stored and whether this instance's construction fixed it (once: a second sweep of a live instance reports false).
+   * `leftover` is the evidence the guard's removal needs: a record that still holds a name, fingerprint or session
+   * although it is clean, or although no alarm will ever reach it (a cleanup that gave up before retries existed leaves
+   * such a record not clean, which the guard does not fix). Counts only, never a field of the record. A read tolerates
+   * a missing table, so an empty object stays empty.
+   */
+  async sweep() {
+    return guarded(async () => {
+      const fixed = this.repaired;
+      this.repaired = false;
+      const record = this.read();
+      const leftover = record !== null && Boolean(record.name || record.fingerprint || record.session)
+        && (record.clean || await this.ctx.storage.getAlarm() === null);
+      return { stored: record !== null, fixed, leftover };
+    });
   }
 
   // Probing a random ID must not materialise storage, so reads tolerate a missing table.

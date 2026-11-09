@@ -363,6 +363,34 @@ tab's session storage unless the sender ticks "Remember the password on this dev
 device", and an interrupted upload with its key (no password, no encryption key) until it finishes, is discarded or
 its 24-hour window ends. The CLI keeps no state on disk.
 
+### One-off sweep (temporary)
+
+Temporary: this section, `npm run admin -- sweep`, `POST /api/admin/sweep` and `Transfer.sweep()` go away after the
+sweep has run once in production, together with the constructor's guard for old tombstones
+([compatibility code](ARCHITECTURE.md#compatibility-code)). Tombstones cleaned up before 2026-10-27 may still carry the
+file name and fingerprint and no purge date, and some before 2026-10-30 16:40 UTC a one-time session; the `Transfer`
+constructor fixes such a record whenever a request reaches its object. The sweep reaches every object once:
+
+```sh
+npm run admin -- sweep --dry-run   # lists the Transfer namespace's objects with stored data and counts them; sends nothing
+npm run admin -- sweep             # posts their ids in batches of 50; prints running totals, then
+                                   # "Swept N objects: S stored, F fixed, L leftover, E failed." (exit 1 if L or E > 0)
+npm run admin -- sweep             # once more: expect 0 fixed, 0 leftover, 0 failed
+```
+
+Only a second run with 0 fixed, 0 leftover and 0 failed is the evidence for the follow-up that removes the guard; record
+its counts and time there. `leftover` counts records that still hold a file name, fingerprint or one-time session
+although they are clean or no alarm will ever reach them, such as an early upload whose cleanup gave up before
+cleanups were retried. The constructor's guard handles clean records only, so the sweep cannot fix these: keep the
+guard and look into them first.
+
+Besides the operator token and the Access service token it needs `CLOUDFLARE_API_TOKEN` (environment or `.env`) to
+list the objects through the Cloudflare API; a token with only Workers Scripts Read is enough, and the token goes only
+to `https://api.cloudflare.com` (`FYL_CLOUDFLARE_API` may name a loopback fake, nothing else). `--all` sweeps objects
+without stored data too (they stay empty). `ADMIN_RATE` allows 10 batches a minute; a refused batch is sent again
+after 15 seconds. A listing with no objects to sweep, or one that is not the list the API documents, exits 1 and sends
+nothing. The run prints and logs counts only, and running it again is harmless.
+
 ## Static assets
 
 `dist/` is the site's source and what `npm run dev` and the tests serve; its pages `dist/<lang>/*.html` and

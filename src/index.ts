@@ -175,6 +175,39 @@ const OWNER_READS = new Set(['/api/admin/ready', '/api/admin/uploads', '/api/adm
 const queued = ({ case: id, createdAt, category, priority, status, outcome, fileAvailable }: Record<string, unknown>) =>
   ({ case: id, createdAt, category, priority, status, outcome, fileAvailable });
 
+/** At most this many Durable Object ids per sweep request, and this many of them reached at once. */
+const SWEEP_IDS = 50, SWEEP_AT_ONCE = 5;
+/**
+ * Temporary, for the one-off tombstone sweep (npm run admin -- sweep; docs/OPERATIONS.md#one-off-sweep-temporary), to be
+ * removed after its run with Transfer.sweep() and the constructor's guard: reaches each Transfer object by its Durable
+ * Object id (`ids`: 1 to SWEEP_IDS lowercase 64-hex ids, as the Cloudflare API lists the namespace's objects), so its
+ * constructor fixes a stale tombstone. Every id is checked before any object is reached; one that is not an id of the
+ * namespace refuses the whole request. Answers counts only and logs nothing: no id, name or field of a record.
+ * `leftover` counts records that still hold a name, fingerprint or session with nothing left to remove them
+ * (Transfer.sweep()); the guard can go only after a run that counts none.
+ */
+async function sweep(env: Env, data: Record<string, unknown>) {
+  const ids = data.ids;
+  if (!Array.isArray(ids) || ids.length < 1 || ids.length > SWEEP_IDS || !ids.every(id => typeof id === 'string' && /^[0-9a-f]{64}$/.test(id)))
+    throw new ApiError(400, `Send {"ids": [...]} with 1 to ${SWEEP_IDS} Durable Object ids (64 lowercase hex digits).`);
+  let objects: DurableObjectId[];
+  try { objects = ids.map(id => env.TRANSFERS.idFromString(id)); }
+  catch { throw new ApiError(400, 'An id is not a Durable Object id of the Transfer namespace. Nothing was reached.'); }
+  const counts = { checked: 0, stored: 0, fixed: 0, leftover: 0, failed: 0 };
+  for (let start = 0; start < objects.length; start += SWEEP_AT_ONCE) {
+    await Promise.all(objects.slice(start, start + SWEEP_AT_ONCE).map(async object => {
+      counts.checked++;
+      try {
+        const { stored, fixed, leftover } = unwrap(await env.TRANSFERS.get(object).sweep());
+        if (stored) counts.stored++;
+        if (fixed) counts.fixed++;
+        if (leftover) counts.leftover++;
+      } catch { counts.failed++; }
+    }));
+  }
+  return counts;
+}
+
 /**
  * Operator API, enabled by the ADMIN_TOKEN secret: pause or resume uploads, take a file down at once, quarantine
  * and restore it while a report is reviewed, decide reports, reconcile the budgets, and check readiness. Without the
@@ -236,6 +269,7 @@ async function admin(request: Request, env: Env, path: string, owner = false) {
     if (!annotated) console.error(JSON.stringify({ event: 'reports_unavailable', action }));
     return json({ ...await inspect(env, data.id), ...annotated ? {} : { reportsUpdated: false } });
   }
+  if (path === '/api/admin/sweep') { only('POST'); return json(await sweep(env, await readJSON(request, 8192))); }
   const transfer = /^\/api\/admin\/transfers\/([a-zA-Z0-9_-]{43,64})$/.exec(path);
   if (transfer) { only('GET'); return json(await inspect(env, transfer[1])); }
   if (path === '/api/admin/reports') {
