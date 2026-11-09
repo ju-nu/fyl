@@ -404,7 +404,15 @@ goes to whoever started it), with Actions notifications on.
 - **Environments.** The monitor job runs in the GitHub environment `monitor`, which holds `MONITOR_TOKEN`,
   `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` and the variable `BILLING_ALERT_USD`; the Deploy gate's job runs in
   `production`, which holds `FYL_DEPLOY_KEY`. Both admit the branch `main` only, so a workflow pushed on any other
-  branch never gets them. None of them is a repository secret.
+  branch never gets them. None of them is meant to be a repository secret or variable: a repository copy reaches
+  workflows on every branch, and the environment's value wins only inside these jobs.
+  **One-time cleanup (owner).** Before the workflows used the environments, `FYL_DEPLOY_KEY`, `MONITOR_TOKEN`,
+  `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` (repository secrets) and `BILLING_ALERT_USD` (repository variable)
+  lived on the repository, and their copies are still there until this step is done. Once the change that moved them is on `main` and the next Deploy gate and Monitor runs passed
+  from the environments, delete the repository copies: `gh secret delete FYL_DEPLOY_KEY`, `gh secret delete
+  MONITOR_TOKEN`, `gh secret delete FYL_ACCESS_CLIENT_ID`, `gh secret delete FYL_ACCESS_CLIENT_SECRET` and `gh variable
+  delete BILLING_ALERT_USD` (no `--env`). Not before: until then `main`'s workflows still read them. `gh secret list`
+  and `gh variable list` (no `--env`) then list none of them.
 - **What the log shows.** The Actions log of a public repository is public, so there the monitor prints only whether
   the run passed and the names of the checks that failed (health, readiness, attention, billing, setup): no dollars,
   capacity, counts, pause state or hints. `npm run monitor` run locally (with `MONITOR_TOKEN` and the service token in

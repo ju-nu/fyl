@@ -207,7 +207,8 @@ upload.
 ### Source, builds and deploys
 
 No credential is in this repository: secrets live in Cloudflare and in the secrets of the GitHub environments
-`production` and `monitor` (both limited to `main`); local `.dev.vars`, `.env*` (except `.env.example`, which lists names only) and `.wrangler/` are ignored, and `Checks` runs gitleaks over
+`production` and `monitor` (both limited to `main`; the repository-level copies from before are removed once the
+environments have served a run, [Monitor](docs/OPERATIONS.md#monitor)); local `.dev.vars`, `.env*` (except `.env.example`, which lists names only) and `.wrangler/` are ignored, and `Checks` runs gitleaks over
 the tree and every change's commits (and the whole history weekly). Production deploys come only from the
 `production` branch, which the Deploy gate moves after `Checks` passed, using this repository's write deploy key (secret
 `FYL_DEPLOY_KEY`), which reaches only this repository and which the production ruleset lets through; previews never get production storage. Actions are pinned to immutable commits, which Dependabot updates

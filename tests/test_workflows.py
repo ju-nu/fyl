@@ -86,7 +86,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('runs hourly (minute 23)', operations)
         self.assertIn('workflow_dispatch:', monitor)
         self.assertIn('60 days', monitor)
-        # The billing alert (a repository variable, 15 dollars without it), the monitor token and the admin host's Access
+        # The billing alert (a variable of the environment monitor, 15 dollars without it), the monitor token and the admin host's Access
         # service token, handed to the script's step only.
         expressions = ["${{ vars.BILLING_ALERT_USD || '15' }}", '${{ secrets.MONITOR_TOKEN }}', '${{ secrets.FYL_ACCESS_CLIENT_ID }}',
                        '${{ secrets.FYL_ACCESS_CLIENT_SECRET }}']

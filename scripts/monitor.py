@@ -46,8 +46,8 @@ REASONS = {"open_reports": "{reports} open reports wait for a decision. Run npm 
            "attention": "the Worker reports attention without a reason. Run npm run admin -- ready."}
 # When the admin host's Access service token expires; a new one goes into the secrets of the same names.
 TOKEN_EXPIRES = "2027-10-30"
-ACCESS_REFUSED = (" Cloudflare Access refused the service token: the repository secrets FYL_ACCESS_CLIENT_ID and FYL_ACCESS_CLIENT_SECRET "
-                  "are wrong, or the token expired (it runs until {}).".format(TOKEN_EXPIRES))
+ACCESS_REFUSED = (" Cloudflare Access refused the service token: the secrets FYL_ACCESS_CLIENT_ID and FYL_ACCESS_CLIENT_SECRET "
+                  "(of the GitHub environment monitor, or in .env) are wrong, or the token expired (it runs until {}).".format(TOKEN_EXPIRES))
 # The estimate's alert in dollars while BILLING_ALERT_USD is unset or empty: below the account's own budget alert.
 ALERT_USD = "15"
 # Where the monitor's setup and its secrets are described.
@@ -211,7 +211,7 @@ def bill(base, token, access, alert):
     total = amount(body.get("total")) if body is not None else None
     if status != 200 or total is None:
         hint = {401: " The Worker refused MONITOR_TOKEN for the estimate: a Worker from before the monitor's billing check takes it for "
-                     "readiness only (deploy the current main), or the repository secret and the Worker secret differ.",
+                     "readiness only (deploy the current main), or the secret of the GitHub environment monitor and the Worker secret differ.",
                 404: " The Worker has no billing estimate at this address: FYL_BASE_URL must be the admin host (the public host answers 404).",
                 503: " Cloudflare refused the Worker's CF_ANALYTICS_TOKEN: it expired, was revoked or lacks Account Analytics Read. Create "
                      "a new read-only token and set it with npx wrangler secret put CF_ANALYTICS_TOKEN "
@@ -269,23 +269,24 @@ def check(base, token, public=None, access=None, alert=ALERT_USD):
     `alert` BILLING_ALERT_USD as given. The estimate is read once readiness answered."""
     problems, public, limit = [], public or base, alert_of(alert)
     if limit is None:
-        problems.append(("setup", "BILLING_ALERT_USD must be a number of dollars above 0, such as 15 or 12.50 (the repository variable, "
-                                  "see {}); the billing estimate is not compared until it is.".format(DOCS)))
+        problems.append(("setup", "BILLING_ALERT_USD must be a number of dollars above 0, such as 15 or 12.50 (the variable of the GitHub environment "
+                                  "monitor, see {}); the billing estimate is not compared until it is.".format(DOCS)))
     status, body = get(public + "/api/health")
     healthy = status == 200 and body is not None and body.get("status") == "ok"
     print("Health:     " + ("ok" if healthy else "FAILED ({})".format("HTTP {}".format(status) if isinstance(status, int) else status)))
     if not healthy:
         problems.append(("health", "{}/api/health did not answer ok.".format(public)))
     if not token:
-        return problems + [("setup", "Set the repository secret MONITOR_TOKEN to the Worker's MONITOR_TOKEN (see {}); readiness and the "
+        return problems + [("setup", "Set the secret MONITOR_TOKEN of the GitHub environment monitor (or in .env) to the Worker's MONITOR_TOKEN (see {}); readiness and the "
                                      "billing estimate were not checked.".format(DOCS))]
     if access is None:
-        return problems + [("setup", "Set the repository secrets FYL_ACCESS_CLIENT_ID and FYL_ACCESS_CLIENT_SECRET to the Cloudflare Access "
+        return problems + [("setup", "Set the secrets FYL_ACCESS_CLIENT_ID and FYL_ACCESS_CLIENT_SECRET of the GitHub environment monitor (or in "
+                                     ".env) to the Cloudflare Access "
                                      "service token of {} (see {}); readiness and the billing estimate were not checked."
                                      .format(urllib.parse.urlsplit(base).hostname, DOCS))]
     status, body = get(base + "/api/admin/ready", token, access)
     if status not in (200, 503) or body is None:
-        hint = {401: " The Worker refused MONITOR_TOKEN: the repository secret and the Worker secret differ.",
+        hint = {401: " The Worker refused MONITOR_TOKEN: the secret of the GitHub environment monitor and the Worker secret differ.",
                 404: " The Worker has no readiness route for this token: is MONITOR_TOKEN (32 characters or more) set on it?",
                 302: ACCESS_REFUSED, 403: ACCESS_REFUSED}
         shown = "HTTP {}".format(status) if isinstance(status, int) else status

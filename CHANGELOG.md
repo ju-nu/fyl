@@ -17,7 +17,9 @@ Server and repository only; the CLI is unchanged.
 - **Deploys:** the Worker version message names the commit (`fyl <version> <commit>`), so builds that share a tag
   can be told apart in `npm run rollback`.
 - **Repository:** the deploy key and the monitor's tokens live in the GitHub environments `production` and `monitor`,
-  limited to `main`; the Monitor runs at minute 23.
+  limited to `main`; the repository-level copies are deleted once the environments have served a Deploy gate and a
+  Monitor run ([Monitor](docs/OPERATIONS.md#monitor)). The Monitor runs at minute 23 and its hints name the
+  environment `monitor`.
 
 ## 1.0.1 — 2026-11-09
 
