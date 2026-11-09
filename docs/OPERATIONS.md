@@ -108,7 +108,8 @@ pull request ─ merge ─▶ main ─ Checks (GitHub) green ─▶ Deploy gate 
 | API token | Created and stored by Cloudflare; not in Git |
 
 `npm run deploy` regenerates the CLI index, builds `.build/assets` ([static assets](#static-assets)), runs
-`scripts/check_secrets.mjs`, then `wrangler deploy --assets .build/assets --tag v<version> --message "fyl <version>"`,
+`scripts/check_secrets.mjs`, then `wrangler deploy --assets .build/assets --tag v<version> --message "fyl <version> <commit>"` (the full commit
+from Workers Builds' `WORKERS_CI_COMMIT_SHA`, `local` for a deploy from a laptop),
 then `python3 scripts/smoke.py --pages`. `check_secrets.mjs` refuses the deploy when `NETWORK_HASH_KEY`,
 `GRANT_SIGNING_KEY` or `ADMIN_TOKEN` is missing or a development-only secret (`DEV_ACCESS_BYPASS`, `DEV_FAKE_STATS`)
 is set; it warns when `MONITOR_TOKEN`, `CF_ANALYTICS_TOKEN` or `ADMIN_EMAILS` is missing or
@@ -167,6 +168,10 @@ npm run rollback -- <version-id> --yes [--message TEXT]
 npm run admin -- reconcile                         # right after a rollback, and again after the fix-forward deploy
 ```
 
+- A tag names the package version, not one build: every deploy between two releases (a dependency bump, a server fix)
+  carries the same tag. Pick the target by its time, its id, or the commit in its message (`fyl <version> <commit>`,
+  since the deploy after 1.0.1; older ones say only `fyl <version>`), and check that commit on `main` first. Of the
+  builds tagged `v1.0.1`, the one of #8 (the temporary sweep of old tombstones, removed again by #9) is not one to roll back to.
 - Only versions tagged `v1.0.0` or later are targets (`ROLLBACK_FLOOR`). Untagged versions (secret or dashboard
   changes, uploads) are refused, and so is every version tagged in the old numbering (`v2.0.0` to `v2.5.1`,
   `OLD_NUMBERING`), which came before 1.0.0 whatever its number says. The first possible target is the `v1.0.0`
