@@ -24,8 +24,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('group: checks-${{ github.event_name }}-${{ github.ref }}', checks)
         self.assertIn('run: cd cli-rs && cargo test --locked', checks)
         self.assertIn('sh scripts/cli_changed.sh "$EVENT" "$PR_BASE"', checks)
-        self.assertIn('bridge=$(sh scripts/cli_changed.sh --bridge "$EVENT" "$PR_BASE")', checks)
-        self.assertIn("if: needs.changes.outputs.bridge == 'true'\n        run: |\n          sh scripts/build_native.sh --bridge\n", checks)
+        self.assertNotIn('--bridge', checks)
         self.assertIn('run: sh scripts/cli_published.sh "$EVENT" "$PR_BASE"', checks)
         self.assertIn('run: python3 scripts/cli_licenses.py --check', checks)
         for script in sorted((ROOT / 'scripts').glob('*.sh')):

@@ -96,7 +96,7 @@ class State:
         self.block = False
         self.mutate = None
         self.expires_at = 1793000000000
-        # Servers before 2.2.0 send no link at init, and ignore a password.
+        # A server that ignores the password sends no link at init.
         self.early_url = True
         # Per path, how the next successful replies break: see Handler.garbled().
         self.garble = {}

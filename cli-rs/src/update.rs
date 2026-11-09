@@ -25,34 +25,12 @@ pub(crate) struct Update {
 const STATE: &str = "update-check";
 const DAY: u64 = 86_400;
 
-/// A version as its three numbers, e.g. 2.5.1; None for anything else.
+/// A version as its three numbers, e.g. 1.0.1; None for anything else.
 pub(crate) fn version(text: &str) -> Option<(u64, u64, u64)> {
     let numbers: Vec<u64> = text.split('.').map(|part| {
         (!part.is_empty() && part.len() <= 9 && part.bytes().all(|b| b.is_ascii_digit())).then(|| part.parse().ok()).flatten()
     }).collect::<Option<_>>()?;
     match numbers[..] { [major, minor, patch] => Some((major, minor, patch)), _ => None }
-}
-
-/// The last version of the old numbering. fyl counted 2.0.0 to 2.5.1 before its public release started over at 1.0.0,
-/// so a binary of that numbering reads every later release as older. 2.5.1 is the bridge: the server offers it to the
-/// old CLIs that can update (docs/CLI-API.md), and it, like every release after it, carries the rule below.
-const LEGACY_LAST: (u64, u64, u64) = (2, 5, 1);
-
-fn legacy(version: (u64, u64, u64)) -> bool {
-    version.0 == 2 && (version.1, version.2) <= (LEGACY_LAST.1, LEGACY_LAST.2)
-}
-
-/// How the offered version compares with this one. Every version of the old numbering came before every release of
-/// the new one: a binary of the old numbering takes any version outside it as newer, which carries it to 1.0.0 and
-/// on, and a binary of the new numbering takes an offered old one as older (a server rolled back past 1.0.0, say), so
-/// it never goes back to it without --force. Within a numbering the numbers compare plainly. The new numbering never
-/// uses 2.0.0 to 2.5.1, which old binaries and the server would take for the old one.
-pub(crate) fn compare(offered: (u64, u64, u64), this: (u64, u64, u64)) -> Ordering {
-    match (legacy(offered), legacy(this)) {
-        (false, true) => Ordering::Greater,
-        (true, false) => Ordering::Less,
-        _ => offered.cmp(&this),
-    }
 }
 
 /// $XDG_CACHE_HOME/fyl (when absolute), else ~/Library/Caches/fyl on macOS and ~/.cache/fyl elsewhere.
@@ -103,13 +81,13 @@ fn due() -> bool {
     fs::create_dir_all(&dir).is_ok() && fs::write(&file, format!("{now}\n")).is_ok()
 }
 
-/// After a command that succeeded: "fyl 2.5.1 is available: run fyl update" on stderr when the server of `endpoint`
+/// After a command that succeeded: "fyl 1.1.0 is available: run fyl update" on stderr when the server of `endpoint`
 /// names a newer version. Waits at most 2 seconds, once a day, and never changes the command's outcome.
 pub(crate) fn notice(endpoint: &str) {
     let Some((origin, _)) = split_url(endpoint) else { return };
     if !due() { return }
     let Some((_, offered @ (major, minor, patch))) = current(&agent(Some(Duration::from_secs(2))), &origin) else { return };
-    if version(VERSION).is_some_and(|this| compare(offered, this) == Ordering::Greater) {
+    if version(VERSION).is_some_and(|this| offered > this) {
         note!("fyl {major}.{minor}.{patch} is available: run fyl update");
     }
 }
@@ -175,10 +153,10 @@ pub(crate) fn update(options: Update) {
     let Some((index, latest)) = current(&agent, &origin) else { failed(&format!("Could not read the current version from {host}. Try again later.")) };
     let (this, shown) = (version(VERSION).unwrap_or_default(), format!("{}.{}.{}", latest.0, latest.1, latest.2));
     if options.check {
-        let said = if compare(latest, this) == Ordering::Greater { format!("fyl {shown} is available (this is {VERSION}): run fyl update\n") } else { format!("fyl {VERSION} is up to date.\n") };
+        let said = if latest > this { format!("fyl {shown} is available (this is {VERSION}): run fyl update\n") } else { format!("fyl {VERSION} is up to date.\n") };
         return emit(&said).unwrap_or_else(|error| unwritten(error));
     }
-    match compare(latest, this) {
+    match latest.cmp(&this) {
         Ordering::Equal if !options.force => return emit(&format!("fyl {VERSION} is already up to date.\n")).unwrap_or_else(|error| unwritten(error)),
         Ordering::Less if !options.force => failed(&format!("{host} offers fyl {shown}, older than this fyl {VERSION}. Nothing was changed; \
                                                              fyl update --force installs it anyway.")),
@@ -231,38 +209,12 @@ mod tests {
 
     #[test]
     fn versions_are_three_numbers() {
-        assert_eq!(version("2.5.1"), Some((2, 5, 1)));
+        assert_eq!(version("1.5.1"), Some((1, 5, 1)));
         assert_eq!(version("10.0.12"), Some((10, 0, 12)));
-        assert!(version("2.5.1") > version("2.4.10") && version("2.10.0") > version("2.9.9"));
-        for bad in ["", "2.5", "2.5.1.1", "2.5.x", "v2.5.1", "2.5.1-rc1", "2..1", " 2.5.1", "2.5.+1", "1234567890.0.0"] {
+        assert!(version("1.5.1") > version("1.4.10") && version("1.10.0") > version("1.9.9"));
+        for bad in ["", "1.5", "1.5.1.1", "1.5.x", "v1.5.1", "1.5.1-rc1", "1..1", " 1.5.1", "1.5.+1", "1234567890.0.0"] {
             assert_eq!(version(bad), None, "{bad}");
         }
         assert!(version(VERSION).is_some());
-    }
-
-    #[test]
-    fn the_old_numbering_takes_the_new_one_as_newer() {
-        use Ordering::{Equal, Greater, Less};
-        let v = |text| version(text).unwrap();
-        let cases = [
-            // The bridge and the old binaries before it: 1.0.0 and everything after it is newer.
-            ("1.0.0", "2.5.1", Greater), ("1.0.1", "2.5.1", Greater), ("1.12.3", "2.5.1", Greater), ("0.0.1", "2.5.1", Greater),
-            ("1.0.0", "2.5.0", Greater), ("1.0.0", "2.0.0", Greater), ("3.0.0", "2.5.1", Greater), ("2.5.2", "2.5.1", Greater),
-            ("2.6.0", "2.5.1", Greater), ("2.10.0", "2.0.0", Greater),
-            // Within the old numbering the numbers decide, as before: 2.5.0 moves to the bridge, never back.
-            ("2.5.1", "2.5.0", Greater), ("2.5.1", "2.4.0", Greater), ("2.5.1", "2.5.1", Equal), ("2.5.0", "2.5.1", Less),
-            ("2.4.0", "2.5.1", Less), ("2.0.0", "2.5.1", Less),
-            // A binary of the new numbering compares plainly, and takes the old numbering as older.
-            ("1.0.0", "1.0.0", Equal), ("1.0.1", "1.0.0", Greater), ("1.1.0", "1.0.9", Greater), ("0.9.0", "1.0.0", Less),
-            ("1.0.0", "1.0.1", Less), ("3.0.0", "1.4.2", Greater), ("2.5.1", "1.0.0", Less), ("2.5.0", "1.0.0", Less),
-            ("2.0.0", "1.12.3", Less), ("2.5.1", "3.0.0", Less), ("2.5.2", "1.0.0", Greater),
-            ("1.0.0", "3.0.0", Less), ("3.0.0", "3.0.0", Equal),
-        ];
-        for (offered, this, expected) in cases {
-            assert_eq!(compare(v(offered), v(this)), expected, "{offered} offered to {this}");
-        }
-        // Exactly 2.0.0 to 2.5.1 is the old numbering.
-        for old in ["2.0.0", "2.0.9", "2.4.10", "2.5.0", "2.5.1"] { assert!(legacy(v(old)), "{old}"); }
-        for new in ["1.0.0", "1.99.99", "2.5.2", "2.6.0", "3.0.0", "0.0.0"] { assert!(!legacy(v(new)), "{new}"); }
     }
 }

@@ -3,9 +3,9 @@
   "version": "1.0.1",
   "path": "/cli/1.0.1/",
   "files": {
-    "fyl-linux-x86_64": "b0354929b8abe98efe17ad49b119117d3ccbe0e966bbdb499e9c18a9ba8e82f8",
-    "fyl-linux-arm64": "96e5a506d4e0d68f2dbc4ceff8f425c0f741883abeaa8e0117422ccd036c3e4a",
-    "fyl-macos-x86_64": "dfaf00cb5201933e18d679e774d45957555fabb77fb04ad420ad09891557bd00",
-    "fyl-macos-arm64": "7cffccacf46a04625c1963070898d527452106aa66722d3bfd4acd28239e0f68"
+    "fyl-linux-x86_64": "4d6f50f1961b3632da289661b9d20d00e0a945889b0200903ebad331d48f8ef1",
+    "fyl-linux-arm64": "fcc3a97269c1ec15dabb44f674e1c5715558d46880f6e0ab9600b2fc76ec412b",
+    "fyl-macos-x86_64": "70dc169436c0a1c821f4b9a21e909854bad5bda5ad928994043885c988de011c",
+    "fyl-macos-arm64": "6cd1f8159c63b88d18f2dbc72486031a32ee8c969dcfc7db4383527b65b1d018"
   }
 }

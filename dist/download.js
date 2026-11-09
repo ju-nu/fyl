@@ -74,8 +74,6 @@
   globalThis.FylDownload = {nextDelay, clockOffset, validPassword, addressKey, plainSize, kind, basic, MEMORY_LIMIT, appleTouch, streams};
   if (typeof document === 'undefined') return; // tests load the helpers above without a page
 
-  // Management links copied on a download page used to keep its /d/ path; they belong to the site root.
-  if (location.hash.startsWith('#manage/')) { location.replace('/' + location.hash); return; }
   const $ = id => document.getElementById(id);
   // The page's language (dist/i18n.js, loaded first): the Worker served the page in it (?lang= or Accept-Language).
   const L = window.FylText, t = L.t;

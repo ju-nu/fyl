@@ -240,7 +240,7 @@ describe('chat link previews', () => {
     }
     // Images the page loads, download tools and the CLI get 404, from this site and any other.
     for (const headers of [{ 'User-Agent': 'Mozilla/5.0', 'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Dest': 'image' },
-      { 'User-Agent': 'curl/8.5.0', Accept: '*/*' }, { 'User-Agent': 'Wget/1.21.4' }, { 'User-Agent': 'fyl/2.3.0' }, {}] as Record<string, string>[]) {
+      { 'User-Agent': 'curl/8.5.0', Accept: '*/*' }, { 'User-Agent': 'Wget/1.21.4' }, { 'User-Agent': 'fyl-cli/1.0.1' }, {}] as Record<string, string>[]) {
       const refused = await preview(picture.path, headers);
       expect([refused.status, (await refused.json<{ code: string }>()).code], JSON.stringify(headers)).toEqual([404, 'not_found']);
     }

@@ -8,7 +8,7 @@
 set -u
 base="${FYL_BASE_URL:-https://fyl.at}"
 FYL_API_URL="$base/api/upload"; export FYL_API_URL
-# fyl's own check: the CLI adds this to its User-Agent (since 2.5.0), so the dashboard leaves these uploads out.
+# fyl's own check: the CLI adds this to its User-Agent, so the dashboard leaves these uploads out.
 FYL_UA_SUFFIX="fyl-smoke"; export FYL_UA_SUFFIX
 work="$(mktemp -d "${TMPDIR:-/tmp}/fyl-check.XXXXXX")" || exit 1
 work="$(printf '%s' "$work" | sed 's|//*|/|g')"

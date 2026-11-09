@@ -84,10 +84,10 @@ describe('operational metrics', () => {
       return sent.response.status;
     };
     const agents: [string, string][] = [
-      ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/141.0 Safari/537.36', 'browser'], ['fyl-cli/2.3.0', 'cli'], ['curl/8.5.0', 'curl'],
+      ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/141.0 Safari/537.36', 'browser'], ['fyl-cli/1.0.0', 'cli'], ['curl/8.5.0', 'curl'],
       ['Wget/1.21.4', 'wget'], ['python-requests/2.32.3', 'other'], ['', 'other'],
       // fyl's own tools and the operator's marked checks count apart, so they stay out of the Downloads tile.
-      ['fyl-smoke/2.4.0', 'own'], ['fyl-smoke', 'own'], ['curl/8.5.0 fyl-ops', 'own'], ['fyl/2.3.0', 'cli'],
+      ['fyl-smoke/1.0.1', 'own'], ['fyl-smoke', 'own'], ['curl/8.5.0 fyl-ops', 'own'], ['fyl/1.0.0', 'other'],
     ];
     for (const [agent, kind] of agents) {
       expect(await get(regular.receipt.url + '?dl=1', { 'User-Agent': agent }), kind).toBe(200);
@@ -168,11 +168,11 @@ describe('operational metrics', () => {
     expect(only(browser.points, 'upload_started')).toEqual([['upload_started', 'browser']]);
     expect(only(browser.points, 'upload_completed')).toEqual([['upload_completed', '', 'browser', '', '']]);
     expect(only(browser.points, 'completion_lifetime')).toEqual([['completion_lifetime', '', 'browser']]);
-    const cli = await started('fyl-cli/2.4.0', { password: 'a long password', oneTime: true });
+    const cli = await started('fyl-cli/1.0.1', { password: 'a long password', oneTime: true });
     expect(only(cli.points, 'upload_started')).toEqual([['upload_started', 'cli']]);
     expect(only(cli.points, 'upload_completed')).toEqual([['upload_completed', '', 'cli', 'password', 'once']]);
     // The smoke test's CLI marks itself (FYL_UA_SUFFIX): fyl's own uploads, which the dashboard leaves out.
-    const smoke = await started('fyl-cli/2.5.0 fyl-smoke');
+    const smoke = await started('fyl-cli/1.0.1 fyl-smoke');
     expect(only(smoke.points, 'upload_completed')).toEqual([['upload_completed', '', 'own', '', '']]);
     for (const { id, points } of [browser, cli, smoke]) {
       const text = JSON.stringify(points);

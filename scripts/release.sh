@@ -3,9 +3,8 @@
 # gate moved production to SHA and https://fyl.at/cli/latest names that version, so a release never runs ahead of
 # what fyl.at serves. Workers Builds deploys production minutes after the Deploy gate, and not at all when its build
 # fails: this waits up to 20 minutes and then fails. A release that exists already must carry exactly the committed
-# SHA256SUMS: published files never change. The bridge of the old numbering (build_cli.py BRIDGE), which fyl update
-# moves every fyl 2.5.0 onto, gets no GitHub release: fyl.at serves it with its SHA256SUMS, and its binary must report
-# its version like this version's.
+# SHA256SUMS: published files never change.
+# The binary must report this version.
 #   sh scripts/release.sh SHA      (from a checkout of SHA; needs gh with GH_TOKEN, GITHUB_REPOSITORY,
 #                                   GITHUB_SERVER_URL and RUNNER_TEMP, and curl, as in GitHub Actions)
 set -eu
@@ -16,12 +15,9 @@ production="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/production" --jq .o
 if [ "$production" != "$sha" ]; then echo "production is at $production, not $sha; nothing to release."; exit 0; fi
 python3 scripts/build_cli.py
 version="$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')"
-bridge="$(python3 scripts/build_cli.py --bridge)"
-for each in "$version" "$bridge"; do
-  [ "$("dist/cli/$each/fyl-linux-x86_64" --version)" = "fyl $each" ] || fail "dist/cli/$each/fyl-linux-x86_64 does not report fyl $each."
-done
+[ "$("dist/cli/$version/fyl-linux-x86_64" --version)" = "fyl $version" ] || fail "dist/cli/$version/fyl-linux-x86_64 does not report fyl $version."
 # The release must ship exactly the committed, reviewed files; a generated file left untracked counts too.
-changed="$(git status --porcelain --untracked-files=all -- dist/cli/ dist/_redirects)"
+changed="$(git status --porcelain --untracked-files=all -- dist/cli/)"
 [ -z "$changed" ] || fail "The generated CLI files differ from the committed ones: $changed"
 [ -s cli-rs/THIRD-PARTY-LICENSES.txt ] || fail "cli-rs/THIRD-PARTY-LICENSES.txt is missing (python3 scripts/cli_licenses.py)."
 mkdir -p "$RUNNER_TEMP/published"

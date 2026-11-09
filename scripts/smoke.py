@@ -341,11 +341,7 @@ def main():
     for name, digest in published.items():
         _, downloads[name] = request(folder + name)
         check(hashlib.sha256(downloads[name]).hexdigest() == digest, "Published CLI checksum mismatch: " + name)
-    # Installers before 2.3.0 fetch the unversioned paths (with curl -L).
-    for name in [*published, "SHA256SUMS"]:
-        headers, _ = request(base + "/cli/" + name, expected=302, follow=False)
-        check(headers.get("Location") in (f"/cli/{release}/{name}", folder + name), "Old CLI path does not lead to this version: " + name)
-    print("Versioned CLI files and redirects passed.")
+    print("Versioned CLI files passed.")
     with tempfile.TemporaryDirectory(prefix="fyl-smoke-") as directory:
         root = Path(directory)
         native = NATIVE.get((platform.system(), platform.machine()))
@@ -354,8 +350,8 @@ def main():
         cli.write_bytes(downloads[native])
         cli.chmod(0o755)
         program = [str(cli)]
-        # The CLI adds FYL_UA_SUFFIX to its User-Agent (since 2.5.0), so the dashboard counts these
-        # uploads and downloads as fyl's own and leaves them out; an older CLI ignores it.
+        # The CLI adds FYL_UA_SUFFIX to its User-Agent, so the dashboard counts these uploads and downloads as fyl's
+        # own and leaves them out.
         cli_env = {**os.environ, "FYL_UA_SUFFIX": "fyl-smoke"}
         output = subprocess.run(program + ["--version"], capture_output=True, timeout=15)
         check(output.returncode == 0 and output.stdout.decode().strip() == "fyl " + version["version"], "Wrong CLI version.")

@@ -24,8 +24,9 @@ import sys
 # Fix forward: no version before the public release 1.0.0 is a target. Raise it when a release makes older versions
 # unsafe.
 ROLLBACK_FLOOR = "1.0.0"
-# The old numbering, first and last: those releases came before 1.0.0, though their numbers are higher. The new
-# numbering never uses them (scripts/build_cli.py BRIDGE).
+# Versions deployed before 1.0.0 were numbered 2.0.0 to 2.5.1 (first and last): Cloudflare's deployment history still
+# lists their tags, and they are never targets, though their numbers are higher. Releases never use them again
+# (scripts/build_cli.py refuses them).
 OLD_NUMBERING = ("2.0.0", "2.5.1")
 # (since, text): what a target older than `since` lacks or breaks; such a rollback needs --accept-caveats. Add one
 # when a release changes something an older version would mishandle without being unsafe (else raise the floor).

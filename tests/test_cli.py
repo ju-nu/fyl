@@ -2024,26 +2024,6 @@ class NativeClientTests(unittest.TestCase):
         result = update('--force')
         self.assertEqual((result.returncode, result.stdout), (0, 'Updated fyl {} to 0.9.0: {}\n'.format(VERSION, copy)), result.stderr)
 
-    def test_the_bridge_of_the_old_numbering_updates_to_this_release(self):
-        # 2.5.1, the last release of the old numbering, which the server offers the old CLIs (scripts/build_cli.py BRIDGE),
-        # takes this release as newer although its number is lower, and installs it without --force.
-        bridge = ROOT / 'dist' / 'cli' / '2.5.1' / HOST
-        copy = self.folder('bridge') / 'fyl'
-        shutil.copy2(bridge, copy)
-
-        def run(*args):
-            return subprocess.run([str(copy), *args], capture_output=True, text=True, env=self.environment(), timeout=60, stdin=subprocess.DEVNULL)
-        self.assertEqual(run('--version').stdout, 'fyl 2.5.1\n')
-        binary = self.release(VERSION)
-        check = run('update', '--check', '--endpoint', self.endpoint)
-        self.assertEqual((check.returncode, check.stdout), (0, 'fyl {} is available (this is 2.5.1): run fyl update\n'.format(VERSION)), check.stderr)
-        result = run('update', '--endpoint', self.endpoint)
-        self.assertEqual((result.returncode, result.stdout), (0, 'Updated fyl 2.5.1 to {}: {}\n'.format(VERSION, copy)), result.stderr)
-        self.assertEqual(copy.read_bytes(), binary)
-        # This release compares plainly (the server offers the bridge only to the old CLIs, src/index.ts).
-        self.offer(VERSION)
-        self.assertEqual(self.run_raw('update', '--check', '--endpoint', self.endpoint).stdout, 'fyl {} is up to date.\n'.format(VERSION))
-
     def test_update_is_a_command_unless_a_file_named_update_stands_alone(self):
         (self.root / 'update').write_bytes(b'fyl.at fixture')
         result = self.run_raw('update', '--endpoint', self.endpoint, cwd=self.root)

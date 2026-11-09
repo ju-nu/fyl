@@ -132,29 +132,6 @@ class NativeJobTests(GitTestCase):
         self.assertEqual(self.changed('pull_request', '0' * 40), 'true')
         self.assertEqual(self.changed('pull_request', ''), 'true')
 
-    def test_the_bridge_is_rebuilt_while_the_source_is_its_own_or_a_change_adds_it(self):
-        bridge = load('build_cli').BRIDGE
-        base = self.commit({'README.md': '1'})
-        self.commit({'cli-rs/src/main.rs': '2'})
-        self.assertEqual((self.changed('pull_request', base), self.changed('--bridge', 'pull_request', base)), ('true', 'false'))
-        added = self.commit({'dist/cli/{}/fyl-linux-x86_64'.format(bridge): 'b'})
-        # Built from this source: compared on every run, with or without a base (a history that starts here has none).
-        for args in (('pull_request', base), ('push',), ('schedule',), ('pull_request', ''), ('pull_request', '0' * 40)):
-            self.assertEqual(self.changed('--bridge', *args), 'true', args)
-        self.production(added)
-        self.commit({'README.md': '2', 'scripts/promote.sh': '2'})
-        self.assertEqual(self.changed('--bridge', 'push'), 'true')
-        # Once the source changed, it no longer builds the bridge byte for byte: never again, nor without a base.
-        changed = self.commit({'cli-rs/src/main.rs': '3'})
-        for args in (('push',), ('schedule',), ('pull_request', ''), ('pull_request', '0' * 40), ('pull_request', added)):
-            self.assertEqual(self.changed('--bridge', *args), 'false', args)
-        self.assertEqual(self.changed('push'), 'true')
-        # A change that adds the bridge and then changes the source still compares it, and fails until it is rebuilt.
-        self.commit({'dist/cli/{}/fyl-linux-x86_64'.format(bridge): 'c'})
-        self.commit({'scripts/build_native.sh': '4'})
-        self.assertEqual(self.changed('--bridge', 'pull_request', changed), 'true')
-        self.assertEqual(self.changed('--bridge', 'schedule'), 'false')
-
 
 class PublishedCliTests(GitTestCase):
     """scripts/cli_published.sh: files under dist/cli/<version>/ never change once the base (production, or a pull
@@ -205,13 +182,11 @@ class ReleaseTests(GitTestCase):
             shutil.copy(ROOT / 'scripts' / name, self.work / 'scripts' / name)
         (self.work / 'package.json').write_text('{"version": "9.9.9"}')
         (self.work / 'CHANGELOG.md').write_text('# Changelog\n\n## 9.9.9 — 2026-10-30\n\nSee [the CLI](docs/CLI.md).\n\n## 9.9.8\n\nOld.\n')
-        bridge = load('build_cli').BRIDGE
-        for version in ('9.9.9', bridge):
-            folder = self.work / 'dist' / 'cli' / version
-            folder.mkdir(parents=True)
-            for name in NATIVE:
-                (folder / name).write_text('#!/bin/sh\necho "fyl {}"\n'.format(version))
-                (folder / name).chmod(0o755)
+        folder = self.work / 'dist' / 'cli' / '9.9.9'
+        folder.mkdir(parents=True)
+        for name in NATIVE:
+            (folder / name).write_text('#!/bin/sh\necho "fyl 9.9.9"\n')
+            (folder / name).chmod(0o755)
         (self.work / 'cli-rs').mkdir()
         (self.work / 'cli-rs' / 'THIRD-PARTY-LICENSES.txt').write_text('Third-party licenses of the fyl CLI\n')
         for path, content in load('build_cli').render(self.work).items():
@@ -236,7 +211,7 @@ class ReleaseTests(GitTestCase):
             (self.tools / name).chmod(0o755)
         self.curl_log, self.sleep_log, self.served = self.root / 'curl.log', self.root / 'sleep.log', self.root / 'site'
         # A file named after a tag is that release's SHA256SUMS; without one the release does not exist.
-        self.releases, self.bridge = self.root / 'releases', bridge
+        self.releases = self.root / 'releases'
         self.releases.mkdir()
         self.site('9.9.9')
         self.env.update(PATH=os.pathsep.join([str(self.tools), os.environ['PATH']]), FAKE_GH_LOG=str(self.log), FAKE_PRODUCTION=self.sha,
@@ -275,7 +250,6 @@ class ReleaseTests(GitTestCase):
         self.assertEqual(Path(str(self.log) + '.notes.v9.9.9').read_text(),
                          'See [the CLI](https://github.com/ju-nu/fyl-at/blob/{}/docs/CLI.md).\n'.format(self.sha))
         self.assertEqual((self.lines(self.curl_log), self.lines(self.sleep_log)), (['-fs --max-time 15 https://fyl.at/cli/latest'], []))
-        # Only this version: the bridge of the old numbering gets no GitHub release (fyl.at serves it).
         self.assertEqual(len(calls), 3)
         # A later run finds the release and creates nothing.
         self.publish('9.9.9')
@@ -283,17 +257,6 @@ class ReleaseTests(GitTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse([call for call in calls if call.startswith('release create')])
         self.assertIn('Release v9.9.9 exists and carries the committed SHA256SUMS.', result.stdout)
-
-    def test_the_bridge_gets_no_release_but_must_report_its_version(self):
-        self.publish('9.9.9')
-        result, calls = self.release()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse([call for call in calls if call.startswith('release create')])
-        self.assertFalse([call for call in calls if 'v' + self.bridge in call])
-        (self.work / 'dist' / 'cli' / self.bridge / 'fyl-linux-x86_64').write_text('#!/bin/sh\necho "fyl 9.9.9"\n')
-        result, calls = self.release()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('does not report fyl ' + self.bridge, result.stderr)
 
     def test_a_release_waits_until_fyl_at_serves_the_version(self):
         # Workers Builds deploys production minutes after the Deploy gate moved it; until then fyl.at serves the old
@@ -339,7 +302,6 @@ class ReleaseTests(GitTestCase):
 
     def test_an_existing_release_must_carry_the_committed_checksums(self):
         self.publish('9.9.9')
-        self.publish(self.bridge)
         sums = self.releases / 'v9.9.9'
         result, calls = self.release()
         self.assertEqual(result.returncode, 0, result.stderr)
