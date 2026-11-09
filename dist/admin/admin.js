@@ -103,11 +103,11 @@
   };
   // A share in whole percent, "<1 %" for a little more than none.
   const percent = (part, whole) => (part > 0 && part * 100 < whole ? '<1' : Math.round(part / whole * 100)) + ' %';
-  // What a query cut at its limit means for the page, named per query (an older body's `true` says lists only).
+  // What a query cut at its limit means for the page, named per query.
   const CUTS = {events: 'the totals and events may be low', series: 'the charts and the page-view total may be low', sizes: 'upload sizes may be incomplete',
     median: 'the median upload may be off', lifetimes: 'lifetimes may be incomplete'};
   const cutNotice = truncated => {
-    const names = Array.isArray(truncated) ? truncated : truncated ? ['lists'] : [];
+    const names = Array.isArray(truncated) ? truncated : [];
     const parts = [...new Set(names.map(name => CUTS[name] || 'some lists were cut'))];
     return parts.length ? 'Analytics Engine hit the query limit: ' + parts.join('; ') + '.' : '';
   };
@@ -257,7 +257,7 @@
     const problems = counted.filter(([, n]) => n > 0), sum = problems.reduce((all, [, n]) => all + n, 0);
     if (counted.length) parts.push(sum ? [count(sum) + (sum === 1 ? ' problem' : ' problems') + ' in 24 h (' + problems.map(([name, n]) => name + ' ' + count(n)).join(' · ') + ')', true]
       : ['No problems in 24 h', false]);
-    // The live deploy: its tag (v2.4.1) and when it was uploaded, in Vienna time.
+    // The live deploy: its tag (such as v1.0.1) and when it was uploaded, in Vienna time.
     const version = body?.version, time = version?.deployedAt ? Date.parse(version.deployedAt) : Number.NaN;
     const when = Number.isFinite(time) ? new Date(time).toLocaleString('en-GB', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: ZONE}).replace(',', '') : '';
     if (version?.tag || when) parts.push([version.tag ? 'Live ' + version.tag + (when ? ', deployed ' + when : '') : 'Deployed ' + when, false]);
@@ -409,8 +409,7 @@
   const languages = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['en'], {type: 'language'}) : null;
   const named = (display, code) => { try { return display ? display.of(code) || code : code; } catch { return code; } };
   const PAGES = {home: 'Home', report: 'Report form', privacy: 'Privacy', download: 'Download pages', gone: 'Closed links'};
-  // `internal` is fyl.at itself in a body from before the kinds of its pages were told apart (src/stats.ts referrerOf()).
-  const REFERRERS = {direct: 'Direct or hidden', internal: 'fyl.at itself', ip: 'An IP address', private: 'A private network', other: 'Not a web address'};
+  const REFERRERS = {direct: 'Direct or hidden', ip: 'An IP address', private: 'A private network', other: 'Not a web address'};
   const DEVICES = {desktop: 'Desktop', mobile: 'Mobile', tablet: 'Tablet'};
   const CLIENTS = {browser: 'Browser', cli: 'fyl CLI', curl: 'curl', wget: 'wget', bot: 'Bot', script: 'Browser-named scripts', other: 'Other tools and scripts',
     own: "fyl's own checks"};
@@ -452,13 +451,13 @@
   const baseOf = (kind, totals) => {
     if (kind === 'downloadsByClient') return [totals.downloads || 0, 'of ' + count(totals.downloads) + ' downloads'];
     if (kind === 'uploadSizes') return [totals.uploads || 0, 'of ' + count(totals.uploads) + ' uploads completed'];
-    // Only uploads whose kind of client, or options, were recorded (since the release after 2.4.0).
+    // Only uploads whose kind of client, or options, were recorded (since 2026-11-01).
     if (kind === 'uploadsByClient') return [totals.uploadsWithClient || 0, 'of ' + count(totals.uploadsWithClient) + ' uploads with a recorded client'];
     if (kind === 'uploadOptions') return [totals.uploadsWithOptions || 0, 'of ' + count(totals.uploadsWithOptions) + ' uploads; options combine'];
-    // Download requests that started, a resumed one counting again, of every transfer closed in the range (an older body:
-    // those with a count); the median and the most are of the transfers with a count.
+    // Download requests that started, a resumed one counting again, of every transfer closed in the range; the median and
+    // the most are of the transfers with a count.
     if (kind === 'downloadsPerTransfer') {
-      const closed = Number(totals.transfersClosed) || Number(totals.transfersWithDownloads) || 0;
+      const closed = Number(totals.transfersClosed) || 0;
       return [closed, 'of ' + count(closed) + ' closed transfers'
         + (Number.isFinite(totals.medianDownloads) ? ' · median ' + count(totals.medianDownloads) + ' · most ' + count(totals.maxDownloads) : '')];
     }

@@ -132,7 +132,7 @@ describe('page-view statistics', () => {
       // An in-app browser naming its app is a browser when it navigates.
       ['/en/', { ...html, 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile/15E148 Snapchat/13.10.0.40' }, { client: 'browser', device: 'mobile' }],
       ['/en/', { 'User-Agent': 'curl/8.5.0' }, { client: 'curl', device: '' }], ['/en/', { 'User-Agent': 'Wget/1.21.4' }, { client: 'wget' }],
-      ['/en/', { 'User-Agent': 'fyl/2.3.0' }, { client: 'cli' }], ['/en/', { 'User-Agent': 'python-requests/2.32' }, { client: 'other', device: '' }], ['/en/', {}, { client: 'other' }],
+      ['/en/', { 'User-Agent': 'fyl-cli/1.0.1' }, { client: 'cli' }], ['/en/', { 'User-Agent': 'python-requests/2.32' }, { client: 'other', device: '' }], ['/en/', {}, { client: 'other' }],
     ];
     for (const [path, headers, expected] of cases) {
       const { views: counted } = await viewed(path, { headers });
@@ -156,12 +156,12 @@ describe('page-view statistics', () => {
   });
 
   it("never counts fyl's own tools or the operator's checks marked fyl-ops, and still counts the CLI", async () => {
-    for (const agent of ['fyl-smoke/2.4.0', 'fyl-smoke', 'fyl-monitor', 'fyl-admin', 'fyl-ops', 'curl/8.5 fyl-ops', `${BROWSER} fyl-ops`,
+    for (const agent of ['fyl-smoke/1.0.1', 'fyl-smoke', 'fyl-monitor', 'fyl-admin', 'fyl-ops', 'curl/8.5 fyl-ops', `${BROWSER} fyl-ops`,
       'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 HeadlessChrome/130.0 Safari/537.36 fyl-ops']) {
       const { status, views: counted } = await viewed('/en/', { headers: { ...html, 'User-Agent': agent } });
       expect([agent, status, counted]).toEqual([agent, 200, []]);
     }
-    for (const agent of ['fyl-cli/2.4.0', 'fyl/2.3.0']) expect((await viewed('/en/', { headers: { 'User-Agent': agent } })).views).toMatchObject([{ client: 'cli' }]);
+    for (const agent of ['fyl-cli/1.0.1']) expect((await viewed('/en/', { headers: { 'User-Agent': agent } })).views).toMatchObject([{ client: 'cli' }]);
     // Only a marker of its own: a name that merely contains the letters stays what it is.
     expect((await viewed('/en/', { headers: { ...html, 'User-Agent': `${BROWSER} notfyl-opsx` } })).views).toMatchObject([{ client: 'browser' }]);
   });

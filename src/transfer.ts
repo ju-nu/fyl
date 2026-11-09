@@ -15,8 +15,6 @@ const CLEANUP_RETRY_MS = [60000, 300000, 900000, 3600000];
 /** An R2 completion can finish after a cleanup it raced: an hour later the object and upload are checked once more. */
 const VERIFY_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** Closed transfers cleaned up before 2.1.2 kept their tombstone this long (see the constructor). */
-const LEGACY_TOMBSTONE_MS = 30 * DAY_MS;
 /**
  * One row per part with an admitted attempt, so a part operation writes one small row instead of the whole
  * transfer: `ticket` is the latest admitted attempt's (`active` until it settles) and `attempts` counts them;
@@ -46,45 +44,35 @@ const TRIES_TABLES = ['CREATE TABLE IF NOT EXISTS tries (network TEXT PRIMARY KE
   'CREATE TABLE IF NOT EXISTS wrong_tries (at INTEGER NOT NULL)'];
 /**
  * An encrypted upload's pins (docs/E2EE.md §8.3): the MD5 (32 lowercase hex digits) each part must have, the first value
- * the client pinned before sending the part's body. Kept apart from the parts table, which code before 2.4.0 also
- * writes; made by the first pin, dropped with the other tables at cleanup.
+ * the client pinned before sending the part's body; made by the first pin, dropped with the other tables at cleanup.
  */
 const PINS_TABLE = 'CREATE TABLE IF NOT EXISTS pins (number INTEGER PRIMARY KEY, md5 TEXT NOT NULL)';
 const partBytes = (size: number, number: number) => Math.min(PART_BYTES, size - (number - 1) * PART_BYTES);
-/** A refusal that only an encrypted upload gets (part_changed, part_corrupt, head_mismatch), counted as part_refused. */
-/** The kind of client that started a transfer, for its statistics; `unknown` for a record from before it was kept. */
+/** The kind of client that started a transfer, for its statistics. */
 const clientKind = (record: TransferRecord) => record.client || 'unknown';
+/** A refusal that only an encrypted upload gets (part_changed, part_corrupt, head_mismatch), counted as part_refused. */
 const refused = (env: Env, status: number, message: string, code: string) => { metric(env, 'part_refused', code); return new ApiError(status, message, code); };
 const CHANGED = 'This part differs from the one this upload pinned: the file changed. Start a new upload.';
 
 export class Transfer extends DurableObject<Env> {
-  /** Set once the tables are known to exist; they are created on the first write, not on reads. */
+  /** Set once the record is known to be stored; its tables are created on the first write, not on reads. */
   private stored = false;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
+    // A clean record keeps no name, fingerprint or download session, and every closed link but a takedown has a purge
+    // date. Cleanups until 2026-10-27 kept the name and fingerprint and set no purge date, so no alarm ever reaches such
+    // a record; cleanups before 2026-10-30 16:40 UTC kept a one-time link's session, and takedowns keep theirs for good.
+    // Such a record is fixed when a request next reaches it, so this stays for good (docs/ARCHITECTURE.md).
     const previous = this.read();
-    // Purges before 2.1.2 only emptied the table and kept its pages: drop them the way a purge does now. Such
-    // objects stay until a request reaches them, so this stays for good.
-    if (!previous && this.stored) ctx.blockConcurrencyWhile(() => this.purge());
-    // Records cleaned by 1.0/1.1 got no purge date: give them one when they next start. Only those few exist;
-    // without this they would keep answering 410. A takedown has none on purpose.
-    if (previous?.clean && !previous.purgeAt && previous.status !== 'removed') {
-      previous.name = ''; previous.fingerprint = ''; previous.purgeAt = Date.now() + TOMBSTONE_TTL_MS;
+    if (previous?.clean && (previous.name || previous.fingerprint || previous.session || (!previous.purgeAt && previous.status !== 'removed'))) {
+      previous.name = ''; previous.fingerprint = ''; delete previous.session;
+      if (!previous.purgeAt && previous.status !== 'removed') {
+        previous.purgeAt = Date.now() + TOMBSTONE_TTL_MS;
+        if (!previous.verifyAt) this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
+      }
       this.save(previous);
-      this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
     }
-    // Records cleaned before 2.1.2 were kept 30 days, every later one 7 (TOMBSTONE_TTL_MS): only theirs end more than
-    // 7 days from now. They go 7 days after their cleanup, as every closed link does now, or at once if that is past.
-    // Their dates all pass by 2026-11-27 (2.1.2 reached production on 2026-10-28): remove from 2026-11-28.
-    if (previous?.clean && previous.purgeAt && previous.status !== 'removed' && previous.purgeAt > Date.now() + TOMBSTONE_TTL_MS) {
-      previous.purgeAt = Math.max(Date.now(), previous.purgeAt - (LEGACY_TOMBSTONE_MS - TOMBSTONE_TTL_MS));
-      this.save(previous);
-      this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
-    }
-    // A closed record keeps no network: cleanups before 2.3.0 left a one-time link's session (its network hash) in the
-    // tombstone, which a takedown keeps for good. Takedowns stay, so this stays.
-    if (previous?.clean && previous.session) { delete previous.session; this.save(previous); }
   }
 
   // Probing a random ID must not materialise storage, so reads tolerate a missing table.
@@ -92,13 +80,9 @@ export class Transfer extends DurableObject<Env> {
     let row: { payload: string } | undefined;
     try { row = this.ctx.storage.sql.exec<{ payload: string }>('SELECT payload FROM transfer WHERE id=1').toArray()[0]; }
     catch (error) { if (/no such table/i.test(String(error))) return null; throw error; }
-    this.stored = true;
     if (!row) return null;
-    // Records stored before 2.1.2 kept their parts in the payload. Every such record is closed by now (a takedown
-    // keeps its record for good), so the field is ignored: dropped here, and gone from the payload at the next save.
-    const record = JSON.parse(row.payload) as TransferRecord & { parts?: unknown };
-    delete record.parts;
-    return record;
+    this.stored = true;
+    return JSON.parse(row.payload) as TransferRecord;
   }
 
   private save(record: TransferRecord) {
@@ -163,7 +147,8 @@ export class Transfer extends DurableObject<Env> {
    * one is taken: a late write can't replace a newer confirmed part unless the part used all its slots.
    */
   private slot(record: TransferRecord, number: number) {
-    // Every upload admitted since 2.3.0 has its slots (init()); only closed records from before may lack them.
+    // Every upload has its slots (init()); a record without them (a takedown placeholder, or closed before slots
+    // existed) is never uploaded to.
     const slots = record.slots as number, sql = this.ctx.storage.sql, lease = Date.now() - ATTEMPT_LEASE_MS;
     // An attempt whose lease ended before the Budget admitted it never got its slot: nothing of it can arrive.
     sql.exec('DELETE FROM attempts WHERE number=? AND seq=0 AND at<=?', number, lease);
@@ -193,8 +178,8 @@ export class Transfer extends DurableObject<Env> {
 
   /**
    * The record if `key` is its management key or, with `resume` (the upload routes), its resume token;
-   * `owner` is true for the key only. Records from before 2.1.2 have no resumeHash and take the key only;
-   * takedowns among them are kept for good, so the check stays.
+   * `owner` is true for the key only. A record without resumeHash (a takedown placeholder, or a record closed before
+   * 2026-10-28 16:55 UTC that a takedown keeps for good) takes the key only.
    */
   private async access(key: string, resume: boolean) {
     const hash = await digest(key);
@@ -414,10 +399,9 @@ export class Transfer extends DurableObject<Env> {
 
   /**
    * The download page for a link opened in a browser (or by a link-preview bot); it never counts a download.
-   * `guesser` is the per-transfer hash password tries count for (an IPv6 subscriber's /56, see networkOf()); an
-   * older Worker sends none and counts them per `network`.
+   * `guesser` is the per-transfer hash password tries count for (an IPv6 subscriber's /56, see networkOf()).
    */
-  async page(network: string, guesser = network) {
+  async page(network: string, guesser: string) {
     return guarded(() => {
       const record = this.shown(network);
       return this.view(record, guesser, false, this.lock(record, guesser, this.holds(record, network)));
@@ -425,7 +409,7 @@ export class Transfer extends DurableObject<Env> {
   }
 
   /** The download page's password form: the page unlocked, or showing why not. */
-  async unlock(password: string, network: string, guesser = network) {
+  async unlock(password: string, network: string, guesser: string) {
     return guarded(async () => {
       const record = this.shown(network);
       if (!record.pwHash || this.pending(record)) return this.view(record, guesser);
@@ -1079,7 +1063,7 @@ export class Transfer extends DurableObject<Env> {
       current.name = ''; current.fingerprint = '';
       // A one-time link's session goes too: its network hash is no use once the link is closed. So do an encrypted
       // transfer's head and meta (its pins go with the tables below): a tombstone keeps none of them (docs/E2EE.md §4.4).
-      for (const field of ['pwSalt', 'pwHash', 'pwIter', 'pwFails', 'pwPausedUntil', 'quarantine', 'session', 'head', 'meta', 'client'] as const) delete current[field];
+      for (const field of ['pwSalt', 'pwHash', 'pwIter', 'pwPausedUntil', 'quarantine', 'session', 'head', 'meta', 'client'] as const) delete current[field];
       if (current.status !== 'removed') current.purgeAt = now + TOMBSTONE_TTL_MS;
       if (current.cleanupDue) metric(this.env, 'cleanup_age', '', Math.max(0, Math.round((now - current.cleanupDue) / 1000)));
       delete current.cleanupDue; delete current.cleanupTries;
@@ -1120,7 +1104,7 @@ export class Transfer extends DurableObject<Env> {
         else await this.cleanup(() => this.verify());
         return;
       }
-      // Takedowns are never purged; older ones still carry a purge date, which no longer applies.
+      // A takedown is never purged, whatever purge date it may carry.
       if (record.status === 'removed' || !record.purgeAt) return;
       if (Date.now() >= record.purgeAt) await this.purge();
       else await this.ctx.storage.setAlarm(record.purgeAt);

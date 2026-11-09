@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { PART_BYTES, budget, randomToken, unwrap } from '../src/shared';
-import { call, post, init, part, put, finish, file, pathOf, record, edit, useNetworkPrefix, type Session } from './helpers';
+import { call, post, init, part, put, finish, file, pathOf, useNetworkPrefix, type Session } from './helpers';
 
 useNetworkPrefix('198.18.3.');
 
@@ -69,26 +69,7 @@ describe('parts in their own table', () => {
     await finish(session, parts);
   });
 
-  it('ignores a parts field that records from before 2.1.2 kept in their payload, and never fails on it', async () => {
-    const payload = new TextEncoder().encode('ignored legacy parts'), session = await init(payload.length);
-    const done = await part(session, payload);
-    // A payload as 2.1.1 wrote it, with its parts inside (here next to the table): nothing reads them any more.
-    const legacy = { 1: { size: 3, attempts: 7, ticket: 'old-ticket', active: true, etag: 'old-etag' }, 9: { size: 1, attempts: 1, ticket: 't', active: false } };
-    await edit(session.uploadId, record => { Object.assign(record, { parts: legacy }); });
-    await evictDurableObject(transfer(session));
-    expect((await status(session)).parts).toEqual([{ partNumber: 1, size: payload.length, etag: done.etag }]);
-    expect(await rows(session)).toEqual([expect.objectContaining({ number: 1, etag: done.etag, attempts: 1 })]);
-    // The next save leaves the field out.
-    const receipt = await finish(session, [done]);
-    expect(await record(session.uploadId)).not.toHaveProperty('parts');
-    expect(new Uint8Array(await (await call(pathOf(receipt.url))).arrayBuffer())).toEqual(payload);
-    // Garbage in the field doesn't matter either.
-    await edit(session.uploadId, record => { Object.assign(record, { parts: 'not an object' }); });
-    await evictDurableObject(transfer(session));
-    expect((await call(`/api/transfers/${session.uploadId}`)).status).toBe(200);
-  });
-
-  it('leaves no parts behind after cleanup, for new records and for closed ones that kept their parts in the record', async () => {
+  it('leaves no parts behind after cleanup, for aborted and deleted transfers', async () => {
     // Aborted mid-upload: the table goes with the bytes, and the status still answers.
     const payload = new Uint8Array(PART_BYTES).fill(1);
     const aborted = await init(PART_BYTES + 1);
@@ -102,34 +83,19 @@ describe('parts in their own table', () => {
     expect(await rows(session)).toHaveLength(1);
     expect((await call(`/api/transfers/${receipt.id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + receipt.deleteToken } })).status).toBe(200);
     expect(await tables(session)).toEqual(['transfer']);
-    // A record 2.1.1 had already cleaned still answers as closed, with its parts field ignored and no parts table made.
-    await runInDurableObject(transfer(session), (_instance, ctx) => {
-      const stored = JSON.parse(ctx.storage.sql.exec<{ payload: string }>('SELECT payload FROM transfer WHERE id=1').one().payload);
-      ctx.storage.sql.exec('UPDATE transfer SET payload=? WHERE id=1', JSON.stringify({ ...stored, parts: { 1: { size: 17, attempts: 1, ticket: 't', active: false } } }));
-    });
-    await evictDurableObject(transfer(session));
-    const closed = await call(pathOf(receipt.url));
-    expect([closed.status, (await closed.json<{ code: string }>()).code]).toEqual([410, 'deleted']);
-    expect(await tables(session)).toEqual(['transfer']);
   });
 
-  it('drops the empty table that purges before 2.1.2 left behind once the object is touched again', async () => {
+  it('answers 404 for an object with an empty transfer table, and creates the upload tables when a record is saved there', async () => {
     const id = randomToken(), stub = env.TRANSFERS.getByName(id);
-    await runInDurableObject(stub, async (_instance, ctx) => {
+    await runInDurableObject(stub, (_instance, ctx) => {
       ctx.storage.sql.exec('CREATE TABLE transfer (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL)');
-      ctx.storage.sql.exec('INSERT INTO transfer (id,payload) VALUES (1,?)', '{}');
-      ctx.storage.sql.exec('DELETE FROM transfer WHERE id=1');
-      // A pending alarm proves deleteAll() drops alarms too outside an alarm handler (one that runs consumes its own).
-      await ctx.storage.setAlarm(Date.now() + 86400000);
-      expect(ctx.storage.sql.databaseSize).toBeGreaterThan(4096);
     });
-    // A later request starts a new instance of the object.
     await evictDurableObject(stub);
     expect((await call(`/api/transfers/${id}`)).status).toBe(404);
-    await runInDurableObject(stub, async (_instance, ctx) => {
-      expect(ctx.storage.sql.exec("SELECT name FROM sqlite_master WHERE type = 'table'").toArray()).toEqual([]);
-      expect(ctx.storage.sql.databaseSize).toBe(4096);
-      expect(await ctx.storage.getAlarm()).toBeNull();
+    await runInDurableObject(stub, (instance, ctx) => {
+      (instance as unknown as { save(record: { clean: boolean }): void }).save({ clean: false });
+      const names = ctx.storage.sql.exec<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table'").toArray().map(row => row.name);
+      expect(names.sort()).toEqual(['attempts', 'parts', 'transfer']);
     });
   });
 });

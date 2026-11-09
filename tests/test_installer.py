@@ -126,7 +126,7 @@ class InstallerTests(unittest.TestCase):
             shutil.copy(ROOT / 'scripts' / name, tree / 'scripts' / name)
         # The license texts need the real crates; faked, as cargo is below.
         (tree / 'scripts' / 'cli_licenses.py').write_text('print("Wrote cli-rs/THIRD-PARTY-LICENSES.txt.")\n')
-        for release in ('9.9.7', '9.9.8', load('build_cli').BRIDGE):
+        for release in ('9.9.7', '9.9.8'):
             (cli / release).mkdir(parents=True)
             for name in NATIVE:
                 (cli / release / name).write_text('#!/bin/sh\necho "fyl {}"\n'.format(release))
@@ -141,7 +141,7 @@ class InstallerTests(unittest.TestCase):
         built = subprocess.run(['sh', str(tree / 'scripts' / 'build_native.sh')], env=self.env, capture_output=True, text=True, timeout=60)
         self.assertEqual(built.returncode, 0, built.stderr)
         self.assertIn('Removed dist/cli/9.9.7', built.stdout)
-        self.assertEqual(sorted(path.name for path in cli.iterdir()), [load('build_cli').BRIDGE, '9.9.8', '9.9.9', 'install', 'latest'])
+        self.assertEqual(sorted(path.name for path in cli.iterdir()), ['9.9.8', '9.9.9', 'install', 'latest'])
         for path, content in load('build_cli').render(tree).items():
             (tree / path).write_bytes(content)
         self.assertEqual((cli / 'latest').read_text(), '9.9.9\n')
@@ -201,36 +201,23 @@ class LayoutTests(unittest.TestCase):
         build = load('build_cli')
         first, second = build.render(), build.render()
         self.assertEqual(first, second)
-        self.assertEqual(sorted(first), sorted(['dist/cli/{}/SHA256SUMS'.format(VERSION), 'dist/cli/{}/SHA256SUMS'.format(build.BRIDGE), 'dist/cli/latest',
-                                                'dist/cli/version.json', 'dist/cli/bridge.json', 'dist/_redirects']))
+        self.assertEqual(sorted(first), sorted(['dist/cli/{}/SHA256SUMS'.format(VERSION), 'dist/cli/latest', 'dist/cli/version.json']))
         for path, content in first.items():
             self.assertEqual((ROOT / path).read_bytes(), content, path + ' is stale; run npm run build:cli')
         self.assertEqual((CLI / 'latest').read_text(), VERSION + '\n')
-        # version.json names this release; bridge.json, for the old CLIs, the last release of the old numbering.
-        for name, version in (('version.json', VERSION), ('bridge.json', build.BRIDGE)):
-            index = json.loads((CLI / name).read_text())
-            self.assertEqual((index['name'], index['version'], index['path'], sorted(index['files'])), ('fyl', version, '/cli/{}/'.format(version), sorted(NATIVE)))
-        self.assertNotEqual(VERSION, build.BRIDGE)
-        self.assertFalse(build.legacy(VERSION))
+        index = json.loads((CLI / 'version.json').read_text())
+        self.assertEqual((index['name'], index['version'], index['path'], sorted(index['files'])), ('fyl', VERSION, '/cli/{}/'.format(VERSION), sorted(NATIVE)))
+        self.assertFalse(build.old_numbering(VERSION))
 
-    def test_only_the_current_and_the_previous_version_and_the_bridge_are_kept(self):
+    def test_only_the_current_and_the_previous_version_are_kept(self):
         build = load('build_cli')
         self.assertEqual(build.stale(CLI, VERSION), [])
         folders = [path.name for path in CLI.iterdir() if path.is_dir()]
         self.assertIn(VERSION, folders)
-        self.assertIn(build.BRIDGE, folders)
-        self.assertLessEqual(len(folders), 3)
-        self.assertEqual(sorted(path.name for path in CLI.iterdir() if not path.is_dir()), ['bridge.json', 'install', 'latest', 'version.json'])
+        self.assertLessEqual(len(folders), 2)
+        self.assertEqual(sorted(path.name for path in CLI.iterdir() if not path.is_dir()), ['install', 'latest', 'version.json'])
         for folder in folders:
             self.assertEqual(sorted(path.name for path in (CLI / folder).iterdir()), sorted(NATIVE + ['SHA256SUMS']), folder)
-
-    def test_old_unversioned_paths_redirect_to_the_current_files(self):
-        # Installers before 2.3.0 fetch /cli/<asset> and /cli/SHA256SUMS with curl -fsSL, which follows redirects.
-        rules = [line.split() for line in (ROOT / 'dist' / '_redirects').read_text().splitlines() if line and not line.startswith('#')]
-        self.assertEqual(sorted(rule[0] for rule in rules), sorted('/cli/' + name for name in NATIVE + ['SHA256SUMS']))
-        for source, destination, status in rules:
-            self.assertEqual((destination, status), ('/cli/{}/{}'.format(VERSION, source.split('/')[-1]), '302'))
-            self.assertTrue((ROOT / 'dist' / destination.lstrip('/')).is_file(), destination)
 
     def test_versioned_files_are_immutable_and_the_pointers_short_lived(self):
         rules, current = {}, None
@@ -245,10 +232,8 @@ class LayoutTests(unittest.TestCase):
                 rules[current] = {}
         for pattern in ('/cli/:version/fyl-*', '/cli/:version/SHA256SUMS'):
             self.assertEqual(rules[pattern]['Cache-Control'], 'public, max-age=31536000, immutable', pattern)
-        for pattern in ('/cli/latest', '/cli/bridge.json', '/cli/install'):
+        for pattern in ('/cli/latest', '/cli/version.json', '/cli/install'):
             self.assertEqual(rules[pattern]['Cache-Control'], 'public, max-age=60', pattern)
-        # Its answer depends on the User-Agent (the Worker adds Vary): no shared cache keeps it.
-        self.assertEqual(rules['/cli/version.json']['Cache-Control'], 'private, max-age=60')
         self.assertEqual(rules['/cli/:version/fyl-*']['Content-Disposition'], 'attachment; filename="fyl"')
         self.assertFalse([pattern for pattern in rules if pattern.startswith('/cli/fyl-') or pattern == '/cli/SHA256SUMS'])
 
@@ -257,49 +242,29 @@ class LayoutTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'package.json').write_text('{"version": "9.9.9"}')
-            folder, bridge = root / 'dist' / 'cli' / '9.9.9', root / 'dist' / 'cli' / build.BRIDGE
+            folder = root / 'dist' / 'cli' / '9.9.9'
             folder.mkdir(parents=True)
-            bridge.mkdir()
-            for name in NATIVE:
-                (bridge / name).write_bytes(b'bridge ' + name.encode())
             with self.assertRaisesRegex(SystemExit, r'Missing native binaries in dist/cli/9\.9\.9'):
                 build.render(root)
             for name in NATIVE:
                 (folder / name).write_bytes(name.encode())
             self.assertEqual(build.render(root)['dist/cli/latest'], b'9.9.9\n')
-            self.assertEqual(json.loads(build.render(root)['dist/cli/bridge.json'])['version'], build.BRIDGE)
-            (bridge / NATIVE[0]).unlink()
-            with self.assertRaisesRegex(SystemExit, 'Missing native binaries in dist/cli/' + re.escape(build.BRIDGE)):
-                build.render(root)
-            (bridge / NATIVE[0]).write_bytes(b'bridge')
-            # Before the first older folder of the new numbering exists, the newest of the old numbering is the one
-            # before (what /cli/latest named until then); once one exists, the old numbering goes, the bridge stays.
-            for extra in ('2.5.0', '2.4.0', '2.0.0'):
-                (root / 'dist' / 'cli' / extra).mkdir()
-            self.assertEqual(build.stale(root / 'dist' / 'cli', '9.9.9'), ['2.0.0', '2.4.0'])
-            (root / 'dist' / 'cli' / '1.0.0').mkdir()
-            self.assertEqual(build.stale(root / 'dist' / 'cli', '1.0.1'), ['2.0.0', '2.4.0', '2.5.0', '9.9.9'])
-            for extra in ('2.5.0', '2.4.0', '2.0.0', '1.0.0'):
-                (root / 'dist' / 'cli' / extra).rmdir()
-            self.assertEqual([build.legacy(name) for name in ('2.0.0', '2.5.1', '2.5.2', '1.0.0', '3.0.0', 'junk')], [True, True, False, False, False, False])
-            # The newest older version stays, compared by number (2.10.0 is newer than 2.9.0, 10.0.0 than 9.9.9).
-            (root / 'dist' / 'cli' / '2.10.0').mkdir()
+            self.assertEqual([build.old_numbering(name) for name in ('2.0.0', '2.5.1', '2.5.2', '1.0.0', '3.0.0', 'junk')], [True, True, False, False, False, False])
+            # The newest older version stays, compared by number (1.10.0 is newer than 1.9.0, 10.0.0 than 9.9.9).
+            (root / 'dist' / 'cli' / '1.10.0').mkdir()
             self.assertEqual(build.render(root)['dist/cli/latest'], b'9.9.9\n')
-            for extra in ('2.9.0', '10.0.0', '9.9.9-rc.1', 'junk'):
+            for extra in ('1.9.0', '10.0.0', '9.9.9-rc.1', 'junk'):
                 (root / 'dist' / 'cli' / extra).mkdir()
                 with self.assertRaisesRegex(SystemExit, 'remove dist/cli/' + re.escape(extra) + r' \(git rm'):
                     build.render(root)
                 self.assertEqual(build.stale(root / 'dist' / 'cli', '9.9.9'), [extra])
                 (root / 'dist' / 'cli' / extra).rmdir()
-            (root / 'dist' / 'cli' / '2.10.0').rmdir()
-            (root / 'dist' / 'cli' / 'fyl-linux-x86_64').write_bytes(b'old')
-            with self.assertRaisesRegex(SystemExit, 'remove dist/cli/fyl-linux-x86_64'):
-                build.render(root)
+            (root / 'dist' / 'cli' / '1.10.0').rmdir()
             (root / 'package.json').write_text('{"version": "../9"}')
             with self.assertRaisesRegex(SystemExit, 'unusable version'):
                 build.render(root)
             (root / 'package.json').write_text('{"version": "2.5.0"}')
-            with self.assertRaisesRegex(SystemExit, 'of the old numbering'):
+            with self.assertRaisesRegex(SystemExit, 'which releases never use'):
                 build.render(root)
 
 

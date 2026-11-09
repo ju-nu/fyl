@@ -2,19 +2,14 @@
 
 The binaries are built by scripts/build_native.sh and committed. Files under /cli/<version>/ never change once
 published, so they are cached as immutable; /cli/latest (the version, read by the installer) and
-/cli/version.json name the current one. dist/_redirects sends the unversioned paths that installers before
-2.3.0 fetch (with curl -L, which follows redirects) to the current version. The current version's folder and the
-one before it are kept: an installer that read /cli/latest just before a deploy, or from a cache (60 s), still
+/cli/version.json name the current one. The current version's folder and the one before it are kept: an installer that read /cli/latest just before a deploy, or from a cache (60 s), still
 finds the files it names.
 
-The public release started the numbering over at 1.0.0; before it fyl counted 2.0.0 to 2.5.1 (the old numbering).
-BRIDGE, the last of those, stays in dist/cli for good: dist/cli/bridge.json, shaped like version.json, names it, and
-the Worker answers /cli/version.json with it for the old CLIs that read every later release as older (src/index.ts).
-2.5.1 takes 1.0.0 and later as newer (cli-rs/src/update.rs), so fyl update carries them on from there.
+Versions 2.0.0 to 2.5.1 were used before the public release and are never used again
+(docs/ARCHITECTURE.md#version-scheme): render() refuses them.
 
   python3 scripts/build_cli.py            write the index files
   python3 scripts/build_cli.py --stale    list what build_native.sh removes from dist/cli after a build
-  python3 scripts/build_cli.py --bridge   print BRIDGE (for build_native.sh and cli_changed.sh)
 """
 from pathlib import Path
 import hashlib
@@ -25,8 +20,8 @@ import sys
 NATIVE = ["fyl-linux-x86_64", "fyl-linux-arm64", "fyl-macos-x86_64", "fyl-macos-arm64"]
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = re.compile(r"([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.]+)?")
-# The bridge release of the old numbering (2.0.0 to 2.5.1), which the new numbering never uses.
-BRIDGE = "2.5.1"
+# Used before the public release started at 1.0.0; never used again (docs/ARCHITECTURE.md#version-scheme).
+OLD_NUMBERING = ("2.0.0", "2.5.1")
 
 
 def version_of(root):
@@ -42,22 +37,18 @@ def numbers(name):
     return tuple(int(part) for part in match.groups()[:3]) if match else None
 
 
-def legacy(name):
-    """Whether a version folder is of the old numbering, 2.0.0 to BRIDGE: those sort below every release after it."""
+def old_numbering(name):
+    """Whether a version is one of 2.0.0 to 2.5.1, which releases never use."""
     found = numbers(name)
-    return bool(found) and found[0] == 2 and found <= numbers(BRIDGE)
+    return bool(found) and numbers(OLD_NUMBERING[0]) <= found <= numbers(OLD_NUMBERING[1])
 
 
 def stale(cli, version):
-    """What dist/cli must not hold: version folders other than this one, the one before it and BRIDGE, and fyl-*
-    files left from the unversioned layout. The one before is the newest older folder of the new numbering; for the
-    first release of it (none older yet) it is the newest of the old numbering other than BRIDGE, which /cli/latest
-    named until that deploy."""
+    """What dist/cli must not hold: version folders other than this one and the newest one before it."""
     dirs = [path.name for path in cli.iterdir() if path.is_dir() and numbers(path.name)]
-    older = [name for name in dirs if not legacy(name) and numbers(name) < numbers(version)]
-    before = max(older, key=numbers, default=None) or max([name for name in dirs if legacy(name) and name != BRIDGE], key=numbers, default=version)
-    keep = {version, BRIDGE, before}
-    return sorted(path.name for path in cli.iterdir() if (path.is_dir() and path.name not in keep) or path.name.startswith("fyl-"))
+    before = max([name for name in dirs if numbers(name) < numbers(version)], key=numbers, default=version)
+    keep = {version, before}
+    return sorted(path.name for path in cli.iterdir() if path.is_dir() and path.name not in keep)
 
 
 def digests(folder):
@@ -79,30 +70,22 @@ def sums(files):
 def render(root=ROOT):
     """The generated files as {path relative to root: bytes}. Exits when the binaries are missing or stale."""
     version = version_of(root)
-    if legacy(version):
-        raise SystemExit("package.json names {}, of the old numbering (2.0.0 to {}), which releases never use again.".format(version, BRIDGE))
+    if old_numbering(version):
+        raise SystemExit("package.json names {}, one of {} to {}, which releases never use.".format(version, *OLD_NUMBERING))
     cli = root / "dist" / "cli"
-    files, bridge = digests(cli / version), digests(cli / BRIDGE)
+    files = digests(cli / version)
     extra = stale(cli, version)
     if extra:
-        raise SystemExit("Only dist/cli/{}, the version before it and the bridge {} are kept; remove dist/cli/{} (git rm -r).".format(
-            version, BRIDGE, ", dist/cli/".join(extra)))
-    redirects = "# Generated by scripts/build_cli.py: unversioned paths of installers before 2.3.0.\n" + "".join(
-        "/cli/{0} /cli/{1}/{0} 302\n".format(name, version) for name in NATIVE + ["SHA256SUMS"])
+        raise SystemExit("Only dist/cli/{} and the version before it are kept; remove dist/cli/{} (git rm -r).".format(
+            version, ", dist/cli/".join(extra)))
     return {
         "dist/cli/{}/SHA256SUMS".format(version): sums(files),
-        "dist/cli/{}/SHA256SUMS".format(BRIDGE): sums(bridge),
         "dist/cli/latest": (version + "\n").encode(),
         "dist/cli/version.json": index(version, files),
-        "dist/cli/bridge.json": index(BRIDGE, bridge),
-        "dist/_redirects": redirects.encode(),
     }
 
 
 def main(argv):
-    if argv == ["--bridge"]:
-        print(BRIDGE)
-        return
     if argv == ["--stale"]:
         print("".join(name + "\n" for name in stale(ROOT / "dist" / "cli", version_of(ROOT))), end="")
         return

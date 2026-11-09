@@ -1,7 +1,6 @@
 // Builds the site's pages in every language (i18n/README.md): i18n/templates/*.html with the catalogs i18n/<lang>.json
 // become dist/<lang>/{index,privacy,report,download}.html, and dist/sitemap.xml lists them. The output is committed,
-// like dist/_redirects, so `npm run dev`, the tests and `wrangler dev` serve dist/ as it is; `npm run build:assets` runs
-// this first, and the tests fail while a generated file is stale or a catalog is incomplete (problems()).
+// so `npm run dev`, the tests and `wrangler dev` serve dist/ as it is; `npm run build:assets` runs this first, and the tests fail while a generated file is stale or a catalog is incomplete (problems()).
 //
 // A template names a message as {{key}}, with arguments as {{key name:other.key count=3}} (another message, a number).
 // Keys ending in "Html" may hold the inline markup their English holds; every other value is plain text, escaped here.

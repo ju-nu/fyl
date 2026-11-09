@@ -12,7 +12,7 @@ const resolve = (reference: string, from: string) => new URL(reference, 'https:/
 describe('deployed assets (.build/assets)', () => {
   it('holds every file of dist/ and nothing else', () => {
     expect(Object.keys(output)).toEqual(Object.keys(source));
-    expect(Object.keys(source)).toEqual(expect.arrayContaining(['en/index.html', 'de/privacy.html', 'cli/latest', 'cli/install', '_headers', '_redirects']));
+    expect(Object.keys(source)).toEqual(expect.arrayContaining(['en/index.html', 'de/privacy.html', 'cli/latest', 'cli/install', '_headers']));
   });
 
   it("minifies the site's own scripts and stylesheets and nothing else", () => {

@@ -28,9 +28,8 @@ use std::time::Duration;
 // use carry their own allow(dead_code) outside tests, so clippy still reports anything else that falls out of use.
 mod e2ee;
 
-/// Cargo.toml's version, unless the build names another in FYL_BUILD_VERSION: scripts/build_native.sh builds the
-/// bridge release of the old numbering (update.rs) from this source that way.
-const VERSION: &str = match option_env!("FYL_BUILD_VERSION") { Some(version) => version, None => env!("CARGO_PKG_VERSION") };
+/// Cargo.toml's version.
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The User-Agent every request sends: `fyl-cli/<version>`, then FYL_UA_SUFFIX when it is a short plain token. fyl's
 /// own checks set `fyl-smoke`, so the server's statistics count their uploads and downloads as its own; anything else in
@@ -379,10 +378,10 @@ fn default_endpoint() -> String {
     std::env::var("FYL_API_URL").unwrap_or_else(|_| DEFAULT_API.to_string())
 }
 
-/// Whether a first argument `download`, `decrypt` or `update` is that command rather than a file to upload, as it was
-/// before 2.4.0 (2.5.0 for update): the command when a link or file follows it (or `-o`, `--check`, `--force`), or when
-/// no regular file of that name exists. So `fyl download LINK` always downloads, `fyl download --once` still uploads an
-/// existing file named download, and `./download` always uploads. A folder of that name doesn't count: `fyl update`
+/// Whether a first argument `download`, `decrypt` or `update` is that command rather than a file to upload: the
+/// command when a link or file follows it (or `-o`, `--check`, `--force`), or when no regular file of that name exists.
+/// So `fyl download LINK` always downloads, `fyl download --once` still uploads an existing file named download, and
+/// `./download` always uploads. A folder of that name doesn't count: `fyl update`
 /// next to a folder named update updates fyl rather than send the folder, which takes `./update`.
 fn names_the_command(args: &[String], exists: impl Fn(&str) -> bool) -> bool {
     let mut rest = args[1..].iter();
@@ -1382,7 +1381,7 @@ fn upload(options: Upload) {
             fail("The server sent an invalid response to the upload request.");
         };
         *ACTIVE.lock().unwrap() = Some((api.clone(), id.to_string(), key.to_string()));
-        // Servers before 2.2.0 ignore the password (and send no link yet): never upload without the one asked for.
+        // A server that ignores the password sends no link at init: never upload without the one asked for.
         if password.is_some() && session["url"].is_null() { fail("This server doesn't support download passwords. Nothing was uploaded."); }
         let payload = match fresh {
             None => Payload::Raw,

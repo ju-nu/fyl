@@ -161,36 +161,38 @@ reconciles the aggregates (logging `budget_drift` for each aggregate that was of
 
 ## Version scheme
 
-The public release started the numbering over at **1.0.0** for the service (the Worker version tag `v1.0.0`) and the
-CLI (`fyl 1.0.0`). Before it, fyl was developed privately and counted 2.0.0 to 2.5.1. Those numbers are never used
-again: after 1.x comes 3.0.0, or 2.5.2 at the earliest, because the old CLIs, the update rule in `cli-rs/src/update.rs`,
-the Worker's User-Agent check (`bridged()` in `src/index.ts`), `scripts/build_cli.py` and `OLD_NUMBERING` in
-`scripts/rollback.py` all read 2.0.0 to 2.5.1 as the old numbering. Version numbers such as "since 2.4.0" in comments
-and older docs refer to those releases, which all came before 1.0.0.
-
-**The bridge.** CLI 2.5.0 compares versions by number and would read 1.0.0 as older. 2.5.1, built from the 1.0.0
-source (`sh scripts/build_native.sh --bridge`), carries the rule that a binary of the old numbering counts any version
-outside it as newer. `/cli/version.json` answers a User-Agent `fyl-cli/2.0.0` to `fyl-cli/2.5.0` with the index of
-2.5.1 (`dist/cli/bridge.json`), and everyone else with the current version, so `fyl update` takes 2.5.0 to 2.5.1 and
-then to the current release. CLIs before 2.5.0 have no `fyl update` and install again with
-`curl -fsSL https://fyl.at/cli/install | sh`. `dist/cli/2.5.1/` stays for good, and the GitHub release `v2.5.1` carries
-the same files (published once, never marked Latest), so its checksums can be compared like any release's.
+The public release started the numbering at **1.0.0** for the service (the Worker version tag `v1.0.0`) and the CLI
+(`fyl 1.0.0`). Before it, fyl was developed privately and its Worker versions were tagged `v2.0.0` to `v2.5.1`;
+Cloudflare's deployment history still lists them. Those numbers are never used again: after 1.x comes 3.0.0, or 2.5.2
+at the earliest. `OLD_NUMBERING` in `scripts/rollback.py` refuses those tags as rollback targets, `scripts/build_cli.py`
+refuses them as a version. The CLI 1.0.0 binary also takes an offered 2.0.0 to 2.5.1 for an older version; from 1.0.1
+on the CLI compares versions plainly, so a reused number would still confuse 1.0.0 installs. Version numbers
+such as "since 2.4.0" in comments and older docs refer to those releases, which all came before 1.0.0.
 
 ## Compatibility code
 
-Code that exists only for records, clients or Worker versions of the past. Before removing an entry, check its
-trigger and note the evidence (deploy time, an Analytics query) in the change that removes it.
+Code that exists only for data written by earlier versions. Before removing an entry, check its trigger and note the
+evidence (deploy time, an Analytics query) in the change that removes it.
 
-- **From 2026-11-28:** the Transfer constructor's shortening of tombstone purge dates set before 2.1.2
-  (`LEGACY_TOMBSTONE_MS` in `src/transfer.ts`). Every such date has passed by 2026-11-27. The tombstone half of its
-  test in `tests/worker.test.ts` goes with it; the takedown assertion stays.
-- **Once a rollback can't reach a Worker before 1.0.0** (it can't: `ROLLBACK_FLOOR` is 1.0.0 and the old numbering is
-  refused): the dashboard's fallbacks for answers of older Workers (`dist/admin/admin.js`, such as a `truncated` flag
-  given as a boolean, a missing `transfersWithDownloads`) may go once 1.0.0 has replaced every older version.
-- **Stays for good:** the constructor's purge of objects emptied before 2.1.2, the removal of one-time sessions from
-  clean records, `read()` dropping a `parts` field from the payload, and the key-only access of records from before
-  2.1.2. Takedowns are kept for good and may carry those shapes. The bridge (`dist/cli/2.5.1/`, `bridged()`) stays as
-  long as installed CLIs of the old numbering may ask for an update.
+- **Until 2027-01-30:** the dashboard's handling of Analytics rows written before 2026-11-01 in `src/stats.ts` (the
+  `internal` referrer, the empty client and closed-reason blobs, `unknown` clients and `COUNTED_SINCE`) and the
+  matching "Not recorded (older)" remainders in `dist/admin/admin.js`. Rows of those shapes were last written about
+  2026-11-01 and leave the 90-day range then.
+- **Stays for good:** `alarm()` and `schedule()` in `src/transfer.ts` never purge a takedown, whatever purge date it
+  carries. Takedowns made between 2026-10-28 11:32 and 16:55 UTC got one and cannot be ruled out; without the check
+  such a link could be purged and take an upload again.
+- **Stays for good:** `Transfer.access()` takes only the management key for a record without `resumeHash`. Takedown
+  placeholders have none, and neither do records closed before 2026-10-28 16:55 UTC, which takedowns keep for good.
+  Likewise a record without `slots` (closed before 2026-10-30 16:40 UTC, or a placeholder) is never uploaded to.
+- **Stays for good:** the `Transfer` constructor clears the name, fingerprint and one-time session of a clean record
+  that still has them, and gives a clean record other than a takedown a purge date if it has none. Cleanups until
+  2026-10-27 kept the name and fingerprint and set no purge date, so no alarm reaches those records; cleanups before
+  2026-10-30 16:40 UTC kept the session. Takedowns keep such records for good, and the others stay until a request
+  reaches them, so it cannot be shown that none is left.
+
+Not compatibility code: a record without `client` stored none (takedown placeholders, and cleanup drops it), and a raw
+record stores no `mode`. Tombstones of the former 30-day rule stay as storage until their alarm, 2026-11-27 at the
+latest; they answer 410 and serve nothing.
 
 ## Known limitations
 

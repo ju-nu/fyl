@@ -11,7 +11,7 @@ import { fakeAPI, type Session, type Upload } from './fake-api';
 // browser's. Opening a page again is a reload: the previous page's timers stop and its locks are freed. A test plays
 // another tab by holding a lock or changing storage. Time is fake, so a test decides when a countdown runs out.
 const fail = (status: number, code: string, message = 'Refused.') => Object.assign(new Error(message), { status, code });
-// "Custom…" in the receipt's expiry menu (static markup in dist/index.html).
+// "Custom…" in the receipt's expiry menu (static markup in i18n/templates/index.html).
 const customExpiry = () => Object.assign(new El('expiry-custom'), { dataset: { action: 'edit-expiry' } });
 
 const NOW = Date.UTC(2026, 9, 30, 12), MINUTE = 60000, HOUR = 3600000, DAY = 86400000, MB = 1048576;

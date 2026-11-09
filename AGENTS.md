@@ -16,9 +16,8 @@ compatibility code), [docs/OPERATIONS.md](docs/OPERATIONS.md) (deploys, secrets,
   User-Agent in scripts/smoke.py), the generated CLI files and the CHANGELOG section consistent: the release notes are
   that section. Never use the versions 2.0.0 to 2.5.1 ([version scheme](docs/ARCHITECTURE.md#version-scheme)).
 - The CLI is `cli-rs/` (Rust). Binaries live in `dist/cli/<version>/` with `SHA256SUMS`; only the current version's
-  folder, the one before it and the bridge 2.5.1 stay (`scripts/build_cli.py` refuses any other). Rebuild with
-  `npm run build:native` (pinned toolchain, zig and cargo-zigbuild) and commit the binaries; `sh
-  scripts/build_native.sh --bridge` rebuilds the bridge. A published version folder never changes.
+  folder and the one before it stay (`scripts/build_cli.py` refuses any other). Rebuild with `npm run build:native`
+  (pinned toolchain, zig and cargo-zigbuild) and commit the binaries. A published version folder never changes.
 - Checks against production must stay out of the statistics: fyl's own tools send `fyl-smoke`, `fyl-monitor` or
   `fyl-admin` in their User-Agent, and an ad-hoc check adds `fyl-ops` (`curl -A fyl-ops …`, or `HEAD`, which is never
   counted; a Playwright context against fyl.at appends ` fyl-ops` to its `userAgent`). `OWN_TOOLS` in `src/index.ts`

@@ -67,7 +67,7 @@ export function plaintextSize(size: number): number | null {
   const chunks = Math.max(1, Math.ceil(sealed / SEALED_CHUNK_BYTES)), plain = sealed - TAG_BYTES * chunks;
   return chunks >= 2 && plain <= CHUNK_BYTES * (chunks - 1) ? null : plain;
 }
-/** Transfer modes this server knows; a record without `mode` is raw (records from before 2.4.0 have none). */
+/** Transfer modes this server knows; a raw record stores no `mode`. */
 const MODES = ['raw', 'e2ee'];
 export const modeOf = (record: { mode?: string }) => record.mode ?? 'raw';
 export const knownMode = (record: { mode?: string }) => MODES.includes(modeOf(record));
@@ -340,8 +340,7 @@ export interface InitMetadata {
   pwIter?: number;
   /**
    * The kind of client that started the upload (clientOf() in src/index.ts: `browser`, `cli`, `curl`, `wget`, `other`,
-   * or `own` for fyl's own tools), for statistics only; never part of the fingerprint, and cleanup drops it. Records
-   * from before it have none (counted as `unknown`).
+   * or `own` for fyl's own tools), for statistics only; never part of the fingerprint, and cleanup drops it.
    */
   client?: string;
 }
@@ -350,7 +349,10 @@ type TransferStatus = 'creating' | 'uploading' | 'completing' | 'ready' | 'consu
 export interface TransferRecord extends InitMetadata {
   id: string;
   keyHash: string;
-  /** Digest of the resume token; records from before 2.1.2 have none and resume with the key only (see Transfer.access). */
+  /**
+   * Digest of the resume token; absent on a takedown placeholder and on records closed before 2026-10-28 16:55 UTC,
+   * which takedowns keep for good. Such a record takes the management key only (see Transfer.access).
+   */
   resumeHash?: string;
   objectKey: string;
   uploadId: string;
@@ -368,13 +370,13 @@ export interface TransferRecord extends InitMetadata {
   session?: DownloadSession;
   /**
    * The end of a pause of the whole transfer (PASSWORD_TRANSFER_TRIES); wrong tries per network are in the Transfer's
-   * `tries` table. 2.2.0 counted every network's tries in `pwFails`, which is no longer read (cleanup drops it).
+   * `tries` table.
    */
-  pwFails?: number;
   pwPausedUntil?: number;
   /**
    * R2 part numbers per part: part n writes to (n-1)*slots+1 … n*slots, each admitted attempt to its own. Every upload
-   * admitted since 2.3.0 has them; only records closed before (tombstones, and takedowns kept for good) have none.
+   * admitted from 2026-10-30 16:40 UTC on has them; a takedown placeholder and records closed before then (takedowns
+   * among them are kept for good) have none, and none of those is ever uploaded to.
    */
   slots?: number;
   /** When cleanup became due (for the cleanup_age metric) and its failed tries so far, which set the retry delay. */

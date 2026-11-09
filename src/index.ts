@@ -396,14 +396,14 @@ async function rate(env: Env, limit: Limit, key: string) {
 /**
  * fyl's own tools (the smoke test, the monitor, the operator scripts) and the operator's ad-hoc checks, which add
  * `fyl-ops` to their User-Agent (curl -A fyl-ops, a Playwright context's userAgent + ' fyl-ops'); the smoke test's
- * CLI adds `fyl-smoke` (FYL_UA_SUFFIX, from the CLI release after 2.4.0). For statistics only, never for access: their
+ * CLI adds `fyl-smoke` (FYL_UA_SUFFIX). For statistics only, never for access: their
  * page views are not counted, their uploads and downloads count as `own`.
  */
 const OWN_TOOLS = /^fyl-(?:monitor|admin)\b|\bfyl-(?:smoke|ops)\b/i;
 /** The kind of client an upload comes from or a download goes to, for statistics only (the User-Agent itself is never kept): it can be anything. */
 function clientOf(request: Request) {
   const agent = request.headers.get('User-Agent') || '';
-  return OWN_TOOLS.test(agent) ? 'own' : /^fyl(-cli)?\//i.test(agent) ? 'cli' : /^curl\//i.test(agent) ? 'curl' : /^wget\//i.test(agent) ? 'wget' : /^Mozilla\//.test(agent) ? 'browser' : 'other';
+  return OWN_TOOLS.test(agent) ? 'own' : /^fyl-cli\//i.test(agent) ? 'cli' : /^curl\//i.test(agent) ? 'curl' : /^wget\//i.test(agent) ? 'wget' : /^Mozilla\//.test(agent) ? 'browser' : 'other';
 }
 
 /**
@@ -821,7 +821,7 @@ function pageLanguage(request: Request) {
 }
 
 /**
- * Answers a download link opened in a browser with dist/download.html: <html data-state> and its flags pick what
+ * Answers a download link opened in a browser with dist/<lang>/download.html (i18n/templates/download.html): <html data-state> and its flags pick what
  * it shows, and the JSON block in <head> carries the details. The page is served from /d/<id>/<name>, so its
  * assets use absolute paths (no <base>: it would send in-page links such as #content to /). Pages never send
  * WWW-Authenticate, so browsers never show their own password dialog. An encrypted transfer's page is
@@ -935,33 +935,11 @@ function failed(env: Env, error: unknown, route: 'api' | 'download' | 'admin') {
 /**
  * The CLI files a GET answered 200 counts (`cli_fetch`, statistics only): `install` for the installer, else the
  * binary's platform (`linux-x86_64`, `linux-arm64`, `macos-x86_64`, `macos-arm64`) of any version; null for anything
- * else (latest, version.json, SHA256SUMS, the old unversioned paths, which only redirect).
+ * else (latest, version.json, SHA256SUMS).
  */
 function cliFile(path: string) {
   if (path === '/cli/install') return 'install';
   return /^\/cli\/\d+\.\d+\.\d+\/fyl-((?:linux|macos)-(?:x86_64|arm64))$/.exec(path)?.[1] ?? null;
-}
-
-/**
- * fyl counted 2.0.0 to 2.5.1 before its public release started over at 1.0.0 (scripts/build_cli.py). A CLI of that
- * numbering before 2.5.1 reads every later release as older, so its /cli/version.json is the index of 2.5.1, the
- * bridge (dist/cli/bridge.json), which takes later releases as newer: fyl update carries it there and then on.
- * Every other client, 2.5.1 itself, browsers and scripts included, gets version.json.
- */
-const OLD_CLI = /^fyl-cli\/2\.(\d{1,9})\.(\d{1,9})(?:\s|$)/;
-function bridged(request: Request) {
-  const found = OLD_CLI.exec(request.headers.get('User-Agent') || '');
-  return !!found && (Number(found[1]) < 5 || (Number(found[1]) === 5 && Number(found[2]) < 1));
-}
-
-/** GET or HEAD /cli/version.json: the bridge's index for old CLIs (bridged()). The answer depends on the User-Agent, so
- * it may be kept by the client for 60 seconds, by no shared cache. */
-async function cliIndex(request: Request, env: Env, url: URL) {
-  const asked = bridged(request) ? new Request(new URL('/cli/bridge.json', url), request) : request;
-  const response = await env.ASSETS.fetch(asked), answer = new Response(response.body, response);
-  answer.headers.set('Cache-Control', 'private, max-age=60');
-  answer.headers.set('Vary', 'User-Agent');
-  return answer;
 }
 
 /**
@@ -1124,8 +1102,7 @@ export default {
         if (kind && (response.status === 200 || response.status === 304)) pageView(env, request, kind, visitorOf(request));
         return response;
       }
-      if (path === '/cli/version.json' && (request.method === 'GET' || request.method === 'HEAD')) return await cliIndex(request, env, url);
-      // Every other file of dist/, through the asset layer with its _headers, _redirects and .html handling.
+      // Every other file of dist/, through the asset layer with its _headers and .html handling.
       if (!path.startsWith('/api/')) {
         const response = await env.ASSETS.fetch(request);
         const fetched = cliFile(path);

@@ -3,9 +3,8 @@
 # gate moved production to SHA and https://fyl.at/cli/latest names that version, so a release never runs ahead of
 # what fyl.at serves. Workers Builds deploys production minutes after the Deploy gate, and not at all when its build
 # fails: this waits up to 20 minutes and then fails. A release that exists already must carry exactly the committed
-# SHA256SUMS: published files never change. The bridge of the old numbering (build_cli.py BRIDGE), which fyl update
-# moves every fyl 2.5.0 onto, gets its release the same way, once, after the version it was deployed with and never
-# marked Latest.
+# SHA256SUMS: published files never change.
+# The binary must report this version.
 #   sh scripts/release.sh SHA      (from a checkout of SHA; needs gh with GH_TOKEN, GITHUB_REPOSITORY,
 #                                   GITHUB_SERVER_URL and RUNNER_TEMP, and curl, as in GitHub Actions)
 set -eu
@@ -16,12 +15,9 @@ production="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/production" --jq .o
 if [ "$production" != "$sha" ]; then echo "production is at $production, not $sha; nothing to release."; exit 0; fi
 python3 scripts/build_cli.py
 version="$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')"
-bridge="$(python3 scripts/build_cli.py --bridge)"
-for each in "$version" "$bridge"; do
-  [ "$("dist/cli/$each/fyl-linux-x86_64" --version)" = "fyl $each" ] || fail "dist/cli/$each/fyl-linux-x86_64 does not report fyl $each."
-done
+[ "$("dist/cli/$version/fyl-linux-x86_64" --version)" = "fyl $version" ] || fail "dist/cli/$version/fyl-linux-x86_64 does not report fyl $version."
 # The release must ship exactly the committed, reviewed files; a generated file left untracked counts too.
-changed="$(git status --porcelain --untracked-files=all -- dist/cli/ dist/_redirects)"
+changed="$(git status --porcelain --untracked-files=all -- dist/cli/)"
 [ -z "$changed" ] || fail "The generated CLI files differ from the committed ones: $changed"
 [ -s cli-rs/THIRD-PARTY-LICENSES.txt ] || fail "cli-rs/THIRD-PARTY-LICENSES.txt is missing (python3 scripts/cli_licenses.py)."
 mkdir -p "$RUNNER_TEMP/published"
@@ -65,11 +61,4 @@ if ! published "$version"; then
     sleep 20
   done
   create "$version" "$RUNNER_TEMP/notes.md"
-fi
-# The bridge is in the deploy that serves this version, so fyl.at has it by now.
-if ! published "$bridge"; then
-  link="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$sha/docs/CLI.md#install-and-update"
-  printf '%s\n' "fyl $bridge is the bridge from the old version numbers (2.0.0 to $bridge) to the new ones, which started over at 1.0.0 with the public release. It takes 1.0.0 and every later release as newer, so \`fyl update\` carries a fyl 2.5.0 on to the current release ([the CLI]($link))." \
-    > "$RUNNER_TEMP/bridge.md"
-  create "$bridge" "$RUNNER_TEMP/bridge.md" --latest=false
 fi

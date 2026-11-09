@@ -501,7 +501,7 @@ class NativeClientTests(unittest.TestCase):
         self.assertNotIn('/abort', [r[0] for r in self.state.requests])
 
     def test_an_exhausted_part_is_never_retried(self):
-        # part_limit is final with any status, also the 429 servers before 2.3.0 sent; Retry-After doesn't change that.
+        # part_limit is final with any status, a 429 too; Retry-After doesn't change that.
         for status in (409, 429):
             self.state.failures = {'/part': [(status, 'part_limit')]}
             sent = len(self.state.requests)
@@ -1177,7 +1177,7 @@ class NativeClientTests(unittest.TestCase):
                               self.exposed() + "fyl: This key doesn't open this upload. Use the value its interrupted run printed.\n")]:
             refused = self.rerun(command, input=keyless + '\n', env=env)
             self.assertEqual((refused.returncode, refused.stdout, refused.stderr), (2, '', message), env)
-        # Without pins in the status (a server before 2.4.0, or a rollback), no resume.
+        # Without pins in the status (a server without them, such as another implementation), no resume.
         self.state.status_pins = False
         refused = self.rerun(command, input=value + '\n')
         self.assertEqual((refused.returncode, refused.stderr),
@@ -2023,26 +2023,6 @@ class NativeClientTests(unittest.TestCase):
         self.release('0.9.0')
         result = update('--force')
         self.assertEqual((result.returncode, result.stdout), (0, 'Updated fyl {} to 0.9.0: {}\n'.format(VERSION, copy)), result.stderr)
-
-    def test_the_bridge_of_the_old_numbering_updates_to_this_release(self):
-        # 2.5.1, the last release of the old numbering, which the server offers the old CLIs (scripts/build_cli.py BRIDGE),
-        # takes this release as newer although its number is lower, and installs it without --force.
-        bridge = ROOT / 'dist' / 'cli' / '2.5.1' / HOST
-        copy = self.folder('bridge') / 'fyl'
-        shutil.copy2(bridge, copy)
-
-        def run(*args):
-            return subprocess.run([str(copy), *args], capture_output=True, text=True, env=self.environment(), timeout=60, stdin=subprocess.DEVNULL)
-        self.assertEqual(run('--version').stdout, 'fyl 2.5.1\n')
-        binary = self.release(VERSION)
-        check = run('update', '--check', '--endpoint', self.endpoint)
-        self.assertEqual((check.returncode, check.stdout), (0, 'fyl {} is available (this is 2.5.1): run fyl update\n'.format(VERSION)), check.stderr)
-        result = run('update', '--endpoint', self.endpoint)
-        self.assertEqual((result.returncode, result.stdout), (0, 'Updated fyl 2.5.1 to {}: {}\n'.format(VERSION, copy)), result.stderr)
-        self.assertEqual(copy.read_bytes(), binary)
-        # This release compares plainly (the server offers the bridge only to the old CLIs, src/index.ts).
-        self.offer(VERSION)
-        self.assertEqual(self.run_raw('update', '--check', '--endpoint', self.endpoint).stdout, 'fyl {} is up to date.\n'.format(VERSION))
 
     def test_update_is_a_command_unless_a_file_named_update_stands_alone(self):
         (self.root / 'update').write_bytes(b'fyl.at fixture')

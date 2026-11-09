@@ -19,7 +19,7 @@ npm run dev    # http://127.0.0.1:4173 with local R2, Durable Objects and genera
 that), regenerates the locale pages first, and generates random local secrets once into `.wrangler/dev-secrets.env`
 (ignored, never printed). It needs no Cloudflare account. The admin dashboard runs at `http://admin.localhost:4173/`
 without Access and with sample statistics ([admin host](docs/OPERATIONS.md#admin-host-and-statistics)). Point the CLI
-at it with `FYL_API_URL=http://127.0.0.1:4173 fyl ./file`. The report form works without Turnstile locally (readiness
+at its upload endpoint with `FYL_API_URL=http://127.0.0.1:4173/api/upload fyl ./file` (an installed `fyl`, or `dist/cli/<version>/fyl-<os>-<arch>`). The report form works without Turnstile locally (readiness
 says `incomplete`).
 
 `.env.example` lists the variables the operator scripts and wrangler read against a real deployment; you don't need
@@ -94,10 +94,9 @@ read by the server, browser and Rust tests alike: change them together, and rege
   while the `TURNSTILE_SITE_KEY` var and the `TURNSTILE_SECRET` secret are both set, and fails closed (503) when
   siteverify gives no usable answer.
 - The User-Agent never grants access. Its only uses: known link-preview bots (`PREVIEW_BOTS` in `src/index.ts`) get
-  the download page instead of the file and are the only clients of the image preview route; `/cli/version.json`
-  offers CLIs of the old numbering the bridge ([version scheme](docs/ARCHITECTURE.md#version-scheme)); and
-  `download_started` and `page_view` count the kind of client (statistics only). Never classify statistics by a file
-  name, a size or an address.
+  the download page instead of the file and are the only clients of the image preview route; and `download_started`
+  and `page_view` count the kind of client (statistics only). Never classify statistics by a file name, a size or an
+  address.
 
 **Keys, passwords and links.**
 

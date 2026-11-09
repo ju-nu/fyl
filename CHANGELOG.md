@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1 — 2026-11-09
+
+- **CLI dependencies:** getrandom 0.4 and crc32fast 1.5.3. Encryption, checksums and the zip format are unchanged;
+  every test vector passes as before.
+- **CLI downloads:** `/cli/version.json` names the current release for every client, and only the versioned
+  `/cli/<version>/` paths are served. The update path for CLIs from before 1.0.0 (the 2.5.1 build in `/cli/2.5.1/`)
+  and the unversioned `/cli/fyl-<os>-<arch>` and `/cli/SHA256SUMS` paths are gone. A fyl from before 1.0.0
+  installs again with `curl -fsSL https://fyl.at/cli/install | sh`.
+- **`fyl update`** compares version numbers plainly.
+- **Server:** code that only handled records and links of the versions before 1.0.0 is removed
+  ([compatibility code](docs/ARCHITECTURE.md#compatibility-code)).
+
 ## 1.0.0 — 2026-11-09
 
 The first public release of fyl.at: anonymous, temporary file sharing on Cloudflare Workers, with its source open
@@ -31,29 +43,6 @@ under the [GNU AGPL-3.0](LICENSE). Drop a file or a folder, choose when the link
   and a file under review can't be downloaded.
 - **No account, no tracking cookie,** fair-use limits per network, and [llms.txt](https://fyl.at/llms.txt) for agents.
 
-### New in this release
-
-- **Public source.** Every page's footer links the source repository, and the privacy page says that the code of
-  fyl.at and the CLI is public and where each release lists its checksums. `/.well-known/security.txt` names
-  `security@fyl.at` and the [security policy](SECURITY.md).
-- **Version numbers start over at 1.0.0** for the service and the CLI ([version scheme](docs/ARCHITECTURE.md#version-scheme)).
-- **A paused link answers 429** (with `Retry-After`) to a download request without a password too, instead of 401,
-  and still spends no try. The download page uses it to notice, once a minute and when it comes back into view, that
-  the sender lifted a pause early.
-- **Upload page:** a file dropped or pasted while a dialog is open is no longer chosen behind it; after Cancel or a
-  failure a folder's card comes back as it was; with encryption on, a folder too large to encrypt is refused before
-  its files are read; a changed folder for an unfinished folder upload says it can't be resumed; the clipboard
-  fallback gives focus back to the button; menus close on Tab and on scroll, and skip their scale under reduced motion.
-- **Download page:** a paused password page focuses the reason, an encrypted link without a key focuses the key
-  field, and a one-time link's button says "Download again (only if it broke)" once its download started.
-- **Sizes and counts** keep their number and unit on one line in every language; French writes Ko, Mo and Go.
-- **Operators:** the operator's Access identities are the Worker secret `ADMIN_EMAILS` instead of a var; set it with
-  `npx wrangler secret put ADMIN_EMAILS` right after deploying this release
-  ([order](docs/OPERATIONS.md#secrets-and-rotation)). The hourly monitor's GitHub Actions log names only the checks that
-  failed; `npm run monitor` run locally shows the details.
-- **The operator API answers on the admin host only:** `https://fyl.at/api/admin/*` now answers 404; use
-  `https://admin.fyl.at` (the default of `npm run admin`).
-
 ### Dependencies
 
 - The CLI uses the current generation of its crypto libraries, together, so that only one version of each shared
@@ -64,8 +53,5 @@ under the [GNU AGPL-3.0](LICENSE). Drop a file or a folder, choose when the link
 
 ### Before 1.0.0
 
-fyl.at was developed privately and ran in production from release 2.0.0 to 2.5.1 before its source was published.
-Those version numbers are never used again. An installed fyl 2.x moves to the new numbering like this: fyl 2.5.0
-compares versions by number and would take 1.0.0 for an older one, so `/cli/version.json` offers it 2.5.1 first, a
-build of the 1.0.0 source that takes 1.0.0 and every later release as newer. Run `fyl update` twice (2.5.0 → 2.5.1 →
-1.0.0). A fyl before 2.5.0 has no `fyl update` and installs again with `curl -fsSL https://fyl.at/cli/install | sh`.
+fyl.at was developed privately before its source was published with this release. Its versions then were numbered
+2.0.0 to 2.5.1, which releases never use again ([version scheme](docs/ARCHITECTURE.md#version-scheme)).

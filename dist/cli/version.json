@@ -1,11 +1,11 @@
 {
   "name": "fyl",
-  "version": "1.0.0",
-  "path": "/cli/1.0.0/",
+  "version": "1.0.1",
+  "path": "/cli/1.0.1/",
   "files": {
-    "fyl-linux-x86_64": "0715f8f9d78b95c3af2b34a87d1c6e149c69fe9027b40e17c836ca0bb81169d1",
-    "fyl-linux-arm64": "e52c7da1fdcc70e7285aa3cef2ef3ec639775dccd8de658ae936f6f6ec09c6f1",
-    "fyl-macos-x86_64": "80f2596c67bb027aa311e7fb6acd6400cc2468e85f0565ab950a34358c6388f0",
-    "fyl-macos-arm64": "5edc9afe3323d80e14605830c4638892c02e2e16a3f1130c1ac2b4d69ac74046"
+    "fyl-linux-x86_64": "4d6f50f1961b3632da289661b9d20d00e0a945889b0200903ebad331d48f8ef1",
+    "fyl-linux-arm64": "fcc3a97269c1ec15dabb44f674e1c5715558d46880f6e0ab9600b2fc76ec412b",
+    "fyl-macos-x86_64": "70dc169436c0a1c821f4b9a21e909854bad5bda5ad928994043885c988de011c",
+    "fyl-macos-arm64": "6cd1f8159c63b88d18f2dbc72486031a32ee8c969dcfc7db4383527b65b1d018"
   }
 }

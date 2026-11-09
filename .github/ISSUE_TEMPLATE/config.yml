@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ju-nu/fyl-at/security/advisories/new
+    about: Privately, never in a public issue (see SECURITY.md). Never post a management link or a key.
+  - name: Report an abusive or illegal file
+    url: https://report.fyl.at/
+    about: The report form; a person reviews every case.

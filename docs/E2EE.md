@@ -716,7 +716,7 @@ These are added to `tests/vectors/errors.json`:
 
 Rollback compatibility: records carry `mode`, and a missing `mode` means raw. Pre-2.4.0 code would serve E2EE objects
 as raw files and its page would start downloads by itself, using up one-time links on ciphertext. So before
-`E2EE_ENABLED` is first set, `ROLLBACK_FLOOR` is raised to 2.4.0, or to a 2.3.x that answers non-raw modes like the
+`E2EE_ENABLED` was first set, `ROLLBACK_FLOOR` was raised to 2.4.0 (history: the floor is 1.0.0 now), or to a 2.3.x that answers non-raw modes like the
 unknown-mode rule above ([§17](#17-release-gating)). Later modes roll back safely to 2.4.0 by the same rule.
 
 ## 13. Error semantics
@@ -994,7 +994,7 @@ key check on head and meta; every part rebuilt from the producer's head with equ
 and full bytes where C ≤ 4096; decryption to the plaintext, streamed with the verified head and whole with the
 identity. All 24 pass in both suites; one changed digit in a recorded part MD5 fails both.
 
-**CLI 2.5.1.** Re-checked 2026-11-09 after the Rust core moved to `chacha20poly1305` 0.11.0, `x25519-dalek` 3.0.0
+**CLI 1.0.0.** Re-checked 2026-11-09 after the Rust core moved to `chacha20poly1305` 0.11.0, `x25519-dalek` 3.0.0
 (`curve25519-dalek` 5.0.0), `hkdf` 0.13.0, `hmac` 0.13.0, `sha2` 0.11.1 and `md-5` 0.11.0: `cargo test --locked`
 passes every vector above (cross, CCTV, content, decrypt, key check, layout, link, meta, name) and the folder-zip
 vectors with the files unchanged. The oracle and 1 GiB runs below were not repeated.

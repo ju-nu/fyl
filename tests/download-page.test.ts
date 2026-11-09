@@ -304,7 +304,7 @@ describe('password-protected downloads', () => {
     expect((await call(`/api/transfers/${receipt.id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + receipt.deleteToken } })).status).toBe(200);
     const stored = await record(session.uploadId);
     expect(stored.clean).toBe(true);
-    for (const field of ['pwSalt', 'pwHash', 'pwIter', 'pwFails', 'pwPausedUntil']) expect(stored).not.toHaveProperty(field);
+    for (const field of ['pwSalt', 'pwHash', 'pwIter', 'pwPausedUntil']) expect(stored).not.toHaveProperty(field);
     expect((await call(pathOf(receipt.url), { headers: basic(PASSWORD) })).status).toBe(410);
   });
 });

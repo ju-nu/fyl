@@ -1,6 +1,6 @@
 // Builds the folder `npm run deploy` uploads: a copy of dist/ in .build/assets with the site's own scripts and
 // stylesheets minified (docs/OPERATIONS.md#static-assets). dist/ stays the source: `npm run dev` serves it as written,
-// and every other file is copied byte for byte (HTML, _headers, _redirects, fonts, images, dist/cli/).
+// and every other file is copied byte for byte (HTML, _headers, fonts, images, dist/cli/).
 //
 // Only whitespace and comments go (esbuild's minifyWhitespace), never names or syntax: identifiers stay as written, so
 // an error report from a browser still names the function, and pretty-printing a served file gives back the source's

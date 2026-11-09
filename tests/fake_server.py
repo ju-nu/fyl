@@ -96,7 +96,7 @@ class State:
         self.block = False
         self.mutate = None
         self.expires_at = 1793000000000
-        # Servers before 2.2.0 send no link at init, and ignore a password.
+        # A server that ignores the password sends no link at init.
         self.early_url = True
         # Per path, how the next successful replies break: see Handler.garbled().
         self.garble = {}
@@ -109,7 +109,7 @@ class State:
         self.e2ee_disabled = False
         # Init echoes `mode`; `url` overrides for init and receipt (a misconfigured or malicious server).
         self.echo_mode, self.init_url, self.receipt_url, self.management_url, self.receipt_name = True, None, None, None, None
-        # Status lists `e2ee` and `pins` (a server before 2.4.0, or a rollback, doesn't).
+        # Status lists `e2ee` and `pins` (a server without them, such as another implementation, gets no resume).
         self.status_pins = True
         # E2EE: this many parts are stored with an ETag that isn't their pin (502 part_corrupt).
         self.part_corrupt = 0
