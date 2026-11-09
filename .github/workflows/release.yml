@@ -1,0 +1,39 @@
+name: Release
+# Publishes the CLI release v<version> once per version, from the commit the Deploy gate just moved production to,
+# once fyl.at serves that version (Workers Builds deploys it minutes later; the job waits up to 20 minutes, then
+# fails), so the GitHub release never runs ahead of the site. A release that exists already must carry the
+# committed SHA256SUMS, else this run fails (scripts/release.sh).
+on:
+  workflow_run:
+    workflows: [Deploy gate]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: fyl-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Publish this version once, or check the published one
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh scripts/release.sh "$RELEASE_SHA"

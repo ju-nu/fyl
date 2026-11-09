@@ -1,0 +1,76 @@
+# fyl.at
+
+> Anonymous, temporary file sharing. Upload one file of up to 50 GB and get a link that expires after 5 minutes to 7 days. No account, no sign-up. It works in a browser and with the `fyl` command-line tool, which is the easiest way for an agent.
+
+One link is one file; a folder goes as one zip (`<folder>.zip`), from the CLI or the website. A link works as soon as the upload starts; whoever opens it early gets the file once the upload is done. Files are deleted when their link expires, after a one-time link's download, or when the sender deletes them. fyl.at doesn't scan files, so only share files you are allowed to share, and only open files you expected.
+
+## Install the CLI
+
+- `curl -fsSL https://fyl.at/cli/install | sh` installs `fyl` to /usr/local/bin (Linux or macOS 11+, x86_64 or arm64).
+- [Current version](https://fyl.at/cli/latest): the binaries and their `SHA256SUMS` are under `https://fyl.at/cli/<version>/`.
+- `fyl --help` lists every option; `fyl --version` prints the version.
+- `fyl update` replaces the installed `fyl` with the current version, checked against its SHA-256 (`--check` only says whether there is one). After a command, at most once a day and only on a terminal, fyl says on stderr when a newer version exists; `FYL_NO_UPDATE_CHECK=1` turns that check off (it is off in CI too).
+
+## Upload
+
+- `fyl ./report.pdf` uploads the file and prints only its download link on stdout (progress with `-v` on stderr).
+- `fyl ./photos` uploads a folder as one uncompressed zip, `photos.zip`, which unzips to the folder. Symlinks, special files, empty folders and names unsafe in a zip are left out (one line on stderr says so); up to 100,000 files. Every option below works for a folder too; `--json` adds `folder: {files, skipped}`.
+- `--expires 30m` sets the lifetime: from `5m` to `7d`, for example `30m`, `12h`, `3d` (default `1d`).
+- `--once` allows a single download: the first complete download closes the link.
+- `--password` requires a password: fyl asks for one (Enter generates one) or takes `FYL_PASSWORD` in scripts; `--json` includes a generated password.
+- `--encrypt` encrypts the file on this device before the upload (end-to-end encryption, E2EE). The key is the part of the link after `#`, which browsers never send to fyl.at. Anyone with the full link can open the file; a lost key can't be recovered.
+- `--manage` also prints the private management link, needed to delete the file. Keep it to yourself.
+- `--json` prints one JSON object instead: `url`, `name`, `size`, `expiresAt`, `once`, plus `managementUrl`, `protected`, `password` or `encrypted` when they apply.
+- An interrupted upload prints a `fyl … --resume VALUE` command that continues it within 24 hours.
+- A link, resume value or management link given as `-` is read from stdin, which keeps it out of the process list.
+
+## Upload with curl only (files up to 50 MiB)
+
+A file of up to 50 MiB (52,428,800 bytes) is one part, so curl and jq can upload it in three requests: start the upload, send the part, complete it. Larger files have several parts; use the CLI, which also resumes them.
+
+```sh
+f=report.pdf
+init=$(curl -fsS https://fyl.at/api/upload/init -H 'Content-Type: application/json' \
+  -d "$(jq -n --arg name "$f" --argjson size "$(wc -c < "$f")" '{filename: $name, size: $size}')")
+id=$(jq -r .uploadId <<<"$init"); key=$(jq -r .key <<<"$init")
+etag=$(curl -fsS -X PUT "https://fyl.at/api/upload/part?uploadId=$id&partNumber=1" \
+  -H "Authorization: Bearer $key" --data-binary @"$f" | jq -r .etag)
+curl -fsS https://fyl.at/api/upload/complete -H 'Content-Type: application/json' \
+  -d "$(jq -n --arg id "$id" --arg key "$key" --arg etag "$etag" '{uploadId: $id, key: $key, parts: [{partNumber: 1, etag: $etag}]}')"
+```
+
+- The last answer is the receipt: `url` is the download link, `managementUrl` the private management link (`https://fyl.at/#manage/<id>/<management key>`).
+- Options go into the first request: `expiresIn` in seconds (300 to 604800, default 86400), `oneTime: true`, `password: "…"` (6 to 200 characters).
+- The download link works from the first answer on (`.url` of `init`); it waits until the upload is complete.
+- Delete: `curl -fsS -X DELETE https://fyl.at/api/transfers/<id> -H 'Authorization: Bearer <management key>'`.
+- Encrypted uploads need the CLI (`fyl FILE --encrypt`).
+
+## Download
+
+- A plain link (`https://fyl.at/d/<id>/<name>`): `curl -fOJ 'https://fyl.at/d/<id>/<name>'` saves the file under its own name. Requests that ask for HTML (`Accept: text/html`) get the download page instead of the file.
+- A link whose upload is still running answers 503 with `Retry-After`; `curl -fOJ --retry 120 '<link>'` waits for the file.
+- A password-protected link: `curl -fOJ -u fyl '<link>'` asks for the password (the user name is ignored). Five wrong tries from one network pause it for 15 minutes.
+- An encrypted link (`https://fyl.at/d/<id>#<key>`): `fyl download '<link>'` downloads, decrypts and verifies it, then prints the saved path. Without the key in the link, fyl asks for it (`FYL_KEY` in scripts); a protected file asks for its password (`FYL_PASSWORD`). Plain curl gets 409 `encrypted` and no file; `curl -fOJ '<link without #key>?dl=1'` saves the ciphertext, which `fyl decrypt fyl-<id>.age` opens.
+- A one-time link closes after its first complete download. Link previews and HTML page requests don't use it up.
+
+## Delete
+
+- `fyl rm '<management link>'` deletes the file at once; its link stops working.
+
+## Limits and errors
+
+- One file (or one folder as a zip) per link, up to 50 GB; lifetimes from 5 minutes to 7 days.
+- Per network and day: 500 uploads, 50 at a time, 250 GB uploaded, and 250 GB stored at once.
+- API errors are JSON `{error, code}`; download links answer curl with a short plain-text reason. 429 and 503 carry `Retry-After`: wait and try again. 410 means the link is gone (expired, used up or deleted), 404 that there is no file at that link.
+
+## Rules
+
+- Share only files you have the right to share: no malware, no illegal content, nothing that infringes others' rights.
+- To report a file, use the form at https://report.fyl.at/ (it checks that a person sends it).
+
+## Optional
+
+- [Privacy](https://fyl.at/en/privacy): what fyl.at stores, for how long, and what encrypted files keep from the server (binding in English).
+- The pages also exist in German, Spanish, French and Dutch (https://fyl.at/de/, /es/, /fr/, /nl/); https://fyl.at/ picks one by the browser's language. This file, the CLI and the API stay English.
+- [Report a file](https://report.fyl.at/): the report form for abuse and rights holders.
+- [Source code](https://github.com/ju-nu/fyl): fyl.at and the `fyl` CLI (AGPL-3.0); [releases](https://github.com/ju-nu/fyl/releases) list each release's SHA-256 checksums. Report vulnerabilities to security@fyl.at (https://fyl.at/.well-known/security.txt).

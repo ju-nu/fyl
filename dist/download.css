@@ -1,0 +1,141 @@
+/* Download page, served for /d/<id> links opened in a browser, on top of styles.css. The Worker sets html[data-state]
+   (ready, protected, unlocked, uploading, gone) and data-once, data-risky, data-protected; download.js adds data-stalled
+   and data-error (wrong, paused, or format for a password the server would refuse). One centred card, 520 px. */
+
+/* Each block lists the states it belongs to in data-in and is hidden in all others. */
+[data-in]:not(:is([data-state=ready] [data-in~=ready],[data-state=protected] [data-in~=protected],[data-state=unlocked] [data-in~=unlocked],[data-state=uploading] [data-in~=uploading],[data-state=gone] [data-in~=gone],[data-state=key] [data-in~=key])),
+html:not([data-once]) .dl-once,html:not([data-risky]) .dl-warn,html:not([data-stalled]) .dl-stall,[data-stalled] .dl-auto,
+[data-state=uploading][data-protected] .dl-badge,[data-state=uploading]:not([data-protected]) .dl-tile{display:none}
+
+/* Encrypted links (html[data-e2ee], docs/E2EE.md §9): download.js adds the state "key" (the link has no key, or one
+   that doesn't open the file) and data-key-error (invalid, wrong, other). The download is a button, never a link to
+   /d/, and without JavaScript the page says how else to open the file. */
+html[data-e2ee] #download,html[data-e2ee] .ns-raw,html:not([data-e2ee]) .ns-e2ee{display:none}
+noscript code{font-family:var(--mono);font-size:var(--t-xs)}
+.dl-exposed{margin-top:16px}
+.keybox .field{margin-top:10px}
+.keyfield .i{flex:none;width:18px;height:18px;margin-right:10px;color:var(--ink-3)}
+.keyfield input{font-family:var(--mono);font-variant-ligatures:none;letter-spacing:.01em}
+[data-key-error] .keyfield{border-color:var(--danger)}
+[data-key-error] .keyfield:focus-within{box-shadow:0 0 0 1px var(--danger)}
+[data-key-error] #key-message{color:var(--danger)}
+.keybox .meta{margin-top:10px}
+[data-state=protected] #open-file,[data-state=protected] #key-note{display:none}
+/* The decryption code didn't load: no key field, and Try again (which reloads) shows on the password card too. */
+[data-key-error=load] #key-note{display:none}
+[data-state=protected][data-key-error=load] #open-file{display:inline-flex}
+.save-error{color:var(--danger)}
+/* Running: still focusable, so keyboard focus stays on it (aria-disabled, not disabled). */
+#save[aria-disabled=true]{background:var(--disabled-bg);color:var(--disabled-ink);box-shadow:none;cursor:not-allowed;transform:none}
+/* A browser that can't decrypt (data-platform) shows the gone card, and keeps the terminal with the key. */
+html[data-platform] details.term[data-in]{display:block}
+.save .note{margin-top:14px}
+#save-again{margin-top:12px}
+#save-progress .status{margin-top:16px}
+#saved-line{margin-top:16px}
+
+/* Unlocking loads the page again (the form posts to it): the lock tile becomes the file icon and the title the name in
+   a cross-document view transition. Every other part crossfades (styles.css). */
+@view-transition{navigation:auto}
+.dl-head .dl-badge,.dl-head .dl-tile{view-transition-name:dlicon}
+#file-title{view-transition-name:dltitle}
+::view-transition-old(dltitle),::view-transition-new(dltitle){height:100%;object-fit:none;object-position:left top}
+
+.dl{display:grid;grid-template-columns:minmax(0,520px);justify-content:center;align-content:start;padding:32px 0 64px}
+.dl .panel{padding:28px;box-shadow:var(--shadow-card)}
+.dl-head{display:grid;grid-template-columns:48px minmax(0,1fr);gap:16px;align-items:center}
+.dl-head .file-ico{width:40px;height:48px;margin:0 0 0 5px}
+.dl-head .file-ico svg{width:40px;height:48px}
+.dl-head .ext{bottom:5px;left:-5px}
+.dl h1{font-size:var(--t-h);font-weight:600;line-height:28px;letter-spacing:-.01em;overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:left;text-wrap:pretty}
+.dl-meta{margin-top:4px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+/* The lifetime line: time left in words, the date, the share of the lifetime left. Dashed with a tag once closed. */
+.life{margin-top:20px}
+.life p{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.life p strong{font-size:var(--t-ui);font-weight:600;color:var(--ink)}
+.life .bar{margin-top:8px}
+.warnbox{display:flex;gap:10px;margin-top:20px;padding:12px 14px;border:1px solid var(--warn-line);border-radius:var(--r-well);background:var(--warn-wash);font-size:var(--t-small);line-height:20px;color:var(--ink)}
+.warnbox .i{width:18px;height:18px;margin-top:1px;color:var(--warn)}
+.warnbox b{font-weight:600}
+.dl .btn-lg{margin-top:20px}
+.dl .note{margin-top:14px}
+
+/* Password: the field sits directly under its instruction. Wrong: one shake. Paused: a dashed field and a countdown on
+   the button. */
+.dl-lead{margin-top:20px;display:block;font-size:var(--t-ui);color:var(--ink-2)}
+.pw{margin-top:10px;min-height:52px}
+.pw input{font-family:var(--mono);font-variant-ligatures:none;letter-spacing:.06em}
+.pw input[type="text"]{letter-spacing:.01em}
+.pw .lock{display:none;width:18px;height:18px;margin-right:10px;color:var(--ink-3)}
+[data-error=wrong] .pw,[data-error=format] .pw{border-color:var(--danger)}
+[data-error=wrong] .pw:focus-within,[data-error=format] .pw:focus-within{box-shadow:0 0 0 1px var(--danger)}
+.pw.shake{animation:shake calc(300ms * var(--slow)) var(--ease-out)}
+@keyframes shake{0%{transform:translateX(0)}20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+[data-error=paused] .pw{border-style:dashed;border-color:var(--line-3);background:var(--well);box-shadow:none;padding-right:14px}
+[data-error=paused] .pw .lock{display:inline-block}
+[data-error=paused] .pw input{font-family:var(--sans);letter-spacing:0;color:var(--ink-2);cursor:not-allowed}
+[data-error=paused] .pw input::placeholder{color:var(--ink-2);opacity:1}
+[data-error=paused] .pw .btn-icon,[data-error=paused] #tries-note{display:none}
+.msg{display:flex;align-items:flex-start;gap:8px;margin-top:10px;font-size:var(--t-small);line-height:20px;color:var(--ink-2)}
+.msg:empty{display:none}
+.msg .i{width:16px;height:16px;margin:2px 0 0 -1px}
+[data-error=wrong] .msg,[data-error=format] .msg{color:var(--danger)}
+.dl form .meta{margin-top:10px}
+.ok-line{display:flex;align-items:center;gap:8px;margin-top:20px;font-size:var(--t-small);line-height:20px;color:var(--ok)}
+.ok-line .i{width:18px;height:18px}
+
+/* Still uploading: a status row over the real progress, no dead button. Grey once the sender seems gone. */
+.status{display:flex;justify-content:space-between;gap:12px;margin-top:20px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.status strong{font-weight:500;color:var(--ink-2)}
+.prog{margin-top:8px}
+.prog>i{background:var(--bar);transform:scaleX(var(--v,0));transition:transform calc(300ms * var(--slow)) var(--ease-out),background-color var(--d-base) ease}
+.prog.done>i{background:var(--ok-bar)}
+[data-stalled] .prog>i{background:var(--stall)}
+
+/* "Download in a terminal": a disclosure under a rule; open, the command in the dark terminal window (styles.css). */
+.term{margin-top:20px;border-top:1px solid var(--line)}
+.term summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;list-style:none;cursor:pointer;color:var(--ink-2);font-weight:500}
+.term summary::-webkit-details-marker{display:none}
+/* The chevron's ink, not its box, ends on the edge the Download button and the window end on (its glyph sits 5 px in). */
+.term summary .i-chev{margin-right:-5px;transition:transform var(--d-base) var(--ease-out)}
+.term[open]:not([data-shut]) summary .i-chev{transform:rotate(180deg)}
+.term summary span{display:inline-flex;align-items:center;gap:8px}
+.term summary span .i{width:18px;height:18px;margin-left:-3px;color:var(--ink-3)}
+@media (hover:hover) and (pointer:fine){.term summary:hover{color:var(--ink)}}
+/* Its height eases in download.js (.sizing); the window fades and slides like a .reveal's content. */
+.term-window{margin:2px 0 6px;border-radius:var(--r-well);box-shadow:none;
+  transition:opacity var(--d-reveal) var(--ease-drawer),transform var(--d-reveal) var(--ease-drawer)}
+.term:is([data-opening],[data-shut]) .term-window{opacity:0;transform:translateY(-6px)}
+.term[data-shut] .term-window{transition-duration:var(--d-close);transition-timing-function:var(--ease-out)}
+.term-window .code{margin-top:10px}
+.term-window .out{margin-bottom:0}
+.term-window .hint{margin:0;padding:10px var(--tw-x) 14px;color:var(--ink-3)}
+
+.dl-gone .text{margin-top:20px;color:var(--ink-2);text-wrap:pretty}
+/* Under the card: the trust line and Report this file. */
+.after{display:flex;align-items:flex-start;justify-content:space-between;gap:4px 16px;margin-top:12px}
+.after p{max-width:34em;padding-top:12px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.report-link{display:inline-flex;align-items:center;gap:8px;flex:none;min-height:44px;font-size:var(--t-small);font-weight:500;color:var(--ink);text-decoration:none}
+.report-link .i{width:16px;height:16px;margin-left:-3px;color:var(--ink-2)}
+@media (hover:hover) and (pointer:fine){.report-link:hover{text-decoration:underline}}
+
+@media (max-width:560px){
+  .dl{padding-top:12px}
+  .dl .panel{padding:20px}
+  .after{flex-direction:column-reverse;gap:0}
+  .after p{padding-top:4px}
+  /* Room for "curl -fOJ 'https://fyl.at/d/" on the command's first line at 390 px: a narrower column and gutter. */
+  .term-window{--tw-x:12px;--tw-inset:4px;--tw-gap:6px}
+}
+@media (prefers-reduced-motion:reduce){
+  .pw.shake{animation:none}
+  .term-window{transition:none}
+  .term summary .i-chev{transition:none}
+  .prog>i{transition:transform 0s,background-color var(--d-base) ease}
+}
+
+/* After a one-time download started, the label ("Download again (only if it broke)") is longer than the button at
+   phone widths in most languages: it wraps inside the button instead of running past its edges. */
+#download{white-space:normal;text-align:center;text-wrap:balance;padding-block:10px}
+#download .i{flex:none}

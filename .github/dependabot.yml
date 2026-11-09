@@ -1,0 +1,44 @@
+version: 2
+# Minor and patch updates land as one PR per ecosystem; major updates stay separate. Versions must be
+# at least 14 days old before Dependabot proposes them, so a compromised fresh release has time to surface.
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: deps
+    groups:
+      npm:
+        patterns: ['*']
+        update-types: [minor, patch]
+  - package-ecosystem: cargo
+    directory: '/cli-rs'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: deps
+    groups:
+      cargo:
+        patterns: ['*']
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    # Bumps the commit SHA pins together with their version comments.
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: deps
+    groups:
+      actions:
+        patterns: ['*']
+        update-types: [minor, patch]

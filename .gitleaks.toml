@@ -1,0 +1,31 @@
+# gitleaks: the default rules, minus what is public on purpose. Paths match both `gitleaks git` (repository-relative)
+# and `gitleaks dir` (prefixed with the scanned directory), so none is anchored at the start.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public test vectors and identifiers"
+# Published test vectors carry deliberately public keys: the C2SP CCTV age vectors, fyl's own deterministic E2EE and
+# receipt vectors, their generator and the protocol document's worked example.
+paths = [
+  '''(^|/)tests/vectors/''',
+  '''(^|/)scripts/e2ee_vectors\.py$''',
+  '''(^|/)docs/E2EE\.md$''',
+]
+# Regexes match the whole line, not only the flagged value, so a line can be allowed by its key name.
+regexTarget = "line"
+regexes = [
+  # The Cloudflare Access audience tag (wrangler.jsonc and the generated worker-configuration.d.ts): an identifier
+  # every Access login shows, not a credential.
+  '''ACCESS_AUD''',
+  # The download hint's placeholder link, and an old curl example with a placeholder header.
+  '''TRANSFER_ID''',
+  # Keys of tests/vectors/e2ee/keys.json that the web tests use as fixtures (tests/test_workflows.py checks that each
+  # one is still a published vector key).
+  '''KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcy0''',
+  '''yhYmJSxTzxpNxGaV5_zEZZTLTMre22cS39oHU_OuNV4''',
+  '''AGE-SECRET-KEY-1EGTZVFFV20835NWYV6270LXYVK2VKNX2MMDKWYKLMGR48UAWX40Q2P2LM0''',
+  # The throwaway password scripts/mac-check.sh once used for its five-minute test transfer; it now makes one per run.
+  '''fyl:tide-lamp-fern-41''',
+  '''FYL_PASSWORD='tide-lamp-fern-41' ''',
+]

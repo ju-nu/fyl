@@ -1,0 +1,388 @@
+{
+ "description": "ZIP64 decisions by formula (data are zero bytes; segments give every other byte) and by building 65,534/65,535 entries.",
+ "mtimeMs": 1793260800000,
+ "formula": [
+  {
+   "name": "below",
+   "description": "One entry of 0xFFFFFFFE bytes: no ZIP64 entry, but the central directory starts beyond 4 GiB.",
+   "root": "big",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 4294967294,
+     "mtimeMs": 1793260800000
+    }
+   ],
+   "entries": [
+    {
+     "path": "big/a.bin",
+     "size": 4294967294,
+     "crc32": "0f6a7026",
+     "offset": 0,
+     "local": 48,
+     "central": 64,
+     "zip64Sizes": false,
+     "zip64Offset": false
+    }
+   ],
+   "centralOffset": 4294967342,
+   "centralSize": 64,
+   "zip64End": true,
+   "size": 4294967504,
+   "fits": {
+    "raw": true,
+    "e2ee": true
+   },
+   "segments": [
+    {
+     "hex": "504b030414000008000000405d5d26706a0ffefffffffeffffff090009006269672f612e62696e555405000100fde26a"
+    },
+    {
+     "zeros": 4294967294
+    },
+    {
+     "hex": "504b0102140314000008000000405d5d26706a0ffefffffffeffffff090009000000000000000000a481000000006269672f612e62696e555405000100fde26a504b06062c000000000000002d032d0000000000000000000100000000000000010000000000000040000000000000002e00000001000000504b0607000000006e0000000100000001000000504b050600000000ffffffffffffffffffffffff0000"
+    }
+   ]
+  },
+  {
+   "name": "exact",
+   "description": "One entry of 0xFFFFFFFF bytes: the smallest ZIP64 entry.",
+   "root": "big",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 4294967295,
+     "mtimeMs": 1793260800000
+    }
+   ],
+   "entries": [
+    {
+     "path": "big/a.bin",
+     "size": 4294967295,
+     "crc32": "00000000",
+     "offset": 0,
+     "local": 68,
+     "central": 84,
+     "zip64Sizes": true,
+     "zip64Offset": false
+    }
+   ],
+   "centralOffset": 4294967363,
+   "centralSize": 84,
+   "zip64End": true,
+   "size": 4294967545,
+   "fits": {
+    "raw": true,
+    "e2ee": true
+   },
+   "segments": [
+    {
+     "hex": "504b03042d000008000000405d5d00000000ffffffffffffffff09001d006269672f612e62696e01001000ffffffff00000000ffffffff00000000555405000100fde26a"
+    },
+    {
+     "zeros": 4294967295
+    },
+    {
+     "hex": "504b01022d032d000008000000405d5d00000000ffffffffffffffff09001d000000000000000000a481000000006269672f612e62696e01001000ffffffff00000000ffffffff00000000555405000100fde26a504b06062c000000000000002d032d0000000000000000000100000000000000010000000000000054000000000000004300000001000000504b060700000000970000000100000001000000504b050600000000ffffffffffffffffffffffff0000"
+    }
+   ]
+  },
+  {
+   "name": "offset-below",
+   "description": "The second local header at offset 0xFFFFFFFE: not far.",
+   "root": "far",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 4294967246,
+     "mtimeMs": 1793260800000
+    },
+    {
+     "path": "b.txt",
+     "size": 6,
+     "mtimeMs": 1793260800000
+    }
+   ],
+   "entries": [
+    {
+     "path": "far/a.bin",
+     "size": 4294967246,
+     "crc32": "6b6bd6c1",
+     "offset": 0,
+     "local": 48,
+     "central": 64,
+     "zip64Sizes": false,
+     "zip64Offset": false
+    },
+    {
+     "path": "far/b.txt",
+     "size": 6,
+     "crc32": "b1c2a1a3",
+     "offset": 4294967294,
+     "local": 48,
+     "central": 64,
+     "zip64Sizes": false,
+     "zip64Offset": false
+    }
+   ],
+   "centralOffset": 4294967348,
+   "centralSize": 128,
+   "zip64End": true,
+   "size": 4294967574,
+   "fits": {
+    "raw": true,
+    "e2ee": true
+   },
+   "segments": [
+    {
+     "hex": "504b030414000008000000405d5dc1d66b6bceffffffceffffff090009006661722f612e62696e555405000100fde26a"
+    },
+    {
+     "zeros": 4294967246
+    },
+    {
+     "hex": "504b030414000008000000405d5da3a1c2b10600000006000000090009006661722f622e747874555405000100fde26a"
+    },
+    {
+     "zeros": 6
+    },
+    {
+     "hex": "504b0102140314000008000000405d5dc1d66b6bceffffffceffffff090009000000000000000000a481000000006661722f612e62696e555405000100fde26a504b0102140314000008000000405d5da3a1c2b10600000006000000090009000000000000000000a481feffffff6661722f622e747874555405000100fde26a504b06062c000000000000002d032d0000000000000000000200000000000000020000000000000080000000000000003400000001000000504b060700000000b40000000100000001000000504b050600000000ffffffffffffffffffffffff0000"
+    }
+   ]
+  },
+  {
+   "name": "offset-exact",
+   "description": "The second local header at offset 0xFFFFFFFF: its central header carries a ZIP64 offset only.",
+   "root": "far",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 4294967247,
+     "mtimeMs": 1793260800000
+    },
+    {
+     "path": "b.txt",
+     "size": 6,
+     "mtimeMs": 1793260800000
+    }
+   ],
+   "entries": [
+    {
+     "path": "far/a.bin",
+     "size": 4294967247,
+     "crc32": "3e0a767d",
+     "offset": 0,
+     "local": 48,
+     "central": 64,
+     "zip64Sizes": false,
+     "zip64Offset": false
+    },
+    {
+     "path": "far/b.txt",
+     "size": 6,
+     "crc32": "b1c2a1a3",
+     "offset": 4294967295,
+     "local": 48,
+     "central": 76,
+     "zip64Sizes": false,
+     "zip64Offset": true
+    }
+   ],
+   "centralOffset": 4294967349,
+   "centralSize": 140,
+   "zip64End": true,
+   "size": 4294967587,
+   "fits": {
+    "raw": true,
+    "e2ee": true
+   },
+   "segments": [
+    {
+     "hex": "504b030414000008000000405d5d7d760a3ecfffffffcfffffff090009006661722f612e62696e555405000100fde26a"
+    },
+    {
+     "zeros": 4294967247
+    },
+    {
+     "hex": "504b03042d000008000000405d5da3a1c2b10600000006000000090009006661722f622e747874555405000100fde26a"
+    },
+    {
+     "zeros": 6
+    },
+    {
+     "hex": "504b0102140314000008000000405d5d7d760a3ecfffffffcfffffff090009000000000000000000a481000000006661722f612e62696e555405000100fde26a504b01022d032d000008000000405d5da3a1c2b10600000006000000090015000000000000000000a481ffffffff6661722f622e74787401000800ffffffff00000000555405000100fde26a504b06062c000000000000002d032d000000000000000000020000000000000002000000000000008c000000000000003500000001000000504b060700000000c10000000100000001000000504b050600000000ffffffffffffffffffffffff0000"
+    }
+   ]
+  },
+  {
+   "name": "5gib",
+   "description": "A 5 GiB entry followed by a small one: ZIP64 sizes, then a ZIP64 offset.",
+   "root": "video",
+   "files": [
+    {
+     "path": "clip.mov",
+     "size": 5368709120,
+     "mtimeMs": 1793260800000
+    },
+    {
+     "path": "notes.txt",
+     "size": 100,
+     "mtimeMs": 1793260800000
+    }
+   ],
+   "entries": [
+    {
+     "path": "video/clip.mov",
+     "size": 5368709120,
+     "crc32": "193838c3",
+     "offset": 0,
+     "local": 73,
+     "central": 89,
+     "zip64Sizes": true,
+     "zip64Offset": false
+    },
+    {
+     "path": "video/notes.txt",
+     "size": 100,
+     "crc32": "9988c6ca",
+     "offset": 5368709193,
+     "local": 54,
+     "central": 82,
+     "zip64Sizes": false,
+     "zip64Offset": true
+    }
+   ],
+   "centralOffset": 5368709347,
+   "centralSize": 171,
+   "zip64End": true,
+   "size": 5368709616,
+   "fits": {
+    "raw": true,
+    "e2ee": true
+   },
+   "segments": [
+    {
+     "hex": "504b03042d000008000000405d5dc3383819ffffffffffffffff0e001d00766964656f2f636c69702e6d6f760100100000000040010000000000004001000000555405000100fde26a"
+    },
+    {
+     "zeros": 5368709120
+    },
+    {
+     "hex": "504b03042d000008000000405d5dcac6889964000000640000000f000900766964656f2f6e6f7465732e747874555405000100fde26a"
+    },
+    {
+     "zeros": 100
+    },
+    {
+     "hex": "504b01022d032d000008000000405d5dc3383819ffffffffffffffff0e001d000000000000000000a48100000000766964656f2f636c69702e6d6f760100100000000040010000000000004001000000555405000100fde26a504b01022d032d000008000000405d5dcac6889964000000640000000f0015000000000000000000a481ffffffff766964656f2f6e6f7465732e747874010008004900004001000000555405000100fde26a504b06062c000000000000002d032d00000000000000000002000000000000000200000000000000ab00000000000000e300004001000000504b0607000000008e0100400100000001000000504b050600000000ffffffffffffffffffffffff0000"
+    }
+   ]
+  },
+  {
+   "name": "limit",
+   "description": "The largest single-file folder for raw uploads: the zip is exactly 50 GiB.",
+   "root": "max",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 53687090950,
+     "mtimeMs": 1793260800000
+    }
+   ],
+   "entries": [
+    {
+     "path": "max/a.bin",
+     "size": 53687090950,
+     "crc32": "87ac3ed0",
+     "offset": 0,
+     "local": 68,
+     "central": 84,
+     "zip64Sizes": true,
+     "zip64Offset": false
+    }
+   ],
+   "centralOffset": 53687091018,
+   "centralSize": 84,
+   "zip64End": true,
+   "size": 53687091200,
+   "fits": {
+    "raw": true,
+    "e2ee": false
+   },
+   "segments": [
+    {
+     "hex": "504b03042d000008000000405d5dd03eac87ffffffffffffffff09001d006d61782f612e62696e0100100006ffff7f0c00000006ffff7f0c000000555405000100fde26a"
+    },
+    {
+     "zeros": 53687090950
+    },
+    {
+     "hex": "504b01022d032d000008000000405d5dd03eac87ffffffffffffffff09001d000000000000000000a481000000006d61782f612e62696e0100100006ffff7f0c00000006ffff7f0c000000555405000100fde26a504b06062c000000000000002d032d0000000000000000000100000000000000010000000000000054000000000000004affff7f0c000000504b0607000000009effff7f0c00000001000000504b050600000000ffffffffffffffffffffffff0000"
+    }
+   ]
+  }
+ ],
+ "built": [
+  {
+   "name": "count-65534",
+   "description": "65534 empty files many/00000 … many/65533, all at mtimeMs 1793260800000.",
+   "count": 65534,
+   "centralOffset": 3211166,
+   "centralSize": 4259710,
+   "zip64End": false,
+   "size": 7470898,
+   "sha256": "d4b7083e6dfcc696702073a2b02ec0160d32e72ef6ab1c17da346d2f50fe4e1e",
+   "tail": "3332555405000100fde26a504b0102140314000008000000405d5d0000000000000000000000000a0009000000000000000000a4816dff30006d616e792f3635353333555405000100fde26a504b050600000000fefffeff7eff40009eff30000000"
+  },
+  {
+   "name": "count-65535",
+   "description": "65535 empty files many/00000 … many/65534, all at mtimeMs 1793260800000.",
+   "count": 65535,
+   "centralOffset": 3211215,
+   "centralSize": 4259775,
+   "zip64End": true,
+   "size": 7471088,
+   "sha256": "f89ada2151204b16f96f05036b45b4614ee94aa0ea6f5ebc20349bef1fbd51b9",
+   "tail": "504b06062c000000000000002d032d000000000000000000ffff000000000000ffff000000000000bfff400000000000cfff300000000000504b0607000000008eff71000000000001000000504b050600000000ffffffffffffffffffffffff0000"
+  }
+ ],
+ "crc32Combine": [
+  {
+   "length": 100000,
+   "split": 0,
+   "crc1": "00000000",
+   "crc2": "b0a8c3cd",
+   "crc": "b0a8c3cd"
+  },
+  {
+   "length": 100000,
+   "split": 1,
+   "crc1": "d202ef8d",
+   "crc2": "c176b9f5",
+   "crc": "b0a8c3cd"
+  },
+  {
+   "length": 100000,
+   "split": 65536,
+   "crc1": "91af6755",
+   "crc2": "b1cdbac8",
+   "crc": "b0a8c3cd"
+  },
+  {
+   "length": 100000,
+   "split": 99999,
+   "crc1": "77319f91",
+   "crc2": "37d75180",
+   "crc": "b0a8c3cd"
+  },
+  {
+   "length": 100000,
+   "split": 100000,
+   "crc1": "b0a8c3cd",
+   "crc2": "00000000",
+   "crc": "b0a8c3cd"
+  }
+ ]
+}

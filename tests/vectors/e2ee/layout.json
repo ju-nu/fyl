@@ -1,0 +1,45 @@
+{
+ "about": "docs/E2EE.md §6: C(P), P(C), chunk and part arithmetic. invalidCiphertextSizes have no P(C). uploadable: 1 <= P and C <= MAX_FILE_BYTES (50 GiB); maxPlaintextSize is P_max, and maxPlaintext gives it for other limits (-1: not even an empty file fits).",
+ "constants": {
+  "H": 184,
+  "CHUNK": 65536,
+  "S": 65552,
+  "PART": 52428800,
+  "MAX_FILE_BYTES": 53687091200,
+  "maxPlaintextSize": 53673987000
+ },
+ "sizes": [
+  {"plaintextSize": 0, "ciphertextSize": 200, "chunks": 1, "lastChunkPlaintext": 0, "parts": 1, "uploadable": false},
+  {"plaintextSize": 1, "ciphertextSize": 201, "chunks": 1, "lastChunkPlaintext": 1, "parts": 1, "uploadable": true},
+  {"plaintextSize": 65536, "ciphertextSize": 65736, "chunks": 1, "lastChunkPlaintext": 65536, "parts": 1, "uploadable": true},
+  {"plaintextSize": 65537, "ciphertextSize": 65753, "chunks": 2, "lastChunkPlaintext": 1, "parts": 1, "uploadable": true},
+  {"plaintextSize": 52428800, "ciphertextSize": 52441784, "chunks": 800, "lastChunkPlaintext": 65536, "parts": 2, "uploadable": true},
+  {"plaintextSize": 1073741824, "ciphertextSize": 1074004152, "chunks": 16384, "lastChunkPlaintext": 65536, "parts": 21, "uploadable": true},
+  {"plaintextSize": 53687091200, "ciphertextSize": 53700198584, "chunks": 819200, "lastChunkPlaintext": 65536, "parts": 1025, "uploadable": false},
+  {"plaintextSize": 53673987000, "ciphertextSize": 53687091200, "chunks": 819001, "lastChunkPlaintext": 3000, "parts": 1024, "uploadable": true}
+ ],
+ "invalidCiphertextSizes": [0, 183, 199, 65737, 65744, 65752, 131304],
+ "partChunks": [
+  {"ciphertextSize": 52441784, "part": 1, "start": 0, "end": 52428800, "firstChunk": 0, "lastChunk": 799},
+  {"ciphertextSize": 52441784, "part": 2, "start": 52428800, "end": 52441784, "firstChunk": 799, "lastChunk": 799},
+  {"ciphertextSize": 53687091200, "part": 2, "start": 52428800, "end": 104857600, "firstChunk": 799, "lastChunk": 1599},
+  {"ciphertextSize": 53687091200, "part": 1024, "start": 53634662400, "end": 53687091200, "firstChunk": 818200, "lastChunk": 819000},
+  {"ciphertextSize": 52428808, "part": 2, "start": 52428800, "end": 52428808, "firstChunk": 799, "lastChunk": 799}
+ ],
+ "maxPlaintext": [
+  {"limit": 0, "maxPlaintextSize": -1},
+  {"limit": 199, "maxPlaintextSize": -1},
+  {"limit": 200, "maxPlaintextSize": 0},
+  {"limit": 201, "maxPlaintextSize": 1},
+  {"limit": 216, "maxPlaintextSize": 16},
+  {"limit": 217, "maxPlaintextSize": 17},
+  {"limit": 65736, "maxPlaintextSize": 65536},
+  {"limit": 65737, "maxPlaintextSize": 65536},
+  {"limit": 65753, "maxPlaintextSize": 65537},
+  {"limit": 53687091200, "maxPlaintextSize": 53673987000},
+  {"limit": 4503599627370496, "maxPlaintextSize": 4502500384112472},
+  {"limit": 8000000000000000, "maxPlaintextSize": 7998047351720584},
+  {"limit": 9000000000000000, "maxPlaintextSize": 8997803270685672},
+  {"limit": 9007199254740991, "maxPlaintextSize": 9005000768225127}
+ ]
+}

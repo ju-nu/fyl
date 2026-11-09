@@ -1,0 +1,47 @@
+[package]
+name = "fyl"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.88"
+description = "fyl.at command-line client: upload a file, get a download link"
+license = "AGPL-3.0-only"
+publish = false
+
+[dependencies]
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+serde_json = "1"
+getrandom = "0.3"
+signal-hook = "0.4"
+md-5 = "0.11"
+sha2 = "0.11"
+rpassword = "7.5"
+# fyl download: statvfs, O_NOFOLLOW, renameat2/renamex_np without replacing, SIGXFSZ (docs/E2EE.md §10); already in the
+# lock through getrandom, signal-hook and rpassword
+libc = "0.2"
+# E2EE (docs/E2EE.md): the digest 0.11 generation, shared with sha2 and md-5 above
+chacha20poly1305 = { version = "0.11.0", default-features = false }
+x25519-dalek = { version = "3.0.0", default-features = false, features = ["static_secrets", "zeroize"] }
+hkdf = { version = "0.13.0", default-features = false }
+hmac = { version = "0.13.0", default-features = false }
+# Folder uploads (docs/FOLDER-ZIP.md): the CRC-32 of every file in the zip, and combining the CRCs of the runs a part
+# read to check the bytes sent (§7.3)
+crc32fast = { version = "1.5.0", default-features = false }
+
+[dev-dependencies]
+# inflates the zlib-compressed CCTV vectors (docs/E2EE.md §16)
+miniz_oxide = { version = "0.9.1", default-features = false, features = ["with-alloc"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# The E2EE tests run 50 MiB vectors through generic crypto code, which compiles into this crate: optimised, they take
+# seconds instead of minutes. Overflow checks and debug assertions stay on; release builds are unaffected.
+[profile.test]
+opt-level = 2
+
+[profile.test.package."*"]
+opt-level = 2

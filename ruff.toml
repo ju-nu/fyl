@@ -1,0 +1,6 @@
+# Lint only (no formatter): real mistakes, not style. Long lines are fine here.
+target-version = "py310"
+
+[lint]
+select = ["E", "F", "W", "B"]
+ignore = ["E501"]

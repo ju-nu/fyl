@@ -1,0 +1,156 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fyl-at",
+  "main": "src/index.ts",
+  "account_id": "96725af894477798ae88306ce0098fb2",
+  "compatibility_date": "2026-10-27",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "enable_request_signal"
+  ],
+  "workers_dev": false,
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "FILES",
+      "bucket_name": "fyl-at-files"
+    }
+  ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "METRICS",
+      "dataset": "fyl_events"
+    }
+  ],
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TRANSFERS",
+        "class_name": "Transfer"
+      },
+      {
+        "name": "BUDGET",
+        "class_name": "Budget"
+      },
+      {
+        "name": "REPORTS",
+        "class_name": "Reports"
+      }
+    ]
+  },
+  "exports": {
+    "Transfer": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "Budget": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "Reports": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "ratelimits": [
+    {
+      "name": "INIT_RATE",
+      "namespace_id": "3791413776",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    },
+    {
+      "name": "PART_RATE",
+      "namespace_id": "1566985378",
+      "simple": {
+        "limit": 600,
+        "period": 60
+      }
+    },
+    {
+      "name": "DOWNLOAD_RATE",
+      "namespace_id": "3603424008",
+      "simple": {
+        "limit": 300,
+        "period": 60
+      }
+    },
+    {
+      "name": "ADMIN_RATE",
+      "namespace_id": "2841075963",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    },
+    {
+      "name": "STATUS_RATE",
+      "namespace_id": "5606053794",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "REPORT_RATE",
+      "namespace_id": "3529118350",
+      "simple": {
+        "limit": 5,
+        "period": 60
+      }
+    }
+  ],
+  "vars": {
+    "PUBLIC_BASE_URL": "https://fyl.at",
+    "MAX_FILE_BYTES": "53687091200",
+    "MAX_STORED_BYTES": "5497558138880",
+    "MAX_DAILY_UPLOAD_BYTES": "1099511627776",
+    "MAX_ACTIVE_UPLOADS": "100000",
+    "MAX_DAILY_UPLOADS": "50000",
+    "MAX_DAILY_UPLOADS_PER_NETWORK": "500",
+    "MAX_DAILY_UPLOAD_BYTES_PER_NETWORK": "268435456000",
+    "MAX_ACTIVE_UPLOADS_PER_NETWORK": "50",
+    "MAX_STORED_BYTES_PER_NETWORK": "268435456000",
+    "MAX_DAILY_REPORTS_PER_NETWORK": "50",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFswoYx8izefOy0Y",
+    "E2EE_ENABLED": "true",
+    "ADMIN_HOST": "admin.fyl.at",
+    "REPORT_HOST": "report.fyl.at",
+    "ACCESS_TEAM_DOMAIN": "wild-moon-5470.cloudflareaccess.com",
+    "ACCESS_AUD": "7d390da898d3aacb38618a6f185e014d90f7f0d9b61fef9cfad2a2641503fbc2",
+    "ANALYTICS_ACCOUNT_ID": "96725af894477798ae88306ce0098fb2",
+    "BILLING_CYCLE_DAY": "28"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1,
+    "redact_query_string": true,
+    "logs": {
+      "invocation_logs": false
+    }
+  },
+  "routes": [
+    {
+      "pattern": "fyl.at",
+      "custom_domain": true
+    },
+    {
+      "pattern": "admin.fyl.at",
+      "custom_domain": true
+    },
+    {
+      "pattern": "report.fyl.at",
+      "custom_domain": true
+    }
+  ],
+  "preview_urls": false
+}

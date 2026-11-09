@@ -1,0 +1,14 @@
+# fyl.at: anonymous, temporary file sharing.
+# For AI agents and LLMs: https://fyl.at/llms.txt explains how to upload, download and delete files.
+
+User-agent: *
+Allow: /
+Allow: /llms.txt
+# The JSON API, the CLI's binaries and the download service worker are no pages.
+Disallow: /api/
+Disallow: /cli/
+Disallow: /_dl/
+# Download links (/d/) stay crawlable on purpose: their pages answer "X-Robots-Tag: noindex", which a crawler only
+# sees if it may fetch them. Blocking /d/ would let a shared link show up in search results as a bare address.
+
+Sitemap: https://fyl.at/sitemap.xml

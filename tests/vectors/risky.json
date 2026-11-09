@@ -1,0 +1,36 @@
+{
+  "note": "Extensions that can run code when opened, pages and shortcuts included (docs/E2EE.md §15.4): the download page warns before such a file. One list for the Worker, which judges a raw file's name (RISKY and kind() in src/shared.ts), and the download page, which judges an encrypted file's name after decrypting it (dist/download.js): tests/download-page.test.ts and the page's tests check theirs against `extensions`, as a set. `names` gives the badge (`ext`, at most 4 characters), the type label and the warning both derive from a name. The extension follows the last dot: 1 to 10 ASCII letters and digits, or up to 20 and `-ms`, in any case; anything else has none.",
+  "extensions": [
+    "exe", "com", "scr", "pif", "msi", "msix", "msixbundle", "appx", "appxbundle", "msp", "msc", "bat", "cmd", "ps1", "psm1", "vb", "vbs",
+    "vbe", "js", "jse", "ws", "wsc", "wsf", "wsh", "hta", "chm", "cpl", "scf", "url", "xll", "jar", "jnlp", "lnk", "reg", "dll", "app",
+    "dmg", "pkg", "mpkg", "command", "sh", "bash", "zsh", "run", "bin", "appimage", "deb", "rpm", "apk", "ipa", "iso", "img", "vhd", "vhdx",
+    "docm", "dotm", "xlsm", "xltm", "xlam", "pptm", "potm", "ppam", "ppsm", "sldm",
+    "html", "htm", "xhtml", "shtml", "svg", "mht", "mhtml", "one", "library-ms", "search-ms", "settingcontent-ms", "desktop", "scpt"
+  ],
+  "names": [
+    {"name": "setup.exe", "ext": "EXE", "type": "Windows program", "risky": true},
+    {"name": "install.SH", "ext": "SH", "type": "shell script", "risky": true},
+    {"name": "macro.docm", "ext": "DOCM", "type": "Word document", "risky": true},
+    {"name": "Invoice.pdf.html", "ext": "HTML", "type": "HTML page", "risky": true},
+    {"name": "page.HTM", "ext": "HTM", "type": "HTML page", "risky": true},
+    {"name": "logo.svg", "ext": "SVG", "type": "SVG image", "risky": true},
+    {"name": "saved.mhtml", "ext": "MHTM", "type": "MHTML file", "risky": true},
+    {"name": "Notes.one", "ext": "ONE", "type": "ONE file", "risky": true},
+    {"name": "Documents.library-ms", "ext": "LIBR", "type": "LIBRARY-MS file", "risky": true},
+    {"name": "find.Search-MS", "ext": "SEAR", "type": "SEARCH-MS file", "risky": true},
+    {"name": "a.settingcontent-ms", "ext": "SETT", "type": "SETTINGCONTENT-MS file", "risky": true},
+    {"name": "start.desktop", "ext": "DESK", "type": "DESKTOP file", "risky": true},
+    {"name": "Open me.scpt", "ext": "SCPT", "type": "SCPT file", "risky": true},
+    {"name": "report.pdf", "ext": "PDF", "type": "PDF document", "risky": false},
+    {"name": "Invoice «2026».pdf", "ext": "PDF", "type": "PDF document", "risky": false},
+    {"name": "page.html.txt", "ext": "TXT", "type": "text file", "risky": false},
+    {"name": "<!--<script>x.tar.gz", "ext": "GZ", "type": "gzip archive", "risky": false},
+    {"name": "photo.jpeg", "ext": "JPEG", "type": "JPEG image", "risky": false},
+    {"name": "sheet.ab-ms", "ext": "AB-M", "type": "AB-MS file", "risky": false},
+    {"name": "backup.tar-gz", "ext": "FILE", "type": "file", "risky": false},
+    {"name": "x.abcdefghij", "ext": "ABCD", "type": "ABCDEFGHIJ file", "risky": false},
+    {"name": "x.abcdefghijk", "ext": "FILE", "type": "file", "risky": false},
+    {"name": "README", "ext": "FILE", "type": "file", "risky": false},
+    {"name": "notes.", "ext": "FILE", "type": "file", "risky": false}
+  ]
+}

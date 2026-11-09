@@ -1,0 +1,106 @@
+{
+ "description": "Files at several depths, an empty file, a hidden file; empty folders, symlinks and a FIFO are left out.",
+ "root": "photos",
+ "disk": true,
+ "tree": [
+  {
+   "path": "a.txt",
+   "text": "hello\n"
+  },
+  {
+   "path": "sub/b.txt",
+   "text": "second file\n",
+   "mtimeMs": 1793260801500
+  },
+  {
+   "path": "sub/deeper/c.bin",
+   "base64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==",
+   "mtimeMs": 1700000000000
+  },
+  {
+   "path": "empty.txt",
+   "text": ""
+  },
+  {
+   "path": ".hidden",
+   "text": "dotfiles are kept\n"
+  },
+  {
+   "path": "emptydir",
+   "type": "dir"
+  },
+  {
+   "path": "sub/onlydirs/inner",
+   "type": "dir"
+  },
+  {
+   "path": "link-to-a",
+   "type": "symlink",
+   "target": "a.txt"
+  },
+  {
+   "path": "sub/link-to-dir",
+   "type": "symlink",
+   "target": ".."
+  },
+  {
+   "path": "pipe",
+   "type": "fifo"
+  }
+ ],
+ "entries": [
+  {
+   "path": "photos/.hidden",
+   "size": 18,
+   "mtime": 1793260800,
+   "crc32": "1d00fc16",
+   "offset": 0
+  },
+  {
+   "path": "photos/a.txt",
+   "size": 6,
+   "mtime": 1793260800,
+   "crc32": "363a3020",
+   "offset": 71
+  },
+  {
+   "path": "photos/empty.txt",
+   "size": 0,
+   "mtime": 1793260800,
+   "crc32": "00000000",
+   "offset": 128
+  },
+  {
+   "path": "photos/sub/b.txt",
+   "size": 12,
+   "mtime": 1793260801,
+   "crc32": "e472ff82",
+   "offset": 183
+  },
+  {
+   "path": "photos/sub/deeper/c.bin",
+   "size": 256,
+   "mtime": 1700000000,
+   "crc32": "29058c73",
+   "offset": 250
+  }
+ ],
+ "skipped": [
+  {
+   "path": "link-to-a",
+   "reason": "symlink"
+  },
+  {
+   "path": "pipe",
+   "reason": "special"
+  },
+  {
+   "path": "sub/link-to-dir",
+   "reason": "symlink"
+  }
+ ],
+ "fingerprint": "5UXwV7sdE7to32oJsaeVXw",
+ "size": 946,
+ "sha256": "53f856f4a2d08e351d9c0ee439216c29dd815268e2011dc2f09891cc5a9d78b1",
+ "zip": "504b030414000008000000405d5d16fc001d12000000120000000e00090070686f746f732f2e68696464656e555405000100fde26a646f7466696c657320617265206b6570740a504b030414000008000000405d5d20303a3606000000060000000c00090070686f746f732f612e747874555405000100fde26a68656c6c6f0a504b030414000008000000405d5d0000000000000000000000001000090070686f746f732f656d7074792e747874555405000100fde26a504b030414000008000000405d5d82ff72e40c0000000c0000001000090070686f746f732f7375622f622e747874555405000101fde26a7365636f6e642066696c650a504b0304140000080000aab16e57738c052900010000000100001700090070686f746f732f7375622f6465657065722f632e62696e555405000100f15365000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff504b0102140314000008000000405d5d16fc001d12000000120000000e0009000000000000000000a4810000000070686f746f732f2e68696464656e555405000100fde26a504b0102140314000008000000405d5d20303a3606000000060000000c0009000000000000000000a4814700000070686f746f732f612e747874555405000100fde26a504b0102140314000008000000405d5d000000000000000000000000100009000000000000000000a4818000000070686f746f732f656d7074792e747874555405000100fde26a504b0102140314000008000000405d5d82ff72e40c0000000c000000100009000000000000000000a481b700000070686f746f732f7375622f622e747874555405000101fde26a504b01021403140000080000aab16e57738c05290001000000010000170009000000000000000000a481fa00000070686f746f732f7375622f6465657065722f632e62696e555405000100f15365504b0506000000000500050064010000380200000000"
+}

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="{{@lang}}">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#070b14" media="(prefers-color-scheme: dark)">
+<meta name="description" content="{{privacy.description}}">{{@seo}}
+<title>{{privacy.title}}</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="describedby" type="text/markdown" href="/llms.txt" title="{{common.agentsTitle}}"><link rel="alternate" type="text/markdown" href="/llms.txt" title="{{common.agentsTitle}}"><link rel="preload" href="/fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/styles.css"><script src="/theme.js"></script>
+</head>
+<body>
+<svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-icons="globe check sun moon monitor">
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5Z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+</svg>
+<a class="skip" href="#content">{{common.skipContent}}</a>
+<div class="shell">
+<header class="site-header">
+<a class="wordmark" href="{{@base}}/" aria-label="{{common.homeLabel}}"><span class="wordmark-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></svg></span><span>fyl<span class="dot">.</span>at</span></a>
+<nav class="header-nav" aria-label="{{common.mainNav}}"><a class="btn btn-quiet" href="{{@base}}/">{{common.sendFile}}</a><button class="btn btn-icon" type="button" data-theme-trigger popovertarget="theme-menu" aria-haspopup="menu" aria-expanded="false" aria-label="{{common.theme}}" data-label="{{common.themeIs}}"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button></nav>
+</header>
+
+<main class="read" id="content">
+<article aria-labelledby="privacy-heading">
+<h1 id="privacy-heading">{{privacy.heading}}</h1>
+<p class="lead">{{privacy.lead}}</p>
+{{@binding}}
+<!-- OPERATOR DETAILS: to be supplied by the operator -->
+<nav aria-label="{{privacy.toc}}"><ul class="toc"><li><a href="#files">{{privacy.files}}</a></li><li><a href="#encrypted">{{privacy.encrypted}}</a></li><li><a href="#previews">{{privacy.previews}}</a></li><li><a href="#networks">{{privacy.networks}}</a></li><li><a href="#counts">{{privacy.counts}}</a></li><li><a href="#logs">{{privacy.logs}}</a></li><li><a href="#reports">{{privacy.reports}}</a></li><li><a href="#browser">{{privacy.browser}}</a></li><li><a href="#cli">{{privacy.cli}}</a></li><li><a href="#contact">{{privacy.contact}}</a></li></ul></nav>
+<h2 id="files">{{privacy.files}}</h2>
+<p>{{privacy.files1Html}}</p>
+<p>{{privacy.files2Html}}</p>
+<p>{{privacy.files3Html}}</p>
+
+<h2 id="encrypted">{{privacy.encrypted}}</h2>
+<p>{{privacy.encrypted1Html}}</p>
+<p>{{privacy.encrypted2Html}}</p>
+<p>{{privacy.sourceHtml}}</p>
+<p>{{privacy.encrypted3Html}}</p>
+
+<h2 id="previews">{{privacy.previews}}</h2>
+<p>{{privacy.previews1Html}}</p>
+
+<h2 id="networks">{{privacy.networks}}</h2>
+<p>{{privacy.networks1Html}}</p>
+<ul>
+<li>{{privacy.networks2Html}}</li>
+<li>{{privacy.networks3Html}}</li>
+<li>{{privacy.networks4Html}}</li>
+</ul>
+<p>{{privacy.networks5Html}}</p>
+
+<h2 id="counts">{{privacy.counts}}</h2>
+<p>{{privacy.counts1Html}}</p>
+<p>{{privacy.counts2Html}}</p>
+<p>{{privacy.counts3Html}}</p>
+<p>{{privacy.languageHtml}}</p>
+
+<h2 id="logs">{{privacy.logs}}</h2>
+<p>{{privacy.logs1Html}}</p>
+
+<h2 id="reports">{{privacy.reports}}</h2>
+<p>{{privacy.reports1Html}}</p>
+<p>{{privacy.reports2Html}}</p>
+
+<h2 id="browser">{{privacy.browser}}</h2>
+<p>{{privacy.browser1Html}}</p>
+<ul>
+<li>{{privacy.browser2Html}}</li>
+<li>{{privacy.browser3Html}}</li>
+<li>{{privacy.browser4Html}}</li>
+<li>{{privacy.browser5Html}}</li>
+<li>{{privacy.browser6Html}}</li>
+<li>{{privacy.browser7Html}}</li>
+</ul>
+<p>{{privacy.browser8Html}}</p>
+
+<h2 id="cli">{{privacy.cli}}</h2>
+<p>{{privacy.cli1Html}}</p>
+
+<h2 id="contact">{{privacy.contact}}</h2>
+<p>{{privacy.contact1Html}}</p>
+</article>
+</main>
+
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="{{common.footerNav}}"><a href="{{@report}}">{{common.reportFile}}</a><a href="{{@base}}/privacy" aria-current="page">{{common.privacy}}</a><a href="/llms.txt">{{common.forAgents}}</a><a href="{{@source}}">{{common.source}}</a>{{@languageButton}}</nav></footer>
+</div>
+
+<div class="menu" id="theme-menu" popover role="menu" aria-label="{{common.theme}}">
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="true" data-theme-choice="system"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg><span>{{common.themeSystem}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span>{{common.themeLight}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span>{{common.themeDark}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+</div>
+{{@languageMenu}}
+</body>
+</html>

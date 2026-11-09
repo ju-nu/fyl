@@ -1,0 +1,172 @@
+name: Checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly on main: RustSec audit and native rebuild, even when the CLI did not change.
+    - cron: '23 4 * * 1'
+permissions:
+  contents: read
+concurrency:
+  # One group per event: the weekly run never cancels the push run of main's head, which alone deploys and releases.
+  # A newer push still cancels an older one; its native diff starts at production, so it covers the older changes.
+  group: checks-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Worker types match wrangler.jsonc and the runtime
+        # Compares the header (env hash, workerd version, compatibility date). Secret names from .env change
+        # the hash and CI has none, so regenerate the committed file ("npm run typegen") without .env.
+        run: npx wrangler types --check
+      - run: npm run ci
+      - name: Lint Python and shell scripts
+        run: |
+          pipx run ruff==0.16.10 check --no-cache scripts tests
+          shellcheck --severity=warning dist/cli/install scripts/build_native.sh scripts/mac-check.sh scripts/cli_changed.sh scripts/cli_published.sh scripts/promote.sh scripts/release.sh
+      - name: Committed CLI files match their sources
+        # npm run ci regenerates SHA256SUMS, latest, version.json and _redirects; stale or uncommitted files fail here.
+        run: |
+          changed=$(git status --porcelain --untracked-files=all -- dist/cli/ dist/_redirects)
+          if [ -n "$changed" ]; then echo "$changed"; git diff --stat -- dist/cli/ dist/_redirects; exit 1; fi
+  hygiene:
+    # Secrets and workflow lint for every change. gitleaks (.gitleaks.toml) scans the tree and the commits the change
+    # adds: a pull request's since its base, a push's since the previous head, and the whole history weekly or when
+    # that range is unknown. actionlint checks the workflow files (with shellcheck for their run blocks). Both are
+    # pinned release binaries checked by sha256, like zig below.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      EVENT: ${{ github.event_name }}
+      PR_BASE: ${{ github.event.pull_request.base.sha }}
+      BEFORE: ${{ github.event.before }}
+      GITLEAKS_VERSION: 8.21.2
+      GITLEAKS_SHA256: 5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba
+      ACTIONLINT_VERSION: 1.7.7
+      ACTIONLINT_SHA256: 023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install gitleaks and actionlint
+        run: |
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o "$RUNNER_TEMP/gitleaks.tar.gz"
+          echo "$GITLEAKS_SHA256  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v$ACTIONLINT_VERSION/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/bin" gitleaks
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP/bin" actionlint
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: No secrets in the tree or the new commits (gitleaks)
+        run: |
+          gitleaks dir . --redact --no-banner -c .gitleaks.toml
+          case "$EVENT" in
+            pull_request) base="$PR_BASE" ;;
+            push) base="$BEFORE" ;;
+            *) base="" ;;
+          esac
+          if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            gitleaks git . --redact --no-banner -c .gitleaks.toml --log-opts="$base..HEAD"
+          else
+            gitleaks git . --redact --no-banner -c .gitleaks.toml
+          fi
+      - name: Lint the workflows (actionlint)
+        run: actionlint -no-color
+  changes:
+    # The native job takes about ten minutes, so it only runs when the CLI, its build inputs or its shared test
+    # vectors changed (on main: since production; see scripts/cli_changed.sh), and on the weekly schedule. It
+    # catches Rust changes whose binaries were not rebuilt.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      cli: ${{ steps.diff.outputs.cli }}
+      bridge: ${{ steps.diff.outputs.bridge }}
+    env:
+      EVENT: ${{ github.event_name }}
+      PR_BASE: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Published CLI files stay as they are
+        # /cli/<version>/ is immutable once production has it: a rebuild needs a version bump (scripts/cli_published.sh).
+        run: sh scripts/cli_published.sh "$EVENT" "$PR_BASE"
+      - id: diff
+        # fetch-depth 0 also fetched origin/production, the base of a push to main.
+        run: |
+          cli=$(sh scripts/cli_changed.sh "$EVENT" "$PR_BASE")
+          bridge=$(sh scripts/cli_changed.sh --bridge "$EVENT" "$PR_BASE")
+          echo "cli=$cli" >> "$GITHUB_OUTPUT"
+          echo "bridge=$bridge" >> "$GITHUB_OUTPUT"
+  native:
+    # Rebuild the Rust binaries with the pinned toolchain and fail if they differ from the committed ones.
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RUSTUP_VERSION: 1.29.2
+      RUSTUP_SHA256: 5be191e8c70a5007074254cb74d78dbfdd25cd5a61c27de7b8e5410122ec24f4
+      ZIG_VERSION: 0.17.0
+      ZIG_SHA256: 1cbe9df9f27e6b78d14ccbca43b6703a404ef79ef1c463de901d7f088d4e2026
+      CARGO_ZIGBUILD_VERSION: 0.24.0
+      CARGO_AUDIT_VERSION: 0.22.2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install rustup, Rust (cli-rs/rust-toolchain.toml), zig and cargo-zigbuild
+        run: |
+          curl -fsSL "https://static.rust-lang.org/rustup/archive/$RUSTUP_VERSION/x86_64-unknown-linux-gnu/rustup-init" -o "$RUNNER_TEMP/rustup-init"
+          echo "$RUSTUP_SHA256  $RUNNER_TEMP/rustup-init" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/rustup-init"
+          "$RUNNER_TEMP/rustup-init" -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          (cd cli-rs && "$HOME/.cargo/bin/rustup" toolchain install)
+          curl -fsSL "https://ziglang.org/download/$ZIG_VERSION/zig-x86_64-linux-$ZIG_VERSION.tar.xz" -o "$RUNNER_TEMP/zig.tar.xz"
+          echo "$ZIG_SHA256  $RUNNER_TEMP/zig.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$HOME"
+          echo "$HOME/zig-x86_64-linux-$ZIG_VERSION" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/cargo" install cargo-zigbuild --version "$CARGO_ZIGBUILD_VERSION" --locked
+          "$HOME/.cargo/bin/cargo" install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked
+      - name: Audit Rust dependencies (RustSec)
+        run: cd cli-rs && cargo audit
+      - name: Lint Rust (clippy)
+        run: cd cli-rs && cargo clippy --release --locked --all-targets -- -D warnings
+      - name: Test Rust (retry classes against tests/vectors/errors.json, receipt schema, retry timing)
+        run: cd cli-rs && cargo test --locked
+      - name: License texts of the linked crates are current (scripts/cli_licenses.py)
+        run: python3 scripts/cli_licenses.py --check
+      - name: Rebuild and compare
+        # Builds into dist/cli/<package.json version> and keeps the previous version's folder; a version bump
+        # without committed binaries shows up as an untracked new folder (or a removed older one).
+        run: |
+          sh scripts/build_native.sh
+          changed=$(git status --porcelain --untracked-files=all -- dist/cli/)
+          if [ -n "$changed" ]; then echo "$changed"; git diff --stat -- dist/cli/; exit 1; fi
+      - name: Rebuild and compare the bridge
+        # The bridge release of the old numbering (scripts/build_cli.py BRIDGE) is built from the same source under
+        # its own version; it is compared while the CLI source is the one it was committed with, or a change adds or
+        # changes it (scripts/cli_changed.sh).
+        if: needs.changes.outputs.bridge == 'true'
+        run: |
+          sh scripts/build_native.sh --bridge
+          changed=$(git status --porcelain --untracked-files=all -- dist/cli/)
+          if [ -n "$changed" ]; then echo "$changed"; git diff --stat -- dist/cli/; exit 1; fi

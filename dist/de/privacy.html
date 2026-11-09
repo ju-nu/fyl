@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#070b14" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Was fyl.at über Dateien, Netzwerke und Meldungen speichert und wann es gelöscht wird."><meta http-equiv="content-language" content="de"><link rel="canonical" href="https://fyl.at/de/privacy"><link rel="alternate" hreflang="en" href="https://fyl.at/en/privacy"><link rel="alternate" hreflang="de" href="https://fyl.at/de/privacy"><link rel="alternate" hreflang="es" href="https://fyl.at/es/privacy"><link rel="alternate" hreflang="fr" href="https://fyl.at/fr/privacy"><link rel="alternate" hreflang="nl" href="https://fyl.at/nl/privacy"><link rel="alternate" hreflang="x-default" href="https://fyl.at/en/privacy"><meta property="og:url" content="https://fyl.at/de/privacy"><meta property="og:locale" content="de_DE"><meta property="og:locale:alternate" content="en_GB"><meta property="og:locale:alternate" content="es_ES"><meta property="og:locale:alternate" content="fr_FR"><meta property="og:locale:alternate" content="nl_NL"><meta property="og:image" content="https://fyl.at/og/de.jpg"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="fyl.at: Dateien bis 50 GB per Link auf Zeit teilen, ohne Konto."><meta name="twitter:card" content="summary_large_image">
+<title>Datenschutz · fyl.at</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="describedby" type="text/markdown" href="/llms.txt" title="So nutzen Agenten fyl.at"><link rel="alternate" type="text/markdown" href="/llms.txt" title="So nutzen Agenten fyl.at"><link rel="preload" href="/fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/styles.css"><script src="/theme.js"></script>
+</head>
+<body>
+<svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-icons="globe check sun moon monitor">
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5Z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+</svg>
+<a class="skip" href="#content">Zum Inhalt springen</a>
+<div class="shell">
+<header class="site-header">
+<a class="wordmark" href="/de/" aria-label="Startseite von fyl.at"><span class="wordmark-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></svg></span><span>fyl<span class="dot">.</span>at</span></a>
+<nav class="header-nav" aria-label="Hauptmenü"><a class="btn btn-quiet" href="/de/">Datei senden</a><button class="btn btn-icon" type="button" data-theme-trigger popovertarget="theme-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Farbschema" data-label="Farbschema: {name}"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button></nav>
+</header>
+
+<main class="read" id="content">
+<article aria-labelledby="privacy-heading">
+<h1 id="privacy-heading">Datenschutz</h1>
+<p class="lead">Was fyl.at speichert und wann es gelöscht wird. Konten gibt es keine.</p>
+<p class="meta binding">Diese Übersetzung dient nur der Orientierung. Verbindlich ist die <a href="/en/privacy" hreflang="en">englische Fassung</a>.</p>
+<nav aria-label="Auf dieser Seite"><ul class="toc"><li><a href="#files">Dateien, die du teilst</a></li><li><a href="#encrypted">Verschlüsselte Dateien</a></li><li><a href="#previews">Link-Vorschauen</a></li><li><a href="#networks">Netzwerke</a></li><li><a href="#counts">Nutzungszahlen</a></li><li><a href="#logs">Anfrageprotokolle</a></li><li><a href="#reports">Meldungen</a></li><li><a href="#browser">In deinem Browser</a></li><li><a href="#cli">Der Befehl fyl</a></li><li><a href="#contact">Kontakt</a></li></ul></nav>
+<h2 id="files">Dateien, die du teilst</h2>
+<p>Die Datei liegt in Cloudflare R2 und ihr Name im Datensatz der Datei bei Cloudflare, bis der Link abläuft, sein einziger Download verbraucht ist oder der Absender oder der Betreiber sie löscht. Danach werden die Datei und ihr Name gelöscht. Unfertige Uploads werden nach 24 Stunden gelöscht. Als Sicherheitsnetz löscht der Speicher jede Datei, die nach 8 Tagen noch da ist.</p>
+<p>Ein kleiner Datensatz ohne Dateinamen (Größe, Datumsangaben und der Grund, warum der Link geschlossen wurde) bleibt 7 Tage erhalten, damit der Link sagen kann, was passiert ist. Bei einer vom Betreiber entfernten Datei bleibt dieser Datensatz dauerhaft, damit ihr Link gesperrt bleibt.</p>
+<p>Von einem Passwort wird nur ein gesalzener PBKDF2-Hash gespeichert (<span class="num">100.000</span> Runden) sowie eine Prüfsumme mit Schlüssel, die eine wiederholte Upload-Anfrage erkennt; nie das Passwort selbst. Beides wird mit der Datei gelöscht. Auch der private Verwaltungsschlüssel wird nur als Hash gespeichert.</p>
+
+<h2 id="encrypted">Verschlüsselte Dateien</h2>
+<p>Bei Ende-zu-Ende-Verschlüsselung wird die Datei vor dem Upload auf deinem Gerät verschlüsselt. Der Schlüssel ist der Teil des Links nach dem #, den Browser nicht an fyl.at senden. fyl.at speichert die verschlüsselte Datei, ihre Größe und wann sie abgerufen wird, nicht aber ihren Namen oder Inhalt: Es behält einen generischen Namen („fyl-“ plus den Anfang der Link-ID), die genaue Größe, zwei kurze verschlüsselte Header und eine Prüfsumme jedes hochgeladenen Teils, bis die Datei wie jede andere gelöscht wird.</p>
+<p>Jeder mit dem vollständigen Link kann die Datei öffnen, und ein verlorener Schlüssel lässt sich nicht wiederherstellen. fyl.at kann verschlüsselte Dateien und ihre Absender nicht prüfen, öffne also nur Dateien, die du erwartet hast. Im Browser verlässt sich das auf den Code, den fyl.at ausliefert; die fyl-CLI führt stattdessen einen festen, versionierten Build auf deinem Computer aus.</p>
+<p>Der Quellcode von fyl.at und der fyl-CLI ist öffentlich auf <a href="https://github.com/ju-nu/fyl">GitHub</a> (AGPL-3.0), und jede Version nennt die SHA-256-Prüfsummen ihrer Dateien auf der <a href="https://github.com/ju-nu/fyl/releases">Release-Seite</a>, damit du prüfen kannst, was du ausführst.</p>
+<p>Ein Link ohne Verschlüsselung trägt den Namen der Datei in seinem Pfad, den jede Anfrage dafür an fyl.at sendet; Links mit Passwort tragen keinen Namen. Ein verschlüsselter Einmal-Link bleibt nach der Auslieferung der Datei bis zu 15 Minuten aus demselben Netzwerk geöffnet, damit ein fehlgeschlagenes Speichern wiederholt werden kann. Meldungen mit Details, die einen Schlüssel enthalten, werden abgelehnt.</p>
+
+<h2 id="previews">Link-Vorschauen</h2>
+<p>Wird ein Link in einer Chat-App gepostet, ruft der Vorschaudienst der App die Download-Seite ab, die Name, Größe, Typ und Ablauf der Datei nennt; bei Links mit Passwort ist nichts davon zu sehen. Bei einem Bild bis 8&nbsp;MB ohne Passwort, das mehr als einen Download erlaubt, erhalten die bekannten Vorschaudienste auch das Bild. Das zählt nicht als Download. Die Chat-App behält ihre Kopie auf ihren eigenen Servern, und diese Kopie kann den Link überdauern.</p>
+
+<h2 id="networks">Netzwerke</h2>
+<p>fyl.at speichert keine IP-Adressen. Wo ein Limit ein Netzwerk erkennen muss (eine IPv4-Adresse oder ein IPv6-/56; bei Einmal-Downloads ein /64), speichert es stattdessen einen Hash mit Schlüssel (HMAC) davon:</p>
+<ul>
+<li>für Upload-Limits ein täglich wechselnder Hash; diese Einträge werden etwa 30 Tage nach dem Upload gelöscht.</li>
+<li>für das Limit, wie viel ein Netzwerk gleichzeitig speichert, ein Hash, der sich nicht ändert; er wird nur behalten, solange die Uploads dieses Netzwerks gespeichert sind, und gelöscht, wenn ihr Speicher freigegeben wird, nachdem die Dateien weg sind.</li>
+<li>für Einmal-Downloads und falsche Passwortversuche ein Hash, der für jede Datei anders ist; er wird mit der Datei gelöscht.</li>
+</ul>
+<p>Ratenbegrenzungen für Anfragen werden von Cloudflare gezählt und nicht von fyl.at gespeichert.</p>
+
+<h2 id="counts">Nutzungszahlen</h2>
+<p>fyl.at zählt Ereignisse wie einen abgeschlossenen Upload oder ein falsches Passwort, jeweils mit einem Code (etwa einem Fehler oder der Art des Clients, wie Browser oder curl) und einer Zahl wie der Größe oder Laufzeit einer Datei. Ein gestarteter und ein abgeschlossener Upload (mit der gewählten Laufzeit) werden mit der Art des Clients gezählt, der ihn gesendet hat, ein abgeschlossener zusätzlich damit, ob er ein Passwort hat, einen Download erlaubt oder verschlüsselt ist; ein geschlossener Link mit dieser Art des Clients und der Zahl seiner Downloads. Dafür behält der Datensatz der Datei die Art des Clients, bis die Datei gelöscht wird. Ein Download des Installationsskripts oder Programms des Kommandozeilen-Tools wird mit der Plattform gezählt, für die es bestimmt ist. Die Zählungen enthalten keine Datei-IDs, Namen, Schlüssel oder Adressen.</p>
+<p>Wird eine Seite angezeigt, zählt fyl.at einen Seitenaufruf mit genau diesen Angaben: welche Seite es war (Startseite, das Meldeformular, diese Seite, eine Download-Seite oder ein geschlossener Link, nie welche Datei) und, bei einem geschlossenen Link, warum er geschlossen wurde; der Name der Website, die darauf verlinkt hat (oder „direkt“, oder welche Art von fyl.at-Seite, nie welche Datei); ein Kampagnen-Tag aus dem Link (<span class="mono">utm_source</span>, <span class="mono">utm_campaign</span>), falls er einen hat; das Land, das Cloudflare aus der Verbindung ableitet; die Art des Clients (Browser, Kommandozeilen-Tool, Bot, Skript oder anderes) und, bei einem Browser, seine Geräteklasse (Mobilgerät, Tablet oder Desktop) und die erste Sprache. Der Server zählt es; es enthält kein Cookie, kein Tracking-Skript und keine Adresse, und nichts identifiziert einen Besucher oder verknüpft zwei Besuche.</p>
+<p>Jedes Ereignis und jeder Seitenaufruf wird mit seiner Zeit drei Monate lang in Cloudflare Workers Analytics Engine gespeichert, auch nachdem die betroffene Datei weg ist, und wird dann gelöscht. Nur der Betreiber kann sie lesen.</p>
+<p>Um die Sprache einer Seite zu wählen, liest fyl.at die Sprachen, die dein Browser anfordert (seinen Accept-Language-Header), wenn du fyl.at/ oder einen Download-Link öffnest. Sie werden nicht gespeichert: Nur die erste Sprache ist Teil des oben beschriebenen Seitenaufrufs. Das Sprachmenü ist ein einfacher Link zur Seite in einer anderen Sprache; kein Cookie merkt sich die Wahl.</p>
+
+<h2 id="logs">Anfrageprotokolle</h2>
+<p>fyl.at läuft auf Cloudflare, das jede Anfrage verarbeitet. Die Protokolle behalten zur Fehlersuche eine Stichprobe von 10 % der Anfragen, ohne Query-Strings. Ein protokollierter Pfad kann den Link und Namen einer Datei enthalten. Es gilt die Aufbewahrungsdauer der Protokolle von Cloudflare.</p>
+
+<h2 id="reports">Meldungen</h2>
+<p>Eine Meldung speichert die ID der Datei (nicht den eingegebenen Link), die Kategorie und die Details, deinen Namen und deine E-Mail, wenn du sie angibst, den Hash deines Netzwerks von diesem Tag und die getroffenen Entscheidungen. Dateien, die in den letzten 7 Tagen geschlossen wurden, können noch gemeldet werden. Ein Fall wird 183 Tage nach seinem Abschluss gelöscht; ein Fall, über den niemand entscheidet, wird etwa 8 Tage nach der Meldung geschlossen, sobald die Datei weg sein muss.</p>
+<p>Wenn es aktiviert ist, prüft das Meldeformular mit Cloudflare Turnstile, dass ein Mensch es sendet; Turnstile setzt keine Tracking-Cookies. fyl.at gibt dein Token und deine IP-Adresse zur Prüfung an Cloudflare weiter und speichert keines von beiden.</p>
+
+<h2 id="browser">In deinem Browser</h2>
+<p>Folgendes liegt im lokalen Speicher deines Browsers, nie auf dem Server:</p>
+<ul>
+<li>deine letzten Uploads (bis zu 20) mit ihren privaten Verwaltungslinks, bis du sie vergisst oder einen Tag nach Ablauf des Links;</li>
+<li>ein unfertiger Upload mit seinem privaten Schlüssel, aber ohne sein Passwort, bis er fertig ist, du ihn verwirfst oder seine 24 Stunden um sind;</li>
+<li>Passwörter, nur wenn du „Passwort auf diesem Gerät merken“ ankreuzt. Sonst bleibt ein Passwort im Sitzungsspeicher dieses Tabs, bis du den Tab schließt;</li>
+<li>die Schlüssel verschlüsselter Uploads und Schlüssel, die du auf einer Download-Seite eingegeben hast, im Sitzungsspeicher dieses Tabs, bis du ihn schließt; im lokalen Speicher nur, wenn du „Schlüssel auf diesem Gerät merken“ ankreuzt. Letzte Uploads behalten ihre Links ohne den Schlüssel;</li>
+<li>bei einem unfertigen verschlüsselten Upload eine Prüfsumme jedes gesendeten Teils, damit ein Fortsetzen erkennen kann, ob sich die Datei geändert hat;</li>
+<li>dein Farbschema.</li>
+</ul>
+<p>Zum Löschen nutze „Dieses Gerät vergessen“ unter „Letzte Uploads“ oder lösche die Daten dieser Website in deinem Browser. Die Website setzt keine Cookies und lädt keine Skripte, Schriften oder Tracker von anderen Websites, außer Turnstile im Meldeformular, wenn es aktiviert ist; das Formular hat eine eigene Adresse, report.fyl.at, damit Turnstile nie dort läuft, wo diese Website deine Daten ablegt.</p>
+
+<h2 id="cli">Der Befehl fyl</h2>
+<p><code>fyl</code> fragt höchstens einmal am Tag nach einem erfolgreichen Befehl <code>/cli/version.json</code> bei fyl.at ab, um dir zu sagen, wenn es eine neuere Version gibt. Dabei geht nur der User-Agent von fyl mit (etwa <code>fyl-cli/2.5.0</code>), nichts über dich oder deine Dateien. Auf deinem Computer speichert fyl nur den Zeitpunkt dieser Abfrage, in seinem Cache-Ordner. <code>FYL_NO_UPDATE_CHECK=1</code> schaltet sie ab; in CI und wenn die Meldungen von fyl nicht in einem Terminal landen, fällt sie ohnehin weg. <code>fyl update</code> lädt eine neue Version nur, wenn du es aufrufst. Sonst speichert die CLI nichts auf deinem Computer.</p>
+
+<h2 id="contact">Kontakt</h2>
+<p>Um eine Datei zu melden, nutze das <a href="https://report.fyl.at/de/">Meldeformular</a>.</p>
+</article>
+</main>
+
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="Über fyl.at"><a href="https://report.fyl.at/de/">Datei melden</a><a href="/de/privacy" aria-current="page">Datenschutz</a><a href="/llms.txt">Für KI-Agenten</a><a href="https://github.com/ju-nu/fyl">Quellcode</a><button class="btn btn-quiet lang-trigger" type="button" popovertarget="lang-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Sprache: Deutsch"><svg class="i" aria-hidden="true"><use href="#i-globe"/></svg><span>Deutsch</span></button></nav></footer>
+</div>
+
+<div class="menu" id="theme-menu" popover role="menu" aria-label="Farbschema">
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="true" data-theme-choice="system"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg><span>System</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span>Hell</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span>Dunkel</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+</div>
+<div class="menu" id="lang-menu" popover role="menu" aria-label="Sprache">
+<a class="menu-item" role="menuitemradio" aria-checked="false" href="/en/privacy" hreflang="en" lang="en" data-lang="en"><span class="lang-code" aria-hidden="true">EN</span><span>English</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></a>
+<a class="menu-item" role="menuitemradio" aria-checked="true" href="/de/privacy" hreflang="de" lang="de" data-lang="de"><span class="lang-code" aria-hidden="true">DE</span><span>Deutsch</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></a>
+<a class="menu-item" role="menuitemradio" aria-checked="false" href="/es/privacy" hreflang="es" lang="es" data-lang="es"><span class="lang-code" aria-hidden="true">ES</span><span>Español</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></a>
+<a class="menu-item" role="menuitemradio" aria-checked="false" href="/fr/privacy" hreflang="fr" lang="fr" data-lang="fr"><span class="lang-code" aria-hidden="true">FR</span><span>Français</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></a>
+<a class="menu-item" role="menuitemradio" aria-checked="false" href="/nl/privacy" hreflang="nl" lang="nl" data-lang="nl"><span class="lang-code" aria-hidden="true">NL</span><span>Nederlands</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></a>
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{
+ "description": "Folders refused as a whole (§2.6).",
+ "trees": [
+  {
+   "name": "collision",
+   "root": "clash",
+   "tree": [
+    {
+     "path": "a.txt",
+     "text": "one"
+    },
+    {
+     "path": "a‎.txt",
+     "text": "two"
+    }
+   ],
+   "code": "collision",
+   "detail": "clash/a.txt"
+  },
+  {
+   "name": "prefix",
+   "root": "clash",
+   "tree": [
+    {
+     "path": "a‎",
+     "text": "file"
+    },
+    {
+     "path": "a-b.txt",
+     "text": "between"
+    },
+    {
+     "path": "a/b.txt",
+     "text": "inside"
+    }
+   ],
+   "code": "collision",
+   "detail": "clash/a"
+  },
+  {
+   "name": "empty",
+   "root": "nothing",
+   "tree": [
+    {
+     "path": "link",
+     "type": "symlink",
+     "target": "/etc/hostname"
+    },
+    {
+     "path": "empty",
+     "type": "dir"
+    },
+    {
+     "path": "bad\tname",
+     "text": "x"
+    }
+   ],
+   "code": "empty"
+  }
+ ],
+ "counts": [
+  {
+   "files": 100000,
+   "code": null
+  },
+  {
+   "files": 100001,
+   "code": "too_many"
+  }
+ ],
+ "sizes": [
+  {
+   "description": "One file making the zip exactly 50 GiB",
+   "root": "max",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 53687090950
+    }
+   ],
+   "limit": 53687091200,
+   "code": null
+  },
+  {
+   "description": "One byte more",
+   "root": "max",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 53687090951
+    }
+   ],
+   "limit": 53687091200,
+   "code": "too_large"
+  },
+  {
+   "description": "The largest E2EE plaintext (P_max) as the zip",
+   "root": "max",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 53673986750
+    }
+   ],
+   "limit": 53673987000,
+   "code": null
+  },
+  {
+   "description": "One byte more than P_max",
+   "root": "max",
+   "files": [
+    {
+     "path": "a.bin",
+     "size": 53673986751
+    }
+   ],
+   "limit": 53673987000,
+   "code": "too_large"
+  }
+ ]
+}

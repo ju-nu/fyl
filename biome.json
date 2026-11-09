@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["src/**", "tests/**/*.ts", "tests/**/*.mjs", "scripts/**/*.mjs", "dist/*.js", "dist/e2ee/*.js", "dist/admin/*.js", "dist/_dl/*.js", "*.ts", "!worker-configuration.d.ts", "!!.build"]
+  },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": { "useTemplate": "off" },
+      "suspicious": { "useIterableCallbackReturn": "off" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["dist/*.js", "dist/e2ee/*.js", "dist/admin/*.js", "dist/_dl/*.js"],
+      "linter": { "rules": { "suspicious": { "noRedundantUseStrict": "off" } } }
+    }
+  ]
+}

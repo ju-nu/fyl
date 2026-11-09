@@ -1,0 +1,35 @@
+{
+ "about": "docs/E2EE.md §3: KEY = b64url(identity) (43 characters, canonical); ageIdentity = the §3.2 Bech32 string (encoders write uppercase; decoders take all-uppercase or all-lowercase); recipient = age's public form, never transmitted, for the standard-tool path only. invalidKeys fail KEY decoding (key_invalid); invalidAgeIdentities fail §3.2 decoding (key_invalid).",
+ "valid": [
+  {"why": "fixed test identity", "identity": "292f768e421ccee021a72a9ddda0d4ea591b1f954443d843fa6887cf4c91732d", "key": "KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcy0", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSCA0M30", "recipient": "age1e06wd7kt68ecad3rtujupch3s9v06u2xekzy8kp6vhkjffupky2q5a55yl"},
+  {"why": "other test identity", "identity": "c6074740f933a53b04f216195830298c63e61fc0879e601f42a01a19f70684ae", "key": "xgdHQPkzpTsE8hYZWDApjGPmH8CHnmAfQqAaGfcGhK4", "ageIdentity": "AGE-SECRET-KEY-1CCR5WS8EXWJNKP8JZCV4SVPF3337V87QS70XQ86Z5QDPNACXSJHQKY63N7", "recipient": "age16x6z76m5awd4250cz3p8z4uhxqklxfe6tx74t9l5r9v8lv5nlfkswghjun"},
+  {"why": "CCTV test identity", "identity": "ca1626252c53cf1a4dc46695e7fcc46594cb4ccadedb6712dfda0753f3ae355e", "key": "yhYmJSxTzxpNxGaV5_zEZZTLTMre22cS39oHU_OuNV4", "ageIdentity": "AGE-SECRET-KEY-1EGTZVFFV20835NWYV6270LXYVK2VKNX2MMDKWYKLMGR48UAWX40Q2P2LM0", "recipient": "age1xmwwc06ly3ee5rytxm9mflaz2u56jjj36s0mypdrwsvlul66mv4q47ryef"},
+  {"why": "all zero bytes", "identity": "0000000000000000000000000000000000000000000000000000000000000000", "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "ageIdentity": "AGE-SECRET-KEY-1QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ8H00W3", "recipient": "age19ljhmg68e43yx9fgm2k9lwefquc0la5y4lzvlshdjzv47kxt8d6qr9vf4p"},
+  {"why": "all 0xff", "identity": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "key": "__________________________________________8", "ageIdentity": "AGE-SECRET-KEY-1LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLS9FV78X", "recipient": "age1s37q6tph2g60xe0xvz24rparwddq7asn69sf6wn2fkx98t42tg3qvgcz2x"},
+  {"why": "'-' and '_' characters", "identity": "fbffbffbffbffbffbffbffbffbffbffbffbffbffbffbffbffbffbffbffbffbff", "key": "-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_8", "ageIdentity": "AGE-SECRET-KEY-1L0LML7LLHLALL0LML7LLHLALL0LML7LLHLALL0LML7LLHLALL0LSPSMA60", "recipient": "age1uj568kjce8lrutdwrr6whdxygx5pd2a44g3jck0thpya6kl9dp8qe04s54"}
+ ],
+ "invalidKeys": [
+  {"why": "42 characters", "key": "KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcy"},
+  {"why": "44 characters", "key": "KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcy0A"},
+  {"why": "padding", "key": "KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcy0="},
+  {"why": "empty", "key": ""},
+  {"why": "trailing bits set (last character not in AEIMQUYcgkosw048)", "key": "KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcy1"},
+  {"why": "standard base64 '+' and '/'", "key": "+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/8"},
+  {"why": "inner space", "key": "KS92jkIczuAhpyqd3aDU lkbH5VEQ9hD-miHz0yRcy0"},
+  {"why": "non-ASCII", "key": "KS92jkIczuAhpyqd3aDU6lkbH5VEQ9hD-miHz0yRcé0"},
+  {"why": "age identity is not a KEY", "key": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSCA0M30"}
+ ],
+ "invalidAgeIdentities": [
+  {"why": "mixed case", "ageIdentity": "AGE-SECRET-KEY-19YHHdrjzrn8wqgd892wamgx5afv3k8u4g3passl6dzru7ny3wvksca0m30"},
+  {"why": "checksum changed", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSCA0M3Q"},
+  {"why": "Bech32m checksum", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSDPLH5D"},
+  {"why": "HRP age (a recipient)", "ageIdentity": "age1e06wd7kt68ecad3rtujupch3s9v06u2xekzy8kp6vhkjffupky2q5a55yl"},
+  {"why": "HRP age-plugin-x-", "ageIdentity": "AGE-PLUGIN-X-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSP20N86"},
+  {"why": "31 bytes", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVJ8E29P"},
+  {"why": "33 bytes", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSQK6H990"},
+  {"why": "non-zero padding bits", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVK39TMWVA"},
+  {"why": "character outside the Bech32 set ('B')", "ageIdentity": "AGE-SECRET-KEY-19YHHDRJZRN8WQGB892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSCA0M30"},
+  {"why": "no separator", "ageIdentity": "AGE-SECRET-KEY-9YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSCA0M30"},
+  {"why": "leading space (the decoder itself doesn't trim)", "ageIdentity": " AGE-SECRET-KEY-19YHHDRJZRN8WQGD892WAMGX5AFV3K8U4G3PASSL6DZRU7NY3WVKSCA0M30"}
+ ]
+}

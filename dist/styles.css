@@ -1,0 +1,946 @@
+/* fyl.at. One sans (IBM Plex Sans), one mono (JetBrains Mono) for links, commands, passwords, keys and IDs only.
+   Colours of fyl.at 2.2.0 on the redesigned layout: slate ink, a cobalt accent with its gradient (primary buttons, the
+   expiry pill, the wordmark, "now.") that also marks options that are on, green for "this link works now" (and the
+   dot on the drop-zone illustration that promises it), amber for "this file can run code", red for errors and
+   deletion, and a soft cobalt glow over a faint grid behind every page. Every terminal (the companion, the CLI dialog,
+   the recipient's "Download in a terminal") is an always-dark window, like a real terminal. See DESIGN.md.
+   Signature: the lifetime line. It is the upload's progress, turns green at the ready beat, then shows the time left
+   on the receipt, in recent uploads and on the recipient's page. A closed link shows it dashed.
+   Motion: every duration is a token times --slow. Reduced motion is the @media block at the end.
+   CSP style-src 'self': no inline styles anywhere; dynamic values go through the CSSOM (--v on bars, the expiry pill).
+   The download page adds download.css. */
+
+@font-face{font-family:Plex;src:url('fonts/plex-sans-400.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Plex;src:url('fonts/plex-sans-600.woff2') format('woff2');font-weight:500 600;font-display:swap}
+@font-face{font-family:Plex;src:url('fonts/plex-sans-700.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:JBMono;src:url('fonts/jetbrains-mono-400.woff2') format('woff2');font-weight:400 600;font-display:swap}
+
+/* ---------- Tokens: light on :root, dark when pinned, dark again from the system unless light is pinned ---------- */
+:root{
+  color-scheme:light;
+  --bg:#f5f7fb;--surface:#ffffff;--surface-top:#ffffff;--surface-bottom:#fbfcfe;--well:#f2f5fa;--well-2:#e7ecf4;--btn-2:#ffffff;
+  --line-faint:#eef2f6;--line:#e3e8ef;--line-2:#d5dce6;--line-3:#a9b3c4;--field-line:#7d8aa0;
+  --ink:#0f172a;--ink-2:#334155;--ink-3:#4b5870;
+  --accent:#2f5ee8;--accent-hover:#2552d6;--accent-bright:#3f6ef5;--accent-ink:#2851d6;--accent-wash:#eef2fe;--accent-line:#c5d4fc;--on-accent:#ffffff;--violet:#6d4cf5;
+  --accent-glow:rgb(47 94 232 / .45);--accent-soft:rgb(63 110 245 / .07);
+  --bar:#2f5ee8;--track:#e2e7f0;--life:#15803d;--stall:#64748b;
+  --ok:#15803d;--ok-wash:#edf8f1;--ok-line:#addfc0;--ok-bar:#15803d;
+  --warn:#d97706;--warn-ink:#92400e;--warn-wash:#fffaf0;--warn-line:#f5d49b;
+  --danger:#dc2626;--danger-bg:#dc2626;--danger-hover:#b91c1c;--danger-wash:#fff5f5;--danger-soft:#b83238;--danger-strong:#c81e1e;--danger-line:#f4bebe;--danger-line-2:#ee9292;
+  --disabled-bg:#ecf1fe;--disabled-ink:#4b5a75;
+  --toast-bg:#0f1a2c;--toast-ink:#f1f5fb;--toast-line:#0f1a2c;--toast-action:#9db9ff;
+  --scrim:rgb(15 23 42 / .35);
+  --shadow-pop:0 1px 2px rgb(15 23 42 / .06),0 10px 28px -8px rgb(15 23 42 / .18);
+  --menu:var(--surface);--menu-line:var(--line);--menu-hover:var(--well);
+  --shadow-dialog:0 2px 6px rgb(15 23 42 / .06),0 40px 90px -24px rgb(15 23 42 / .3);
+  --shadow-card:0 40px 80px -40px rgb(15 23 42 / .14),0 0 0 1px var(--accent-soft),0 0 80px -30px var(--accent-glow);
+  --sel:#c5d4fc;
+  --glow-a:rgb(63 110 245 / .14);--glow-b:rgb(34 197 94 / .06);--grid:rgb(15 23 42 / .045);
+  --art-back:#e6ecf7;--art-back-line:#c9d5ea;--art-sheet:#ffffff;--art-fold:#e7eefc;--art-edge:#93a6c8;--art-lines:#c1cee6;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#070b14;--surface:#101a2e;--surface-top:#131c32;--surface-bottom:#0d1424;--well:#0b1222;--well-2:#1b2539;--btn-2:#1b2539;
+  --line-faint:#1a2335;--line:#222d41;--line-2:#303b4f;--line-3:#4b576c;--field-line:#6b7a93;
+  --ink:#f1f5fb;--ink-2:#cbd5e1;--ink-3:#9aa8bd;
+  --accent:#2f5ee8;--accent-hover:#2552d6;--accent-bright:#5b8cff;--accent-ink:#9db9ff;--accent-wash:#192847;--accent-line:#3a4a6d;--on-accent:#ffffff;--violet:#7c5cff;
+  --accent-glow:rgb(63 110 245 / .9);--accent-soft:rgb(63 110 245 / .1);
+  --bar:#5b8cff;--track:#1e2940;--life:#4ade80;--stall:#8090a8;
+  --ok:#4ade80;--ok-wash:#0e2729;--ok-line:#1e4f3e;--ok-bar:#4ade80;
+  --warn:#fbbf24;--warn-ink:#fcd34d;--warn-wash:#261f10;--warn-line:#5a4520;
+  --danger:#f87171;--danger-bg:#dc2626;--danger-hover:#b91c1c;--danger-wash:#2a1520;--danger-soft:#e07f84;--danger-strong:#f87171;--danger-line:#583645;--danger-line-2:#864652;
+  --disabled-bg:#18274e;--disabled-ink:#a3b1c6;
+  --toast-bg:#0f1a2c;--toast-ink:#f1f5fb;--toast-line:#24304a;--toast-action:#9db9ff;
+  --scrim:rgb(3 6 12 / .72);
+  --shadow-pop:0 0 0 1px rgb(0 0 0 / .5),inset 0 1px 0 rgb(255 255 255 / .06),0 2px 4px rgb(0 0 0 / .45),0 16px 40px -8px rgb(0 0 0 / .75);
+  --menu:#1c2740;--menu-line:#3d4a62;--menu-hover:#26324d;
+  --shadow-dialog:0 40px 100px -20px rgb(0 0 0 / .7);
+  --shadow-card:0 40px 80px -40px rgb(0 0 0 / .7),0 0 0 1px var(--accent-soft),0 0 80px -30px var(--accent-glow);
+  --sel:#343f5b;
+  --glow-a:rgb(63 110 245 / .28);--glow-b:rgb(34 197 94 / .07);--grid:rgb(148 163 184 / .05);
+  --art-back:#1b2742;--art-back-line:#2c3b5c;--art-sheet:#22304f;--art-fold:#2c3d63;--art-edge:#4b6190;--art-lines:#3d5280;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#070b14;--surface:#101a2e;--surface-top:#131c32;--surface-bottom:#0d1424;--well:#0b1222;--well-2:#1b2539;--btn-2:#1b2539;
+    --line-faint:#1a2335;--line:#222d41;--line-2:#303b4f;--line-3:#4b576c;--field-line:#6b7a93;
+    --ink:#f1f5fb;--ink-2:#cbd5e1;--ink-3:#9aa8bd;
+    --accent:#2f5ee8;--accent-hover:#2552d6;--accent-bright:#5b8cff;--accent-ink:#9db9ff;--accent-wash:#192847;--accent-line:#3a4a6d;--on-accent:#ffffff;--violet:#7c5cff;
+    --accent-glow:rgb(63 110 245 / .9);--accent-soft:rgb(63 110 245 / .1);
+    --bar:#5b8cff;--track:#1e2940;--life:#4ade80;--stall:#8090a8;
+    --ok:#4ade80;--ok-wash:#0e2729;--ok-line:#1e4f3e;--ok-bar:#4ade80;
+    --warn:#fbbf24;--warn-ink:#fcd34d;--warn-wash:#261f10;--warn-line:#5a4520;
+    --danger:#f87171;--danger-bg:#dc2626;--danger-hover:#b91c1c;--danger-wash:#2a1520;--danger-soft:#e07f84;--danger-strong:#f87171;--danger-line:#583645;--danger-line-2:#864652;
+    --disabled-bg:#18274e;--disabled-ink:#a3b1c6;
+    --toast-bg:#0f1a2c;--toast-ink:#f1f5fb;--toast-line:#24304a;--toast-action:#9db9ff;
+    --scrim:rgb(3 6 12 / .72);
+    --shadow-pop:0 0 0 1px rgb(0 0 0 / .5),inset 0 1px 0 rgb(255 255 255 / .06),0 2px 4px rgb(0 0 0 / .45),0 16px 40px -8px rgb(0 0 0 / .75);
+  --menu:#1c2740;--menu-line:#3d4a62;--menu-hover:#26324d;
+    --shadow-dialog:0 40px 100px -20px rgb(0 0 0 / .7);
+    --shadow-card:0 40px 80px -40px rgb(0 0 0 / .7),0 0 0 1px var(--accent-soft),0 0 80px -30px var(--accent-glow);
+    --sel:#343f5b;
+    --glow-a:rgb(63 110 245 / .28);--glow-b:rgb(34 197 94 / .07);--grid:rgb(148 163 184 / .05);
+    --art-back:#1b2742;--art-back-line:#2c3b5c;--art-sheet:#22304f;--art-fold:#2c3d63;--art-edge:#4b6190;--art-lines:#3d5280;
+  }
+}
+/* The primary fill: the cobalt gradient of 2.2.0, light at the top. #3f6ef5 alone holds white at 4.41 : 1, so the
+   gradient reaches #2f5ee8 (5.40 : 1) at 62 % of the height: under the label it never drops below 4.76 : 1. */
+:root{
+  --accent-fill:linear-gradient(180deg,#3f6ef5,#2f5ee8 62%);
+  --accent-fill-hover:linear-gradient(180deg,#3567f0,#2552d6 62%);
+  --brand-fill:linear-gradient(140deg,#5b8cff,#3f6ef5);
+}
+:root{
+  --sans:Plex,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:JBMono,ui-monospace,SFMono-Regular,Menlo,monospace;
+  --t-xs:13px;--t-meta:14px;--t-small:14px;--t-ui:15px;--t-lead:16px;--t-intro:18px;--t-promise:20px;--t-h:22px;--t-form:26px;--t-page:32px;--t-title-sm:36px;--t-title:44px;
+  --r-panel:18px;--r-well:12px;--r-ctl:10px;--r-sm:6px;
+  --line-w:4px;--line-w-list:3px;
+  --slow:1;
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-drawer:cubic-bezier(.32,.72,0,1);
+  --d-press:calc(160ms * var(--slow));
+  --d-hover:calc(150ms * var(--slow));
+  --d-swap:calc(150ms * var(--slow));
+  --d-base:calc(200ms * var(--slow));
+  --d-slide:calc(220ms * var(--slow));
+  --d-reveal:calc(280ms * var(--slow));
+  --d-close:calc(180ms * var(--slow));
+  --d-morph:calc(280ms * var(--slow));
+  --d-sheet:calc(320ms * var(--slow));
+  --d-fill:calc(150ms * var(--slow));
+  interpolate-size:allow-keywords;
+  font-family:var(--sans);font-size:var(--t-ui);line-height:1.5;color:var(--ink);background:var(--bg);
+  font-synthesis:none;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-size-adjust:100%;
+  scrollbar-color:var(--line-3) transparent;
+}
+
+/* ---------- Base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;min-height:100vh;min-height:100svh;background:var(--bg);color:var(--ink);isolation:isolate}
+/* The 2.2.0 backdrop: a soft cobalt glow at the top right, a faint green one on the left, and a 56 px grid that fades
+   out towards the bottom. Decorative: fixed behind the page, never in the way of a pointer. */
+body::before,body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none}
+body::before{background:radial-gradient(900px 520px at 78% -8%,var(--glow-a),transparent 62%),radial-gradient(700px 480px at -10% 30%,var(--glow-b),transparent 60%)}
+body::after{background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%)}
+h1,h2,h3,h4,p,ol,ul,dl,dd,figure{margin:0}
+ol,ul{padding:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+button:disabled{cursor:not-allowed}
+button,a,label,input,summary{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+input,textarea{caret-color:var(--accent)}
+::selection{background:var(--sel);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.btn-primary:focus-visible,.btn-danger:focus-visible{outline-offset:3px}
+h1:focus,h2:focus,h3:focus{outline:none}
+[hidden]{display:none!important}
+.theme-change *,.theme-change *::before,.theme-change *::after{transition:none!important}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.icons{position:absolute;width:0;height:0;overflow:hidden}
+.i{display:inline-block;flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.i-sm{width:16px;height:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-variant-ligatures:none}
+.minw0{min-width:0}
+.nowrap{white-space:nowrap}
+.skip{position:fixed;top:12px;left:12px;z-index:50;padding:12px 16px;border-radius:var(--r-ctl);background:var(--accent);color:var(--on-accent);font-weight:600;text-decoration:none;transform:translateY(-200%)}
+.skip:focus{transform:none}
+.meta{font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.err-text{color:var(--danger)}
+.touch-only{display:none}
+@media (hover:none) and (pointer:coarse){.touch-only{display:inline}.fine-only{display:none}}
+
+/* ---------- Shell: header, footer (the footer stays at the bottom of short pages) ---------- */
+.shell{display:flex;flex-direction:column;width:min(100% - 64px,1040px);min-height:100vh;min-height:100svh;margin-inline:auto}
+.shell>main{flex:1}
+.site-header{display:flex;align-items:center;justify-content:space-between;gap:12px;height:72px}
+.wordmark{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding-right:6px;text-decoration:none;font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.wordmark-mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--brand-fill);color:#fff;box-shadow:0 6px 18px -6px rgb(91 140 255 / .7),inset 0 1px 0 rgb(255 255 255 / .25)}
+.wordmark-mark svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.wordmark-mark .fill{fill:currentColor;stroke:none}
+.wordmark .dot{color:var(--accent-bright)}
+.header-nav{display:flex;align-items:center;gap:4px}
+.site-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 24px;padding:20px 0 28px;border-top:1px solid var(--line);font-size:var(--t-meta);color:var(--ink-3)}
+.site-footer nav{display:flex;align-items:center;gap:4px 20px;flex-wrap:wrap}
+.site-footer a{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;color:var(--ink-2);text-decoration:none}
+.site-footer a[aria-current="page"]{color:var(--ink);font-weight:500}
+@media (hover:hover) and (pointer:fine){.site-footer a:hover{color:var(--ink);text-decoration:underline}}
+.footer-brand b{color:var(--ink);font-weight:600}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid transparent;border-radius:var(--r-ctl);font-size:var(--t-ui);font-weight:600;line-height:1.2;text-decoration:none;white-space:nowrap;user-select:none;
+  transition:background-color var(--d-hover) ease,border-color var(--d-hover) ease,color var(--d-hover) ease,transform var(--d-press) var(--ease-out)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn .i{width:18px;height:18px}
+.btn-primary{background:var(--accent-fill);color:var(--on-accent);box-shadow:0 8px 24px -10px var(--accent-glow),inset 0 1px 0 rgb(255 255 255 / .2)}
+.btn-primary:disabled{background:var(--disabled-bg);color:var(--disabled-ink);box-shadow:none}
+.btn-secondary{background:var(--btn-2);border-color:var(--line-2);color:var(--ink)}
+.btn-secondary:disabled{color:var(--disabled-ink)}
+.btn-quiet{padding:0 10px;color:var(--ink-2);font-weight:500}
+.btn-link{min-height:44px;padding:0 4px;color:var(--accent-ink);font-weight:500}
+.btn-danger{background:var(--danger-bg);color:#fff}
+.btn-danger-quiet{padding:0 10px;color:var(--danger);font-weight:500}
+/* Cancel upload: a way out, not a call to action. Muted red text in a faint red outline at rest (5.9 : 1 light, 6.1 : 1
+   dark), the full red on a red wash with a stronger outline on hover. It turns back into a quiet button for "Change
+   options" after a failed upload. */
+.btn-cancel{padding:0 14px;color:var(--danger-soft);border-color:var(--danger-line)}
+.btn-cancel:active:not(:disabled){color:var(--danger-strong);background:var(--danger-wash);border-color:var(--danger-line-2)}
+.btn-icon{width:44px;padding:0;color:var(--ink-2)}
+.btn-lg{width:100%;min-height:52px;font-size:var(--t-lead);border-radius:var(--r-well)}
+.btn-block{width:100%}
+@media (hover:hover) and (pointer:fine){
+  .btn-primary:hover:not(:disabled){background:var(--accent-fill-hover)}
+  .btn-secondary:hover:not(:disabled){border-color:var(--line-3)}
+  .btn-quiet:hover,.btn-icon:hover{color:var(--ink);background:var(--well)}
+  .btn-link:hover{color:var(--ink)}
+  .btn-danger:hover{background:var(--danger-hover)}
+  .btn-danger-quiet:hover{background:var(--well)}
+  .btn-cancel:hover:not(:disabled){color:var(--danger-strong);background:var(--danger-wash);border-color:var(--danger-line-2)}
+}
+/* Two labels or icons in one grid cell: the width stays the larger of the two, so a swap never moves the layout. The
+   hidden one is visibility:hidden once it has faded, so screen readers and accessible names only get the shown one. */
+.swap{display:inline-grid;align-items:center;justify-items:center}
+.swap-start{justify-items:start}
+.swap>*{grid-area:1/1;transition:opacity var(--d-swap) var(--ease-out),filter var(--d-swap) var(--ease-out),transform var(--d-swap) var(--ease-out),visibility 0s}
+.swap>[data-off]{opacity:0;filter:blur(2px);transform:translateY(3px);pointer-events:none;visibility:hidden;transition-delay:0s,0s,0s,var(--d-swap)}
+.swap-ico>[data-off]{transform:scale(.85)}
+/* A split button: pressing the action half scales the pair together (the halves never come apart); pressing the arrow
+   presses only the arrow, its half darkens and its icon shrinks, the action stays still. Either half under the pointer
+   takes the hover fill. Focus rings stay keyboard-only (:focus-visible). */
+.split{display:flex;min-width:0;border-radius:var(--r-ctl);transition:transform var(--d-press) var(--ease-out)}
+.split:has(>.btn:first-child:active:not(:disabled)){transform:scale(.97)}
+.split>.btn:active:not(:disabled){transform:none}
+.split>.btn-primary:active:not(:disabled){background:var(--accent-fill-hover)}
+.split>.btn:first-child{flex:1;border-radius:var(--r-ctl) 0 0 var(--r-ctl)}
+.split>.btn-chev{width:44px;padding:0;border-radius:0 var(--r-ctl) var(--r-ctl) 0;border-left:1px solid rgb(255 255 255 / .28)}
+.split>.btn-chev .i{transition:transform var(--d-base) var(--ease-out),scale var(--d-press) var(--ease-out)}
+.split>.btn-chev:active:not(:disabled) .i{scale:.86}
+.split>.btn-chev[aria-expanded="true"] .i{transform:rotate(180deg)}
+
+/* ---------- Home: the tool first, recent uploads directly under it, the terminal beside (desktop) or after ---------- */
+.home{display:grid;grid-template-columns:minmax(0,600px) minmax(0,340px);grid-template-rows:auto auto 1fr;grid-template-areas:"intro ." "tool side" "recent side";column-gap:56px;justify-content:space-between;padding:20px 0 72px}
+.intro{grid-area:intro;margin-bottom:24px}
+.intro h1{font-size:var(--t-title);font-weight:700;line-height:1.05;letter-spacing:-.03em}
+.intro h1 .now{background:linear-gradient(100deg,var(--accent-ink) 0%,var(--accent-bright) 55%,var(--violet) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (forced-colors:active){.intro h1 .now{background:none;color:inherit}}
+.intro p{margin-top:12px;font-size:var(--t-promise);line-height:30px;color:var(--ink-2);max-width:36em;text-wrap:pretty}
+.tool{grid-area:tool;min-width:0;align-self:start;scroll-margin-top:16px}
+.side{grid-area:side;min-width:0;display:grid;align-content:start;gap:36px;padding-top:6px}
+.recent{grid-area:recent;align-self:start;margin-top:48px;min-width:0}
+
+/* ---------- Panel: one surface; inside it rows are separated by rules and wells are a tone step, never boxes ---------- */
+.panel{position:relative;background:linear-gradient(180deg,var(--surface-top),var(--surface-bottom));border:1px solid var(--line-2);border-radius:var(--r-panel);padding:24px}
+.home .tool{box-shadow:var(--shadow-card)}
+.panel-head{margin-bottom:12px}
+.panel-head h2{font-size:var(--t-h);font-weight:600;line-height:28px;letter-spacing:-.01em}
+
+/* ---------- Unfinished upload notice ---------- */
+.pending{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:4px 10px;margin:-6px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line);font-size:var(--t-small);line-height:20px;color:var(--ink-2)}
+/* Icons that start a line of text sit on the text column by their ink, not their box: a negative margin as wide as
+   the glyph's own inset (2 to 3 px at these sizes). */
+.pending>.i{width:18px;height:18px;margin-left:-3px;color:var(--ink-3)}
+.pending strong{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+
+/* ---------- Drop zone: the whole zone is a native button ---------- */
+.drop{position:relative;display:grid;place-items:center;min-height:172px;padding:20px;border:1.5px dashed var(--line-3);border-radius:var(--r-well);background:radial-gradient(120% 90% at 50% 0%,var(--accent-wash),transparent 70%),var(--well);text-align:center;
+  transition:border-color var(--d-hover) ease,background-color var(--d-hover) ease,transform var(--d-press) var(--ease-out)}
+.drop-picker{position:absolute;inset:0;z-index:1;width:100%;height:100%;border-radius:inherit}
+.drop-picker:focus-visible{outline-offset:3px}
+.drop:has(.drop-picker:active){transform:scale(.99)}
+.drop-art{display:block;width:80px;height:75px;margin:0 auto 10px}
+.drop-art svg{display:block;width:100%;height:100%;overflow:visible}
+.drop-art .back{fill:var(--art-back);stroke:var(--art-back-line);stroke-width:1;transform:rotate(-10deg);transform-origin:50% 60%}
+.drop-art .sheet{fill:var(--art-sheet);stroke:var(--art-edge);stroke-width:1.2;stroke-linejoin:round}
+.drop-art .fold{fill:var(--art-fold);stroke:var(--art-edge);stroke-width:1.2;stroke-linejoin:round}
+.drop-art .lines{fill:none;stroke:var(--art-lines);stroke-width:1.4;stroke-linecap:round}
+.drop-art .arrow{fill:none;stroke:var(--accent-bright);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.drop-art .dot{fill:var(--life)}
+.drop h3{font-size:var(--t-lead);font-weight:600;line-height:24px}
+.drop h3 .choose{color:var(--accent-ink)}
+.drop p{margin-top:4px}
+/* Where the browser can pick folders, the zone says "file or folder" and its picker opens a menu (Choose a file /
+   Choose a folder); where it can't (iOS, iPadOS), it says "file" and opens the file picker. theme.js sets html.no-folders
+   before the first paint, app.js confirms it. */
+.no-folders .if-folders,html:not(.no-folders) .if-files{display:none}
+@media (hover:hover) and (pointer:fine){.drop:has(.drop-picker:hover){border-color:var(--accent);background:var(--accent-wash)}}
+.drop:has(.drop-picker[aria-expanded="true"]){border-color:var(--accent);background:var(--accent-wash)}
+/* Drag-over: an opaque layer covers the content, so no ghosted text shows through. Opacity only, no scale. Its words
+   come from the zone's data-drop, in the page's language. */
+.drop::after{content:attr(data-drop);content:attr(data-drop) / '';position:absolute;inset:-1.5px;display:grid;place-items:center;border:1.5px solid var(--accent);border-radius:inherit;background:var(--accent-wash);color:var(--accent-ink);font-size:var(--t-lead);font-weight:600;
+  opacity:0;pointer-events:none;transition:opacity calc(120ms * var(--slow)) ease}
+.drop.drag-over::after{opacity:1}
+/* A file dragged over the page while one is chosen shows the drop zone in its place. */
+.home[data-drag] #dropzone[hidden]{display:grid!important}
+.home[data-drag] #chosen-file{display:none!important}
+
+/* ---------- File: a well while choosing, a plain row once uploading ---------- */
+.file{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:14px;min-height:76px;padding:12px 6px 12px 14px;border-radius:var(--r-well);background:var(--well)}
+.file-pick{position:absolute;inset:0;border-radius:inherit}
+.file-pick:disabled{cursor:default}
+.file-ico{position:relative;width:34px;height:40px;margin-left:4px;color:var(--ink-3)}
+.file-ico svg{width:34px;height:40px;stroke-width:1.3}
+.ext{position:absolute;left:-4px;bottom:3px;max-width:44px;overflow:hidden;padding:2px 4px;border-radius:4px;background:var(--ink);color:var(--surface);font-size:11px;font-weight:600;line-height:13px;letter-spacing:.02em}
+.file-name{font-weight:600;line-height:21px;overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:left}
+.file-meta{margin-top:2px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.file-meta .tag{display:inline-flex;align-items:center;gap:4px;color:var(--ink-2)}
+.file-meta .tag .i{width:14px;height:14px;margin-left:-2px}
+/* What a folder's zip left out (unsafe names): one quiet line under the size. */
+.file-note{font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.file .btn-icon{position:relative;z-index:1}
+.home:not([data-view="setup"]) .file{min-height:0;padding:0 0 4px;background:none;border-radius:0}
+.home:not([data-view="setup"]) .file-pick,.home:not([data-view="setup"]) #remove-file{display:none}
+
+/* ---------- Options ---------- */
+.opts{margin-top:22px}
+.legend{display:block;margin-bottom:10px;padding:0;font-weight:600}
+fieldset{margin:0;padding:0;border:0;min-width:0}
+/* Expiry: radios underneath. On top, the pill: a window that glides to the chosen cell by transform, holding a copy of
+   the row in the selected colours that moves the opposite way. Its labels stay where the row's are, so each label turns
+   white exactly as far as the pill has come. One timing for both, so a change mid-way retargets without a jump. */
+.seg{position:relative;padding:3px;border-radius:var(--r-well);background:var(--well)}
+.seg-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.seg-row span{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 2px;border-radius:9px;font-size:var(--t-small);font-weight:500;color:var(--ink-2);white-space:nowrap;transition:color var(--d-hover) ease}
+.seg-pill{position:absolute;top:3px;left:3px;width:0;height:0;pointer-events:none;border-radius:9px;background:var(--accent-fill);clip-path:inset(0 round 9px);
+  transition:transform var(--d-slide) var(--ease-out),width var(--d-slide) var(--ease-out),height var(--d-slide) var(--ease-out)}
+/* The copy of the row inside the pill shows only through the pill's clip, but carries the pill's own fill (the same
+   look), so contrast checkers, which ignore clip-path, measure its white on blue rather than on the well. */
+.seg-on{position:absolute;top:0;left:0;background-color:var(--accent);background-image:var(--accent-fill);transition:transform var(--d-slide) var(--ease-out)}
+.seg-on span{color:var(--on-accent);font-weight:600}
+.seg.instant .seg-pill,.seg.instant .seg-on{transition:none}
+.seg:has(input:focus-visible){outline:2px solid var(--accent-ink);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.seg label:hover span{color:var(--ink)}}
+/* Below 360 px, a 3 + 2 grid keeps every label whole; the pill takes the chosen cell's size. */
+@media (max-width:359px){
+  .seg-row{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .seg-row>:nth-child(-n+3){grid-column:span 2}
+  .seg-row>:nth-child(n+4){grid-column:span 3}
+}
+.summary{margin-top:8px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3)}
+.summary strong{color:var(--ink-2);font-weight:600}
+/* Custom expiry: the label over a number and a unit, styled like every other field (48 px, the field border, the focus
+   ring as border plus 1 px), the unit with the site's chevron instead of the system arrow. */
+.custom{display:grid;grid-template-columns:minmax(0,104px) minmax(0,168px);gap:0 8px;padding-top:16px}
+#custom-expiry-wrap .custom{padding-top:16px} /* over .reveal-pad's 4 px, which comes later */
+.custom>label{grid-column:1/-1;margin-bottom:8px;font-size:var(--t-small);line-height:20px;font-weight:500;color:var(--ink-2)}
+.custom .meta{grid-column:1/-1;margin-top:8px}
+.custom input,.custom select{width:100%;min-height:48px;margin:0;padding:0 14px;border:1px solid var(--field-line);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink);font-size:16px;line-height:22px;
+  outline:none;transition:border-color var(--d-hover) ease,box-shadow var(--d-hover) ease}
+.custom input{font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield}
+.custom input::-webkit-inner-spin-button,.custom input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.custom select{appearance:none;-webkit-appearance:none;padding-right:40px;cursor:pointer}
+.custom input:focus,.custom select:focus{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.custom input[aria-invalid="true"]{border-color:var(--danger)}
+.custom input[aria-invalid="true"]:focus{box-shadow:0 0 0 1px var(--danger)}
+.select{position:relative;display:grid;align-items:center}
+.select>*{grid-area:1/1}
+.select>.i{justify-self:end;width:18px;height:18px;margin-right:14px;color:var(--ink-3);pointer-events:none}
+/* One download, Password, Encryption: a row of toggles under "Options", and
+   under them one quiet block with a section for each option that is on, in the toggles' order; with none on, one line
+   says what the link does. */
+.opt-group{margin-top:22px;padding-bottom:10px}
+.opt-toggles{display:flex;flex-wrap:wrap;gap:8px 6px}
+/* A toggle is a native checkbox that covers the whole chip and reaches 4 px past it above and below: a 44 px target,
+   and one touch screen readers find. The visible face follows it (input:checked + .opt-face, so nothing needs :has()):
+   off, outlined like a secondary button with the option's icon; on, the expiry pill's cobalt fades in under it and the
+   icon cross-fades to a check. The fill is a layer of its own because a gradient can't fade. */
+.opt-toggle{--opt-pl:11px;--opt-pr:13px;position:relative;display:inline-flex}
+.opt-toggle input{position:absolute;inset:-4px 0;z-index:1;width:100%;height:calc(100% + 8px);margin:0;opacity:0;cursor:pointer}
+.opt-face{position:relative;isolation:isolate;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 var(--opt-pr) 0 var(--opt-pl);border:1px solid var(--line-2);border-radius:9px;background:var(--btn-2);color:var(--ink-2);
+  font-size:var(--t-small);font-weight:500;line-height:20px;white-space:nowrap;user-select:none;
+  transition:color var(--d-hover) ease,border-color var(--d-hover) ease,transform var(--d-press) var(--ease-out)}
+.opt-face::before{content:'';position:absolute;inset:-1px;z-index:-1;border-radius:inherit;background:var(--accent-fill);box-shadow:0 6px 16px -10px var(--accent-glow),inset 0 1px 0 rgb(255 255 255 / .2);
+  opacity:0;transition:opacity var(--d-base) var(--ease-out)}
+.opt-toggle input:checked+.opt-face{color:var(--on-accent);border-color:transparent}
+.opt-toggle input:checked+.opt-face::before{opacity:1}
+.opt-toggle input:active+.opt-face{transform:scale(.97)}
+.opt-toggle input:focus-visible+.opt-face{outline:2px solid var(--accent-ink);outline-offset:2px}
+.opt-ico{display:inline-grid;place-items:center}
+.opt-ico>.i{grid-area:1/1;width:16px;height:16px;color:var(--ink-3);
+  transition:opacity var(--d-swap) var(--ease-out),filter var(--d-swap) var(--ease-out),transform var(--d-swap) var(--ease-out),color var(--d-hover) ease}
+.opt-ico>.i+.i{stroke-width:2.2;opacity:0;filter:blur(2px);transform:scale(.85)}
+.opt-toggle input:checked+.opt-face .i{color:var(--on-accent)}
+.opt-toggle input:checked+.opt-face .i:first-child{opacity:0;filter:blur(2px);transform:scale(.85)}
+.opt-toggle input:checked+.opt-face .i+.i{opacity:1;filter:none;transform:none}
+@media (hover:hover) and (pointer:fine){
+  .opt-toggle:hover input:not(:checked)+.opt-face{border-color:var(--line-3);color:var(--ink)}
+  .opt-toggle:hover input:not(:checked)+.opt-face .i{color:var(--ink-2)}
+}
+/* The line and the block share one grid cell, so the cell is as tall as the taller of the two: when the first option
+   turns on, the content below only moves down as the block opens (it never jumps up as the line goes first), and back
+   up only as the last one closes. The line fades out at once and back in once the block has nearly closed. */
+.opt-more{display:grid}
+.opt-more>*{grid-area:1/1;align-self:start;min-width:0}
+.opt-off{text-wrap:pretty;transition:opacity calc(150ms * var(--slow)) var(--ease-out) calc(100ms * var(--slow)),visibility 0s}
+.opt-more.any .opt-off{opacity:0;visibility:hidden;transition:opacity calc(100ms * var(--slow)) var(--ease-out),visibility 0s calc(100ms * var(--slow))}
+/* The block: an edge (--line) only while something is on. Its sections open like the custom expiry (.reveal), and a
+   fainter rule (--line-faint) parts them: every section draws it at its own top, inside its reveal, and the block's
+   first one sits 1 px up, under the clipped edge, so a rule never appears or goes in one frame. */
+.opt-box{margin-top:12px;border:1px solid transparent;border-radius:var(--r-well);overflow:hidden;visibility:hidden;
+  transition:border-color calc(100ms * var(--slow)) ease,visibility 0s var(--d-close)}
+.opt-more.any .opt-box{border-color:var(--line);visibility:visible;transition:border-color var(--d-base) ease calc(60ms * var(--slow)),visibility 0s}
+.opt-secs{margin-top:-1px}
+.opt-pad{padding:13px 16px 15px;border-top:1px solid var(--line-faint)}
+/* Title with the option's icon (its ink on the section's edge), then the description, field and notes on the title's
+   text column. */
+.opt-title{display:flex;align-items:center;gap:11px;font-size:var(--t-small);font-weight:600;line-height:20px;color:var(--ink)}
+.opt-title .i{width:16px;height:16px;margin-left:-2px;color:var(--accent-ink)}
+.opt-desc{margin-top:2px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.opt-pad>:not(.opt-title){margin-left:25px}
+.opt-pad .pw-row{margin-top:10px}
+/* The key of an unfinished encrypted upload: a group of its own under the options, its label like a group heading. */
+.resume-key{margin-top:12px}
+.resume-key>label{display:block;font-weight:600}
+.resume-key>p{margin-top:2px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.resume-key .field{margin-top:10px}
+
+/* Reveal: the row grows from 0fr to 1fr on the drawer curve, which eases into the movement instead of landing most of
+   it in the first frames (what follows slides down with it); the content fades in a beat behind the height and
+   settles 6 px, and on closing fades out first. Transitions, so opening and closing retarget mid-way.
+   Closed content is not focusable. */
+.reveal{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--d-close) var(--ease-out)}
+/* A block easing to a new height (resize() in app.js): opening like .reveal.open, closing like .reveal. */
+.sizing{overflow:hidden;transition:height var(--d-reveal) var(--ease-drawer)}
+.sizing.closing{transition:height var(--d-close) var(--ease-out)}
+.reveal>div{min-height:0;overflow:hidden;opacity:0;transform:translateY(-6px);visibility:hidden;
+  transition:opacity calc(100ms * var(--slow)) var(--ease-out),transform var(--d-close) var(--ease-out),visibility 0s var(--d-close)}
+.reveal.open{grid-template-rows:1fr;transition:grid-template-rows var(--d-reveal) var(--ease-drawer)}
+.reveal.open>div{opacity:1;transform:none;visibility:visible;
+  transition:opacity calc(200ms * var(--slow)) var(--ease-out) calc(40ms * var(--slow)),transform var(--d-reveal) var(--ease-out),visibility 0s}
+/* Room for the fields' focus ring, which the clipping would cut. */
+.reveal-pad{padding:4px 2px;margin:0 -2px}
+
+.pw-row{display:flex;gap:8px;margin-top:12px}
+.field{flex:1;min-width:0;display:flex;align-items:center;min-height:48px;padding:0 4px 0 14px;border:1px solid var(--field-line);border-radius:var(--r-ctl);background:var(--surface);transition:border-color var(--d-hover) ease,box-shadow var(--d-hover) ease}
+.field:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field:has([aria-invalid="true"]){border-color:var(--danger)}
+.field:has([aria-invalid="true"]):focus-within{box-shadow:0 0 0 1px var(--danger)}
+.field input{flex:1;min-width:0;min-height:46px;padding:0;border:0;outline:none;background:none;font-size:16px}
+.field input.mono{letter-spacing:.01em}
+.pw-row>.btn-icon{min-height:48px;width:48px}
+.hint{margin-top:8px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.hint.err-text{color:var(--danger)}
+/* A link that ends a hint ("Why?" under encryption): the link colour, and a 44 px target drawn by ::after (13 px above
+   and below the 18 px inline box), so the line keeps its height and the focus ring stays around the word. */
+.hint a{position:relative;color:var(--accent-ink);white-space:nowrap}
+.hint a::after{content:'';position:absolute;inset:-13px -6px}
+@media (hover:hover) and (pointer:fine){.hint a:hover{color:var(--ink)}}
+.note{display:flex;gap:8px;margin-top:10px;font-size:var(--t-meta);line-height:20px;color:var(--ink-2)}
+.note .i{width:16px;height:16px;margin:2px 0 0 -2px;color:var(--ink-3)}
+.note span{text-wrap:pretty}
+.form-error{margin-top:14px;font-size:var(--t-small);line-height:20px;color:var(--danger);text-wrap:pretty}
+.go-l{display:inline-flex;align-items:center;gap:8px}
+.footnote{margin-top:14px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-align:center;text-wrap:balance}
+.footnote .i{width:14px;height:14px;margin:-2px 6px 0 0;color:var(--ok)}
+.go-dock{margin-top:10px}
+
+/* ---------- The link object: born at Upload, turns ready in place, then carries the link's lifetime ---------- */
+.lo{position:relative;margin-top:14px;padding:16px;border-radius:var(--r-well);background:var(--well)}
+.lo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.lo-label{font-size:var(--t-ui);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:var(--accent-wash);color:var(--accent-ink);font-size:var(--t-xs);font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums;
+  transition:background-color var(--d-base) ease,color var(--d-base) ease}
+.chip .tick{display:none;width:14px;height:14px;stroke-width:2.4}
+.lo.ready .chip{background:var(--ok-wash);color:var(--ok)}
+.lo.ready .chip .tick{display:inline-block}
+.lo.lifetime #chip-a{display:none}
+.lo.stalled .chip{background:var(--well-2);color:var(--ink-2)}
+.lo.failed .chip{background:var(--danger-wash);color:var(--danger)}
+.tick path{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset calc(240ms * var(--slow)) var(--ease-out) calc(60ms * var(--slow))}
+.lo.ready .tick path{stroke-dashoffset:0}
+.url-row{display:flex;align-items:center;gap:4px;min-height:48px;margin-top:2px;padding:0 3px 0 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface);font-family:var(--mono);font-variant-ligatures:none;font-size:var(--t-small);line-height:22px}
+/* The link is a field, the way a browser shows an address: one line, mono, the host dimmed, the id in the link colour,
+   the name in ink; app.js cuts the id and the name in the middle to the characters that fit, the name keeping its
+   extension. The copy button sits at the field's end, 3 px from its edges on every side. When copying
+   fails, the field shows the whole link (.full) to be selected by hand. A real link (to a new tab) is underlined on
+   hover. Dragging selects the text instead of dragging the link. Without an address (being created, or failed) it is
+   plain text. */
+.url{flex:1;min-width:0;padding:12px 0;overflow:hidden;white-space:nowrap;color:var(--accent-ink);text-decoration:none;-webkit-user-drag:none}
+.url .host,.url .sep{color:var(--ink-3)}
+.url .name{color:var(--ink)}
+.url .key{color:var(--accent-ink);background:var(--accent-wash);border-radius:4px}
+.url.full{white-space:normal;overflow-wrap:anywhere}
+.url:focus-visible{outline-offset:-1px;border-radius:9px}
+.url-row .btn-icon{flex:none;width:40px;min-height:40px;border-radius:9px}
+.url.waiting{font-family:var(--sans);color:var(--ink-3)}
+/* While the link is being created, the field shows a quiet bar where the link will be, pulsing like the placeholders
+   under it; "Creating your link…" stays in the field for screen readers. */
+.url.waiting:not(.lo.failed .url){position:relative;color:transparent}
+.url.waiting:not(.lo.failed .url)::after{content:'';position:absolute;top:50%;left:0;width:min(64%,340px);height:10px;margin-top:-5px;border-radius:5px;background:var(--well-2);animation:await calc(1200ms * var(--slow)) ease-in-out infinite alternate}
+@media (hover:hover) and (pointer:fine){.url[href]:hover{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}}
+.lo.failed .url,.lo.failed .url .name,.lo.failed .url .host{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line-3)}
+.lo-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.lo-actions>.split{flex:1 1 220px}
+.lo-actions>.btn-secondary{flex:0 0 auto}
+.lo-hint{margin-top:12px;font-size:var(--t-meta);line-height:20px;color:var(--ink-2);text-wrap:pretty}
+.lo-hint span{color:var(--ink-3)}
+.lo-again{margin-top:10px}
+/* The meter: one line, two meanings, each named in words above it. Progress (accent) while uploading; green and full
+   at the ready beat; then the time left. Grey while paused, dashed when the upload failed or the link closed. */
+.lo-meter{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:0 12px;margin-top:16px}
+.lo-meter>p{flex:1 1 auto}
+.mt-main{display:block;font-size:var(--t-ui);line-height:22px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.mt-sub{font-size:var(--t-meta);line-height:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.mt-right{flex:0 1 auto;margin-left:auto;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-align:right;font-variant-numeric:tabular-nums}
+.mt-right .btn-link{margin:0 -4px -12px 0}
+.lo-meter .bar{flex:0 0 100%;margin-top:10px}
+.bar{display:block;height:var(--line-w);border-radius:99px;background:var(--track);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:inherit;background:var(--life);transform-origin:left center;transform:scaleX(var(--v,1))}
+.lo .bar>i{background:var(--bar);transform:scaleX(var(--v,0));transition:transform var(--d-fill) linear,background-color calc(300ms * var(--slow)) ease}
+.lo.ready .bar>i{background:var(--ok-bar)}
+.lo.lifetime .bar>i{background:var(--life)}
+.lo.stalled .bar>i{background:var(--stall)}
+.bar.dead,.lo.failed .bar{height:0;border-radius:0;background:none;border-top:2px dashed var(--field-line)}
+.lo.failed .bar>i{display:none}
+.keysplit{margin-top:10px}
+.keysplit-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:0;border:0;background:none;text-align:left;font-size:var(--t-small);line-height:20px;color:var(--ink-2);cursor:pointer}
+.keysplit-lead{display:flex;align-items:center;gap:8px;min-width:0}
+.keysplit-lead .i{flex:none;width:16px;height:16px;color:var(--accent-ink)}
+.keysplit-toggle .chev{flex:none;width:18px;height:18px;color:var(--ink-3);transition:transform var(--d-base) var(--ease-out)}
+.keysplit-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.keysplit-toggle:focus-visible{outline-offset:2px;border-radius:6px}
+@media (hover:hover) and (pointer:fine){.keysplit-toggle:hover,.keysplit-toggle:hover .chev{color:var(--ink)}}
+.keyrows{margin-top:4px;border:1px solid var(--line);border-radius:var(--r-well)}
+/* Sending the key separately: one quiet line of advice with a disclosure arrow (like MEGA's option, the one link with
+   the key stays the default); open, it shows one quiet block like the options' details with the link without the key
+   and the key, each on one line (cut in the middle to what fits, fitValue() in app.js) with an icon-only copy button
+   that turns into a tick when copied, and "Remember keys on this device" as its last row. The key's note stays outside,
+   above it: whoever never opens the block still learns that closing the tab loses the key. */
+.keyrows ul{list-style:none}
+.keyrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 8px;min-height:56px;padding:6px 6px 6px 16px}
+.keyrow+.keyrow{border-top:1px solid var(--line-faint)}
+.keyrow b{display:block;font-size:var(--t-meta);line-height:18px;font-weight:600;color:var(--ink-2)}
+.keyrow .val{display:block;min-width:0;overflow:hidden;white-space:nowrap;font-family:var(--mono);font-variant-ligatures:none;font-size:var(--t-xs);line-height:20px;color:var(--ink)}
+.keyrow .btn-icon{width:40px;min-height:40px;border-radius:9px}
+.mid .a{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mid .b{flex:none;white-space:pre}
+.keyrows-foot{padding:2px 16px 8px;border-top:1px solid var(--line-faint)}
+.keyrows-foot .keyremember{margin-top:0;padding-top:10px}
+.keywarn{display:flex;gap:8px;margin-top:12px;font-size:var(--t-meta);line-height:20px;color:var(--ink-2)}
+.keywarn .i{width:16px;height:16px;margin:2px 0 0 -2px;color:var(--ink-3)}
+.qr{display:flex;align-items:center;gap:16px;margin-top:14px}
+.qr-img{flex:none;width:120px;height:120px;border-radius:8px;overflow:hidden;background:#fff}
+.qr-img svg{display:block;width:100%;height:100%}
+.qr p{font-size:var(--t-meta);line-height:20px;color:var(--ink-2)}
+.cancel-row{display:flex;justify-content:center;margin-top:10px}
+/* After the ready beat Cancel upload fades out in place; the receipt replaces it (finishProgress() in app.js). */
+.cancel-row.leaving{opacity:0;visibility:hidden;transition:opacity var(--d-swap) var(--ease-out),visibility 0s var(--d-swap)}
+
+/* Receipt sections enter below the link object, which does not move. */
+.enter{transition:opacity var(--d-slide) var(--ease-out),transform var(--d-slide) var(--ease-out);transition-delay:calc(var(--i,0) * 40ms * var(--slow))}
+.enter.d1{--i:1}.enter.d2{--i:2}
+@starting-style{.enter{opacity:0;transform:translateY(6px)}}
+.secret{margin-top:20px}
+.secret h3{margin-bottom:8px;font-size:var(--t-ui);font-weight:600}
+.joined{display:flex}
+/* A generated passphrase (20 characters at most) stays on one line next to Copy at 390 px. */
+.joined .value{flex:1;min-width:0;min-height:48px;padding:10px 12px;border:1px solid var(--line-2);border-right:0;border-radius:var(--r-ctl) 0 0 var(--r-ctl);background:var(--well);font-family:var(--mono);font-variant-ligatures:none;font-size:16px;line-height:22px;color:var(--ink)}
+/* A value to copy wraps instead of hiding its end; one tap selects all of it for copying by hand. */
+span.value{display:flex;align-items:center;overflow-wrap:anywhere;user-select:all;-webkit-user-select:all}
+.joined .btn{min-height:48px;padding:0 14px;border-radius:0 var(--r-ctl) var(--r-ctl) 0}
+/* On phones Copy is the icon alone (its aria-label names it), so the value keeps the room in every language. */
+@media (max-width:559px){.joined .btn{width:48px;padding:0;justify-content:center}.joined .btn>.swap:not(.swap-ico){display:none}}
+.check{display:flex;align-items:flex-start;gap:10px;min-height:44px;margin-top:6px;padding-top:10px;cursor:pointer}
+.check input{flex:none;width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent)}
+.check span{font-size:var(--t-ui);line-height:22px;color:var(--ink)}
+.check small{display:block;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.private{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.private h3{display:flex;align-items:center;gap:8px;font-size:var(--t-ui);font-weight:600}
+.private h3 .i{width:16px;height:16px;margin-left:-2px;color:var(--ink-3)}
+.private p{margin-top:2px}
+.private .pause-note{margin-top:8px;color:var(--ink-2)}
+.private-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.manual-copy{margin-top:12px}
+.manual-copy label{display:block;margin-bottom:6px;font-size:var(--t-meta);color:var(--ink-3)}
+.manual-copy input{width:100%;min-height:44px;padding:0 12px;border:1px solid var(--line-2);border-radius:var(--r-ctl);background:var(--well);font-family:var(--mono);font-size:var(--t-xs)}
+.again{margin-top:20px}
+
+/* ---------- A link that closed, on the home page (the owner's view) ---------- */
+.gone-head{display:grid;grid-template-columns:48px minmax(0,1fr);gap:16px;align-items:center}
+.tile{display:grid;place-items:center;width:48px;height:48px;border-radius:var(--r-well);background:var(--well);color:var(--ink-2)}
+.tile .i{width:24px;height:24px}
+.tile.ok{background:var(--ok-wash);color:var(--ok)}
+.gone-head h2{font-size:var(--t-h);font-weight:600;line-height:28px;letter-spacing:-.01em;text-wrap:pretty}
+.gone-file{margin-top:2px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:left}
+.life-dead{margin-top:20px}
+.life-dead .bar{margin-top:8px}
+.gone-text{margin-top:16px;color:var(--ink-2);text-wrap:pretty}
+.gone-view .btn-lg{margin-top:24px}
+.tag-out{display:inline-flex;align-items:center;justify-self:start;height:22px;padding:0 8px;border:1px solid var(--field-line);border-radius:999px;font-size:var(--t-xs);font-weight:500;line-height:1;color:var(--ink-2);white-space:nowrap}
+
+/* ---------- Commands: real commands with their real output, full contrast (CLI dialog, download page, terminal) ---------- */
+.side h2{font-size:var(--t-lead);font-weight:600;line-height:24px}
+.side .lead{margin-top:2px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.code{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;column-gap:8px;margin-top:10px;padding:6px 4px 6px 12px;border-radius:var(--r-ctl);background:var(--surface);border:1px solid var(--line)}
+.code .ps{padding-top:9px;font-family:var(--mono);font-size:var(--t-xs);line-height:20px;color:var(--ink-3);user-select:none}
+.code code{min-width:0;padding:9px 0;font-family:var(--mono);font-variant-ligatures:none;font-size:var(--t-xs);line-height:20px;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.code code:only-of-type:last-child{grid-column:2/4}
+.code code .flag{white-space:nowrap;color:var(--accent-ink);display:inline-block}
+.code code .flag.new{animation:flag-in var(--d-base) var(--ease-out)}
+@keyframes flag-in{from{opacity:0;filter:blur(2px)}}
+/* While the link is being created its actions hold their place as quiet placeholders (inert, so nothing in them can
+   be reached), so the link arrives without moving anything and the buttons take their real look where they were. */
+.lo-actions.awaiting .btn{color:transparent;background:var(--well-2);border-color:transparent;box-shadow:none;animation:await calc(1200ms * var(--slow)) ease-in-out infinite alternate}
+.lo-actions.awaiting .btn *{visibility:hidden}
+@keyframes await{to{opacity:.55}}
+/* The link arriving (showLink() in app.js): its field and its actions fade up into place. */
+.arrive{animation:arrive var(--d-reveal) var(--ease-out) both}
+#lo-actions.arrive{animation-delay:calc(40ms * var(--slow))}
+@keyframes arrive{from{opacity:0;transform:translateY(4px)}}
+.code .btn-icon{width:44px;min-height:44px;margin:-2px 0}
+/* Every terminal is the dark terminal window of 2.2.0, in both themes: the companion beside the tool, the commands in
+   the CLI dialog and the recipient's "Download in a terminal". Window dots, a title bar, green prompts, each command in
+   a darker row with its output under it. The window redefines the tokens it uses, so its buttons, flags, selection and
+   focus rings read on the dark ground whatever the page theme. Measured on the window's lightest ground (#131d33):
+   lead and notes #9aa8bd 6.96 : 1, output and comments #8a9ab1 5.86 : 1 (6.48 : 1 on a row), prompts #4ade80 9.63 : 1,
+   links and flags #9db9ff 8.65 : 1, commands #f1f5fb 15.3 : 1.
+   One text column at --tw-x: headings, leads, comments, notes, the prompts and the output arrows start on it; the
+   command rows reach --tw-inset from the frame (their fill hangs into the gutter), and the output text starts where the
+   command text does (column plus one prompt character plus the gap). */
+.tw{--tw-x:18px;--tw-inset:10px;--tw-gap:10px;--ink:#f1f5fb;--ink-2:#cbd5e1;--ink-3:#9aa8bd;--tw-faint:#8a9ab1;--tw-green:#4ade80;--accent-ink:#9db9ff;--line:rgb(148 163 184 / .14);--well:rgb(148 163 184 / .1);--tw-row:rgb(7 11 20 / .55);--sel:#343f5b;
+  color-scheme:dark;position:relative;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:var(--r-panel);background:linear-gradient(180deg,#131d33,#0b1120);color:var(--ink);box-shadow:0 30px 60px -30px rgb(0 0 0 / .6)}
+.tw-bar{display:flex;align-items:center;gap:7px;height:38px;padding:0 14px;border-bottom:1px solid var(--line);background:rgb(7 11 20 / .5)}
+.tw-bar span{flex:none;width:11px;height:11px;border-radius:50%;background:#f87171}
+.tw-bar span:nth-child(2){background:#fbbf24}
+.tw-bar span:nth-child(3){background:#34d399}
+.tw-bar em{margin:0 auto;transform:translateX(-22px);font-style:normal;font-family:var(--mono);font-size:12px;color:var(--tw-faint)}
+.tw-sec{padding:18px 0 4px}
+.tw-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--tw-x)}
+.side .tw-head h2{font-size:20px;line-height:26px;font-weight:600;letter-spacing:-.02em}
+.tw-head h2 span{font-family:var(--mono);font-weight:500;color:var(--tw-green)}
+.tw-head>.i{color:var(--tw-faint)}
+.side .tw .lead{margin:4px 0 14px;padding:0 var(--tw-x);font-size:var(--t-small);line-height:20px;color:var(--ink-3)}
+.tw .code{margin:0 var(--tw-inset);padding:4px 4px 4px calc(var(--tw-x) - var(--tw-inset) - 1px);column-gap:var(--tw-gap);border-radius:8px;background:var(--tw-row);border-color:transparent;transition:border-color var(--d-hover) ease}
+.tw .code .ps{padding-top:12px;color:var(--tw-green);font-weight:500}
+.tw .code code{padding:12px 0}
+.tw .code .btn-icon{margin:0}
+.tw .code+.code{margin-top:6px}
+.tw .out{position:relative;margin:8px var(--tw-inset) 14px;padding-left:calc(var(--tw-x) - var(--tw-inset) + 1ch + var(--tw-gap));font-family:var(--mono);font-variant-ligatures:none;font-size:var(--t-xs);line-height:20px;color:var(--tw-faint);white-space:pre-wrap;overflow-wrap:anywhere}
+.tw .out::before{content:'↳';position:absolute;left:calc(var(--tw-x) - var(--tw-inset));color:var(--tw-green)}
+.tw-file{margin-top:6px;border-top:1px solid var(--line)}
+.side .tw-file h2{padding:0 var(--tw-x);font-size:var(--t-lead);line-height:24px}
+.tw-file .lead{margin-bottom:12px}
+.tw-file .code:last-child{margin-bottom:10px}
+/* All CLI options: the terminal glyph of CLI in the header in front (its ink on the text column), the arrow after it
+   nudges on hover. */
+.tw-guide{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin:0 var(--tw-x) 10px;font-size:var(--t-small);font-weight:500;color:var(--accent-ink)}
+.tw-guide .i{width:16px;height:16px}
+.tw-guide .i:first-child{margin-left:-3px}
+.tw-guide .go{transition:transform var(--d-base) var(--ease-out)}
+@media (hover:hover) and (pointer:fine){
+  .tw .code:hover{border-color:var(--line)}
+  .tw-guide:hover{color:var(--ink)}
+  .tw-guide:hover .go{transform:translate(2px,-2px)}
+}
+.steps{list-style:none;display:grid;gap:10px;margin-top:10px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:22px 1fr;font-size:var(--t-meta);line-height:20px;color:var(--ink-2);counter-increment:s}
+.steps li::before{content:counter(s);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.steps strong{color:var(--ink);font-weight:600}
+
+/* ---------- Recent uploads: a departures board. Time left leads each row; live links first; closed rows say why ---------- */
+.recent-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:8px}
+.recent-head h2{font-size:var(--t-h);font-weight:600;line-height:28px}
+.rows{list-style:none}
+.row{display:grid;grid-template-columns:112px minmax(0,1fr) auto 44px;align-items:center;gap:4px 16px;min-height:68px;padding:10px 0;border-top:1px solid var(--line)}
+.row-life{display:grid;gap:6px;font-size:var(--t-small);line-height:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.row-life .bar{height:var(--line-w-list)}
+.row-main{min-width:0}
+.mid{display:flex;min-width:0;font-weight:600;line-height:21px}
+.mid:dir(rtl){justify-content:flex-end}
+/* Each item after the first carries its separator in front of it, in the 16 px between items. The line is shifted
+   16 px left and clipped back to the content edge, so a separator that would start a line is cut off, and none can end
+   one. */
+.row-meta{display:flex;flex-wrap:wrap;align-items:center;margin:2px 0 0 -16px;clip-path:inset(0 0 0 16px);font-size:var(--t-meta);line-height:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.row-meta .i{width:14px;height:14px;margin:0 2px 0 -2px;color:var(--ink-2)}
+.row-meta .on{display:inline-flex;align-items:center;color:var(--ink-2)}
+.row-meta .tag-out{height:20px}
+.row-meta>*{margin-left:16px}
+.row-meta .life-inline{display:none;font-weight:600;color:var(--ink)}
+.row-meta .sep{position:relative;display:inline-flex;align-items:center;min-width:0}
+.row-meta .dot{position:absolute;left:-16px;width:16px;text-align:center;color:var(--ink-3)}
+.row-main>.bar{display:none}
+.row.closed .mid,.row.closed .row-meta,.row.closed .row-meta .on{color:var(--ink-3)}
+.manage .i{display:none;transform:rotate(-90deg)}
+
+/* ---------- Popover menus (copy, expiry, theme): they grow out of their trigger ---------- */
+.menu{position:fixed;inset:auto;margin:0;min-width:220px;max-width:min(340px,calc(100vw - 24px));padding:6px;border:1px solid var(--menu-line);border-radius:var(--r-well);background:var(--menu);color:var(--ink);box-shadow:var(--shadow-pop);
+  transform-origin:var(--origin,top right);
+  transition:opacity var(--d-swap) var(--ease-out),transform var(--d-swap) var(--ease-out),overlay var(--d-swap) allow-discrete,display var(--d-swap) allow-discrete}
+.menu:not(:popover-open){opacity:0;transform:scale(.96)}
+@starting-style{.menu:popover-open{opacity:0;transform:scale(.96)}}
+.menu.instant{transition:none}
+.menu-item{display:grid;grid-template-columns:20px minmax(0,1fr) 16px;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 10px;border-radius:8px;text-align:left;font-size:var(--t-ui);line-height:20px;color:var(--ink)}
+.menu-item .i{width:18px;height:18px;color:var(--ink-3)}
+.menu-item small{display:block;margin-top:1px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3);white-space:normal}
+.menu-item small.v{font-family:var(--mono);font-variant-ligatures:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-item .on{visibility:hidden;color:var(--accent-ink)}
+.menu-item[aria-checked="true"] .on{visibility:visible}
+.menu-item:disabled{color:var(--ink-3)}
+.menu-item:focus-visible{outline-offset:-2px}
+@media (hover:hover) and (pointer:fine){.menu-item:hover:not(:disabled){background:var(--menu-hover)}}
+.menu-sep{height:1px;margin:6px 4px;background:var(--line)}
+.menu-label{padding:8px 10px 4px;font-size:var(--t-meta);line-height:20px;color:var(--ink-3)}
+/* The language menu (footer): a quiet trigger with the language's own name, a menu like the theme menu whose items are
+   links to the page in each language, with its code where the theme menu has an icon. */
+a.menu-item{text-decoration:none}
+.menu-item .lang-code{font-size:11px;font-weight:600;line-height:20px;letter-spacing:.04em;text-align:center;color:var(--ink-3)}
+.site-footer .lang-trigger{gap:6px;padding:0 8px;margin:0 -8px;font-weight:400;color:var(--ink-2)}
+.site-footer .lang-trigger .i{width:16px;height:16px}
+@media (hover:hover) and (pointer:fine){.site-footer .lang-trigger:hover{color:var(--ink)}}
+/* A translated privacy page says that the English one is binding. */
+.binding{margin-top:12px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-ctl);color:var(--ink-2)}
+.binding a{color:inherit}
+
+/* ---------- Toast: enters and leaves through the bottom edge; transitions, so rapid repeats retarget ---------- */
+.toast{position:fixed;inset:auto auto 24px 50%;margin:0;translate:-50% 0;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 32px);width:max-content;padding:10px 10px 10px 16px;border:1px solid var(--toast-line);border-radius:var(--r-well);background:var(--toast-bg);color:var(--toast-ink);box-shadow:var(--shadow-pop);font-size:var(--t-small);line-height:20px;
+  transition:opacity var(--d-base) var(--ease-out),transform var(--d-base) var(--ease-out),overlay var(--d-base) allow-discrete,display var(--d-base) allow-discrete}
+.toast:not(:popover-open){display:none;opacity:0;transform:translateY(8px);transition-duration:var(--d-swap)}
+@starting-style{.toast:popover-open{opacity:0;transform:translateY(8px)}}
+.toast .i{width:18px;height:18px;color:var(--ok-bar)}
+.toast>span{min-width:0;overflow-wrap:anywhere;text-wrap:pretty}
+.toast button{flex:none;min-height:44px;margin:-6px 0;padding:0 12px;border-radius:8px;color:var(--toast-action);font-weight:600}
+.toast:not(:has(button:not([hidden]))){padding-right:16px}
+
+/* ---------- Dialog: a centred modal on wide screens, a bottom sheet on phones ---------- */
+.modal{width:min(420px,calc(100% - 32px));max-height:calc(100svh - 32px);padding:24px;border:1px solid var(--line);border-radius:var(--r-panel);background:linear-gradient(180deg,var(--surface-top),var(--surface-bottom));color:var(--ink);box-shadow:var(--shadow-dialog);
+  opacity:1;transform:none;
+  transition:opacity var(--d-base) var(--ease-out),transform var(--d-base) var(--ease-out),overlay var(--d-base) allow-discrete,display var(--d-base) allow-discrete}
+.modal:not([open]){opacity:0;transform:scale(.96);transition-duration:var(--d-swap)}
+@starting-style{.modal[open]{opacity:0;transform:scale(.96)}}
+.modal::backdrop{background:var(--scrim);opacity:1;transition:opacity var(--d-base) ease,overlay var(--d-base) allow-discrete,display var(--d-base) allow-discrete}
+.modal:not([open])::backdrop{opacity:0}
+@starting-style{.modal[open]::backdrop{opacity:0}}
+.modal h2{font-size:var(--t-h);font-weight:600;line-height:28px}
+.modal p{margin-top:8px;color:var(--ink-2)}
+.modal p strong{color:var(--ink);overflow-wrap:anywhere}
+.modal .custom{padding-top:16px}
+.modal .form-error{margin-top:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
+/* The X's ink (4 px inside its 18 px glyph, 17 px inside the 44 px target) ends on the content edge the tabs and the
+   window end on: 24 px padding on wide screens; on phones (16 px) the target meets the sheet's edge, 1 px short. */
+.modal-x{position:absolute;top:12px;right:7px}
+/* The CLI guide: the same commands in theme colours, no window chrome. */
+.cli-modal{width:min(640px,calc(100% - 32px))}
+.cli-modal h2{padding-right:44px}
+.cli-tabs{display:flex;gap:4px;margin-top:16px;padding:3px;border-radius:var(--r-well);background:var(--well);overflow-x:auto;scrollbar-width:none}
+.cli-tabs [role="tab"]{flex:1;min-height:44px;padding:0 12px;border-radius:9px;font-size:var(--t-small);font-weight:500;color:var(--ink-2);white-space:nowrap}
+.cli-tabs [aria-selected="true"]{background:var(--btn-2);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgb(0 0 0 / .08)}
+/* The commands sit in the terminal window under the tabs; each panel ends with its note under a rule. */
+.cli-window{margin-top:14px;border-radius:var(--r-well);box-shadow:0 24px 50px -30px rgb(0 0 0 / .6)}
+/* Every tab's panel sits in the same grid cell and the hidden ones keep their space (visibility), so the window is as tall
+   as the tallest tab at every width and switching never changes the dialog's height. The note stays at the bottom. */
+.cli-panels{display:grid}
+.cli-panel{grid-area:1/1;display:flex;flex-direction:column;padding-top:16px;visibility:hidden}
+.cli-panel.active{visibility:visible}
+.cli-panel>:has(+ .cli-note){margin-bottom:14px}
+/* Flex items keep both margins, so the space an output leaves before the next comment is set to what block layout gave. */
+.cli-panel>.out+.cli-comment{margin-top:6px}
+.cli-panel:focus-visible{outline-offset:-2px;border-radius:0 0 var(--r-well) var(--r-well)}
+.cli-window .cli-comment{margin:20px var(--tw-x) 8px;font-family:var(--mono);font-size:var(--t-xs);line-height:18px;color:var(--tw-faint)}
+.cli-window .cli-comment:first-child{margin-top:0}
+.cli-window .cli-note{margin-top:auto;padding:14px var(--tw-x) 16px;border-top:1px solid var(--line);font-size:var(--t-meta);line-height:20px;color:var(--ink-3);text-wrap:pretty}
+.cli-note code{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-2)}
+@media (max-width:560px){
+  .modal{width:100%;max-width:none;margin:auto 0 0;border-radius:var(--r-panel) var(--r-panel) 0 0;border-bottom:0;padding:24px 16px calc(16px + env(safe-area-inset-bottom));
+    transition:transform var(--d-sheet) var(--ease-drawer),opacity var(--d-swap) ease,overlay var(--d-sheet) allow-discrete,display var(--d-sheet) allow-discrete}
+  .modal:not([open]){opacity:1;transform:translateY(100%);transition-duration:var(--d-base)}
+  @starting-style{.modal[open]{opacity:1;transform:translateY(100%)}}
+  .modal-x{right:0}
+  .modal-x:focus-visible{outline-offset:-2px} /* the sheet clips at its edge, so the ring stays inside the target */
+  .modal-actions{flex-direction:column-reverse}
+  .modal-actions .btn{width:100%;min-height:48px}
+}
+
+/* ---------- Plain pages: report (a form in a panel) and privacy (a reading page, no card, 65 to 75 characters) ---------- */
+.plain{display:grid;grid-template-columns:minmax(0,600px);justify-content:center;align-content:start;padding:32px 0 64px}
+.plain .panel{padding:28px}
+/* The report form's title sits in its panel: a step under the reading page's title (--t-page), far under the home headline. */
+.plain h1{font-size:var(--t-form);font-weight:700;line-height:32px;letter-spacing:-.02em}
+.plain .lead{margin-top:8px;font-size:var(--t-lead);line-height:24px;color:var(--ink-2);text-wrap:pretty}
+.f{margin-top:22px}
+.f>label,.f>legend{display:block;margin-bottom:8px;padding:0;font-weight:600}
+.opt-word{font-weight:400;color:var(--ink-3)}
+.input{display:block;width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--field-line);border-radius:var(--r-ctl);background:var(--surface);font-size:16px;line-height:22px;transition:border-color var(--d-hover) ease,box-shadow var(--d-hover) ease}
+.input:focus{outline:none;border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.input::placeholder{color:var(--ink-3)}
+textarea.input{min-height:120px;resize:vertical}
+.input[aria-invalid="true"]{border-color:var(--danger)}
+.input[aria-invalid="true"]:focus{box-shadow:0 0 0 1px var(--danger)}
+.hint-row{display:flex;justify-content:space-between;gap:12px}
+.hint-row .hint:last-child{flex:none}
+.hint-row .over{color:var(--danger)}
+/* The details' minimum: a ring until it is reached, then a tick in the "works" green. The icons' ink starts on the text
+   column. */
+.minimum{display:flex;align-items:center;gap:6px;margin-top:2px}
+.minimum .i{width:16px;height:16px;margin-left:-3px}
+.minimum .i+.i,.minimum.met .i:first-child{display:none}
+.minimum.met .i+.i{display:inline-block}
+.minimum.met{color:var(--ok)}
+.ferr{display:flex;align-items:flex-start;gap:6px;margin-top:6px;font-size:var(--t-meta);line-height:20px;color:var(--danger)}
+.ferr .i{width:14px;height:14px;margin:3px 0 0 -1px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.choice{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer}
+.choice input,.consent input{flex:none;width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.consent{display:flex;align-items:flex-start;gap:10px;min-height:44px;margin-top:22px;cursor:pointer;color:var(--ink)}
+.consent input{margin-top:2px}
+.form-alert{display:flex;align-items:center;gap:6px;margin-top:16px;font-size:var(--t-small);color:var(--danger)}
+.form-alert .i{width:14px;height:14px;margin-left:-1px}
+.plain .form-error{margin-top:16px}
+.plain .form-error:focus{outline:none}
+.plain .btn-lg{margin-top:20px}
+/* Cloudflare Turnstile (report form, only when the Worker sets a site key): flexible 65 px wide widget, compact below 300 px. */
+.human{margin-top:22px}
+.human>div:first-child{min-height:65px}
+.case{display:flex;align-items:center;gap:12px;margin-top:16px}
+.case .joined{flex:1}
+.done-h{margin-top:16px}
+.done .text{margin-top:16px;color:var(--ink-2);text-wrap:pretty}
+.done>.btn{margin-top:24px}
+.read{display:grid;grid-template-columns:minmax(0,680px);justify-content:center;align-content:start;padding:32px 0 72px}
+.read h1{font-size:var(--t-page);font-weight:700;line-height:38px;letter-spacing:-.02em}
+.read .lead{margin-top:8px;font-size:var(--t-intro);line-height:28px;color:var(--ink-2);max-width:62ch}
+.read .toc{display:flex;flex-wrap:wrap;gap:0 18px;margin-top:20px;padding:6px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);list-style:none}
+.read .toc a{display:inline-flex;align-items:center;min-height:44px;font-size:var(--t-small);color:var(--ink-2);text-decoration:none}
+@media (hover:hover) and (pointer:fine){.read .toc a:hover{color:var(--ink)}}
+.read h2{margin-top:40px;font-size:var(--t-h);font-weight:600;line-height:28px;letter-spacing:-.01em;scroll-margin-top:24px}
+.read p,.read li{max-width:70ch;font-size:var(--t-lead);line-height:26px;color:var(--ink);text-wrap:pretty}
+.read p{margin-top:12px}
+.read ul{margin-top:12px;padding-left:22px;display:grid;gap:8px}
+.read li::marker{color:var(--ink-3)}
+.read a{color:var(--accent-ink)}
+
+/* ---------- View transitions (file chosen, Upload to link, back to start, unlock). Only the named groups morph. The
+   rest of the page (root) switches at once: its new picture is live, so the transitions inside it (the Upload label,
+   a reveal) still play, and it covers the whole screen from the first frame. A crossfade of the page let it show
+   through to the empty canvas behind whenever the two pictures didn't add up to one, which they didn't: a blink of the
+   whole page (measured: the unchanged header lost half its brightness in the dark theme). No blur anywhere, so slow
+   phones don't composite a blurred full screen. ---------- */
+::view-transition-group(*){animation-duration:var(--d-morph);animation-timing-function:var(--ease-out)}
+::view-transition-old(root){animation:none;opacity:0}
+::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-group(linkobj){border-radius:var(--r-well);overflow:clip}
+::view-transition-old(linkobj),::view-transition-new(linkobj){height:100%;object-fit:none;object-position:top left}
+::view-transition-old(linkobj){animation:vt-out calc(100ms * var(--slow)) ease both}
+::view-transition-new(linkobj){animation:vt-in calc(200ms * var(--slow)) var(--ease-out) calc(60ms * var(--slow)) both}
+::view-transition-group(filecard){border-radius:var(--r-well);overflow:clip}
+::view-transition-old(filecard),::view-transition-new(filecard){height:100%;object-fit:none;object-position:center}
+@keyframes vt-out{to{opacity:0}}
+@keyframes vt-in{from{opacity:0}}
+#create-button,#lo{view-transition-name:linkobj}
+#dropzone,#chosen-file{view-transition-name:filecard}
+
+/* ---------- Narrower screens ---------- */
+@media (max-width:1000px){
+  .home{grid-template-columns:minmax(0,600px);grid-template-rows:none;grid-template-areas:"intro" "tool" "recent" "side";justify-content:center}
+  .side{margin-top:48px;padding-top:0}
+}
+@media (max-width:560px){
+  .shell{width:calc(100% - 32px)}
+  .site-header{height:64px}
+  .intro{margin-bottom:20px}
+  .intro h1{font-size:var(--t-title-sm)}
+  .intro p{margin-top:8px;font-size:17px;line-height:26px}
+  /* Once the upload starts, the link leads: the promise steps aside on phones. */
+  .home:not([data-view="setup"]) .intro{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .home{padding-top:8px}
+  .panel{padding:16px;border-radius:16px}
+  .drop{min-height:136px;padding:16px 20px}
+  .drop-art{width:56px;height:52px;margin-bottom:8px}
+  .opts{margin-top:18px}
+  .legend{margin-bottom:8px}
+  /* The toggles drop their icons, so the three stay on one line (12 px padding down to 381 px, 8 px below that). */
+  .opt-group{margin-top:18px;padding-bottom:14px}
+  .opt-toggle{--opt-pl:12px;--opt-pr:12px}
+  .opt-face{letter-spacing:-.01em}
+  .opt-ico{display:none}
+  .opt-pad{padding:12px 14px 14px}
+  .opt-pad>:not(.opt-title){margin-left:0}
+  .resume-key{margin-top:4px}
+  .footnote{margin-top:10px}
+  .seg-row span{letter-spacing:-.01em}
+  .lo{padding:14px}
+  .lo-meter{display:grid;grid-template-columns:minmax(0,1fr) auto}
+  .lo-meter>p{display:contents}
+  .mt-main{grid-area:1/1;align-self:baseline}
+  .mt-right{grid-area:1/2;align-self:baseline}
+  .mt-sub{grid-area:2/1/3/3}
+  .lo-meter .bar{grid-area:3/1/4/3}
+  .lo-actions>.split{flex-basis:100%}
+  .lo-actions>.btn-secondary{flex:1 1 0}
+  /* With end-to-end encryption, the visible "Send the key separately" rows replace the menu on phones. */
+  .lo.e2ee .btn-chev{display:none}
+  .lo.e2ee .split>.btn:first-child{border-radius:var(--r-ctl)}
+  /* One thumb: once a file is chosen, Upload stays at the bottom of the screen until the panel ends. */
+  .home[data-view="setup"][data-file] .go-dock{position:sticky;bottom:0;z-index:5;margin:12px -16px -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);border-radius:0 0 16px 16px;background:var(--surface-bottom)}
+  .kb-open .home[data-view="setup"][data-file] .go-dock{position:static;margin:12px 0 0;padding:0;border:0}
+  :root:has(.home[data-view="setup"][data-file]){scroll-padding-bottom:96px}
+  .plain .panel{padding:20px}
+  .plain,.read{padding-top:12px}
+  .read .lead{font-size:var(--t-lead);line-height:26px}
+  .choices,.pair{grid-template-columns:1fr}
+  .row{grid-template-columns:minmax(0,1fr) 44px 44px;gap:2px 8px}
+  .row>.row-life{display:none}
+  .row-meta .life-inline{display:inline}
+  .row-main>.bar{display:block;height:var(--line-w-list);margin-top:8px}
+  .manage{width:44px;padding:0}
+  .manage .manage-l{display:none}
+  .manage .i{display:inline-block}
+  .recent-head{align-items:flex-start;flex-direction:column;gap:4px}
+  .recent-head .btn{margin-left:-10px}
+}
+/* "Encryption" stays on the first line down to 360 px: the three toggles take 287 of the 294 px there, 7 to spare for
+   other text rendering. Below that they may wrap, 8 px apart, so their targets never overlap. */
+@media (max-width:380px){
+  .opt-toggle{--opt-pl:8px;--opt-pr:8px}
+}
+/* Forced colours drop the fill (and phones the icons), so a toggle that is on keeps a 2 px Highlight border instead.
+   Chromium forces the text colour but not an SVG icon's own colour, so the icons take the forced text colour too:
+   otherwise the white check sat white on white in a light high-contrast theme. */
+@media (forced-colors:active){
+  .opt-face::before{display:none}
+  .opt-toggle input:checked+.opt-face{border:2px solid Highlight;padding:0 calc(var(--opt-pr) - 1px) 0 calc(var(--opt-pl) - 1px)}
+  .opt-ico>.i,.opt-toggle input:checked+.opt-face .i,.opt-toggle:hover input:not(:checked)+.opt-face .i{color:CanvasText}
+}
+
+/* ---------- Reduced motion: gentler, not zero. Opacity and colour stay (150 ms at most); travel, scale and drawing go ---------- */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .btn:active:not(:disabled),.drop:has(.drop-picker:active),.split:has(>.btn:first-child:active:not(:disabled)){transform:none}
+  .split>.btn-chev:active:not(:disabled) .i{scale:none}
+  .swap>[data-off]{transform:none;filter:none}
+  .seg-pill,.seg-on{transition:none}
+  .opt-toggle input:active+.opt-face{transform:none}
+  .opt-ico>.i,.opt-ico>.i+.i,.opt-toggle input:checked+.opt-face .i:first-child{transform:none;filter:none}
+  .opt-face::before{transition-duration:calc(150ms * var(--slow))}
+  .opt-box,.opt-more.any .opt-box{transition:border-color calc(120ms * var(--slow)) ease,visibility 0s}
+  .reveal,.reveal.open{transition:none}
+  .reveal>div,.reveal.open>div{transform:none;transition:opacity calc(120ms * var(--slow)) ease,visibility 0s}
+  .enter{transition:opacity calc(150ms * var(--slow)) ease;transition-delay:0s}
+  @starting-style{.enter{transform:none}}
+  .menu,.menu:not(:popover-open){transform:none}
+  @starting-style{.menu:popover-open{transform:none}}
+  .toast:not(:popover-open){transform:none}
+  @starting-style{.toast:popover-open{transform:none}}
+  .modal,.modal:not([open]){transform:none;transition:opacity calc(150ms * var(--slow)) ease,overlay calc(150ms * var(--slow)) allow-discrete,display calc(150ms * var(--slow)) allow-discrete}
+  .modal:not([open]){opacity:0}
+  @starting-style{.modal[open]{transform:none;opacity:0}}
+  .code code .flag.new{animation:none}
+  .tw-guide .go{transition:none}
+  .tw-guide:hover .go{transform:none}
+  .split>.btn-chev .i{transition:none}
+  .tick path{transition:none}
+  .arrive{animation-name:vt-in;animation-duration:calc(150ms * var(--slow))}
+  .lo-actions.awaiting .btn,.url.waiting::after{animation:none}
+  .keysplit-toggle .chev{transition:none}
+  ::view-transition-group(*){animation:none}
+  ::view-transition-old(*),::view-transition-new(*){animation-duration:calc(150ms * var(--slow))}
+  /* The named groups set their own timing above, which outranks the (*) rule. */
+  ::view-transition-old(linkobj),::view-transition-new(linkobj){animation-duration:calc(150ms * var(--slow));animation-delay:0s}
+}

@@ -1,0 +1,11 @@
+{
+  "name": "fyl",
+  "version": "2.5.1",
+  "path": "/cli/2.5.1/",
+  "files": {
+    "fyl-linux-x86_64": "9479c8a6170f9447c983b4c63d4929d22a2108eadfc2cb4d982aa32370f8a624",
+    "fyl-linux-arm64": "a9f690ea950ac5d1f9587358bb2ec43f6865c217c9699a3178c36d34b0ad3215",
+    "fyl-macos-x86_64": "1dededada6a73edcf22e7f279c9b0ac725827ed6b3252338d47bfdc8713b4f29",
+    "fyl-macos-arm64": "171b81239622ab0764ce4ca1608de2103562e5bde9be1f8ba9ba698464856aa8"
+  }
+}

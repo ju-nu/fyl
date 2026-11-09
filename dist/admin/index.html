@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#070b14" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · fyl.at</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="preload" href="/fonts/plex-sans-600.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/admin/admin.css"><script src="/theme.js"></script><script src="/admin/admin.js" defer></script>
+</head>
+<body>
+<svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-icons="copy check refresh alert info sun moon monitor up-right">
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.7 4.2 2.9 18a1.5 1.5 0 0 0 1.3 2.2h15.6a1.5 1.5 0 0 0 1.3-2.2L13.3 4.2a1.5 1.5 0 0 0-2.6 0Z"/><path d="M12 9.5v4M12 16.8v.2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8V8"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+<symbol id="i-up-right" viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></symbol>
+</svg>
+<a class="skip" href="#content">Skip to content</a>
+<div class="shell dash-shell">
+<header class="site-header">
+<a class="wordmark" href="/" aria-label="fyl.at admin"><span class="wordmark-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></svg></span><span>fyl<span class="dot">.</span>at</span><span class="chip dash-badge">admin</span></a>
+<nav class="header-nav" aria-label="Main"><a class="btn btn-quiet" href="https://fyl.at/">fyl.at <svg class="i i-sm" aria-hidden="true"><use href="#i-up-right"/></svg></a><button class="btn btn-icon" type="button" data-theme-trigger popovertarget="theme-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Colour theme"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button></nav>
+</header>
+
+<main class="dash" id="content" aria-busy="true">
+<div class="dash-head">
+<div class="minw0"><h1>Statistics</h1><p class="meta" id="status" role="status">Loading…</p></div>
+<div class="dash-tools">
+<fieldset class="range" id="range"><legend class="sr-only">Range</legend>
+<label><input type="radio" name="range" value="1d"><span>1 day</span></label>
+<label><input type="radio" name="range" value="7d" checked><span>7 days</span></label>
+<label><input type="radio" name="range" value="30d"><span>30 days</span></label>
+<label><input type="radio" name="range" value="90d"><span>90 days</span></label>
+</fieldset>
+<button class="btn btn-secondary" type="button" id="refresh"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span>Refresh</span></button>
+</div>
+</div>
+<a class="strip is-pending" id="strip" href="#ops"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg><span id="strip-text">Checking readiness…</span></a>
+<noscript><p class="notice">This dashboard needs JavaScript.</p></noscript>
+<p class="notice" id="notice" role="alert" hidden><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><span></span></p>
+
+<section class="kpis" aria-label="Totals for the range">
+<div class="kpi"><h2 class="kpi-label">Page views (browsers)</h2><p class="kpi-value num" data-kpi="pageViews">–</p><p class="meta" data-note="pageViews">&nbsp;</p></div>
+<div class="kpi"><h2 class="kpi-label">Uploads</h2><p class="kpi-value num" data-kpi="uploads">–</p><p class="meta" data-note="uploads">&nbsp;</p></div>
+<div class="kpi"><h2 class="kpi-label">Data uploaded</h2><p class="kpi-value num" data-kpi="uploadBytes">–</p><p class="meta" data-note="uploadBytes">&nbsp;</p></div>
+<div class="kpi"><h2 class="kpi-label">Downloads</h2><p class="kpi-value num" data-kpi="downloads">–</p><p class="meta" data-note="downloads">&nbsp;</p></div>
+<div class="kpi kpi-now"><h2 class="kpi-label">Storage in use</h2><button class="btn btn-icon kpi-help" type="button" popovertarget="storage-help" aria-label="What Storage in use counts"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg></button>
+<div class="menu tip" id="storage-help" popover><p>What the upload budget holds right now: stored files, retry copies and the space reserved for uploads still running, until cleanup releases it.</p><p>That is close to the size of the R2 bucket, but not what R2 bills: R2 bills GB-month, the average of each day&rsquo;s peak (<em>This billing cycle</em>, below). 1 GB here is 1024³ bytes.</p></div>
+<p class="kpi-value num" data-kpi="storedBytes">–</p><p class="meta" data-note="storedBytes">&nbsp;</p></div>
+</section>
+
+<section class="panel funnel" aria-labelledby="funnel-heading">
+<div class="funnel-head"><h2 id="funnel-heading">From visit to download</h2><p class="meta" id="funnel-note"></p></div>
+<ol class="funnel-steps" id="funnel"></ol>
+</section>
+
+<section class="charts" aria-label="Over time">
+<figure class="panel chart" data-chart="pageViews" data-unit="page views"><figcaption><h2>Page views (browsers)</h2><p class="meta" data-per>per day</p></figcaption><div class="plot"></div><p class="readout meta" aria-hidden="true">&nbsp;</p><details class="as-table"><summary>Show as table</summary><div class="table-wrap"></div></details></figure>
+<figure class="panel chart" data-chart="uploads" data-unit="uploads"><figcaption><h2>Uploads completed</h2><p class="meta" data-per>per day</p></figcaption><div class="plot"></div><p class="readout meta" aria-hidden="true">&nbsp;</p><details class="as-table"><summary>Show as table</summary><div class="table-wrap"></div></details></figure>
+<figure class="panel chart" data-chart="uploadBytes" data-unit="uploaded" data-bytes><figcaption><h2>Data uploaded</h2><p class="meta" data-per>per day</p></figcaption><div class="plot"></div><p class="readout meta" aria-hidden="true">&nbsp;</p><details class="as-table"><summary>Show as table</summary><div class="table-wrap"></div></details></figure>
+<figure class="panel chart" data-chart="downloads" data-unit="downloads"><figcaption><h2>Downloads started</h2><p class="meta" data-per>per day</p></figcaption><div class="plot"></div><p class="readout meta" aria-hidden="true">&nbsp;</p><details class="as-table"><summary>Show as table</summary><div class="table-wrap"></div></details></figure>
+</section>
+
+<section class="lists" aria-label="Product mix">
+<div class="panel list" data-list="outcomes"><h2>How transfers ended</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="downloadsPerTransfer"><h2>Downloads per transfer</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="lifetimes"><h2>Lifetimes chosen</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="uploadSizes"><h2>Upload sizes</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="uploadsByClient"><h2>Uploads by client</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="uploadOptions"><h2>Upload options</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="cliFetches"><h2>CLI downloads</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="downloadsByClient"><h2>Downloads by client</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+</section>
+
+<section class="lists" aria-label="Where browser visits come from">
+<div class="panel list" data-list="pages"><h2>Pages</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="closedReasons"><h2>Closed links by reason</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="referrers"><h2>Referrers</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="campaigns"><h2>Campaigns</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="countries"><h2>Countries</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="devices"><h2>Devices</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="languages"><h2>Languages</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+<div class="panel list" data-list="clients"><h2>All clients (incl. automated)</h2><p class="meta list-base"></p><ol class="bars"></ol></div>
+</section>
+
+<section class="panel bill" aria-labelledby="bill-heading">
+<div class="bill-head">
+<div class="minw0"><h2 id="bill-heading">This billing cycle</h2><p class="meta" id="bill-period">Loading…</p></div>
+<a class="btn btn-secondary" href="https://dash.cloudflare.com/?to=/:account/billing" target="_blank" rel="noopener noreferrer">Open billing <svg class="i i-sm" aria-hidden="true"><use href="#i-up-right"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
+</div>
+<p class="bill-sum" id="bill-total"><span class="bill-figure num">–</span></p>
+<p class="meta" id="bill-split">&nbsp;</p>
+<div class="bill-grid" id="bill-meters"></div>
+<p class="meta bill-note">An estimate for the whole Cloudflare account from its analytics, not the invoice: prices as of <span class="bill-date" id="bill-prices">2026-10-31</span> (docs/COSTS.md), usage above each allowance rounded up to whole billing units as Cloudflare does. R2 storage is GB-month of 10⁹ bytes, the average of each day&rsquo;s peak.</p>
+<p class="meta bill-note">Not included: Workers Analytics Engine, Workers Logs, Workers Builds minutes, Durable Objects stored data, R2 Infrequent Access, other products and subscriptions, tax.</p>
+</section>
+
+<section class="ops" id="ops" aria-label="Operations">
+<div class="tw" id="ready-window"><div class="tw-bar" aria-hidden="true"><span></span><span></span><span></span><em>bash — fyl admin</em></div>
+<div class="tw-sec"><div class="tw-head"><h2>Readiness</h2></div><p class="tw-cmd mono"><span class="ps" aria-hidden="true">$</span> npm run admin -- ready</p><pre class="tw-out" id="ready">Loading…</pre></div></div>
+<div class="tw" id="reports-window"><div class="tw-bar" aria-hidden="true"><span></span><span></span><span></span><em>bash — fyl admin</em></div>
+<div class="tw-sec"><div class="tw-head"><h2>Open reports</h2></div><p class="tw-cmd mono"><span class="ps" aria-hidden="true">$</span> npm run admin -- reports</p><p class="tw-out" id="reports-empty">Loading…</p><ol class="cases" id="cases"></ol>
+<p class="tw-note">Read-only. Decide a case in a terminal with the operator token: pick the decision, copy the command, write the reason after <code>--note</code>.</p></div></div>
+</section>
+
+<section class="panel events" aria-labelledby="events-heading">
+<h2 id="events-heading">Events in this range</h2>
+<div class="event-grid" id="events"></div>
+<p class="meta events-quiet" id="events-quiet"></p>
+<details class="as-table"><summary>All counters</summary><div class="table-wrap" id="counters"></div></details>
+</section>
+</main>
+
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · admin, behind Cloudflare Access</span><nav aria-label="Site"><a href="https://fyl.at/privacy">Privacy</a><a href="https://fyl.at/report">Report a file</a></nav></footer>
+</div>
+
+<div class="menu" id="theme-menu" popover role="menu" aria-label="Colour theme">
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="true" data-theme-choice="system"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg><span>System</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span>Light</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span>Dark</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+</div>
+</body>
+</html>

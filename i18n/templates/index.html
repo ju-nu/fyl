@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="{{@lang}}">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#070b14" media="(prefers-color-scheme: dark)">
+<meta name="description" content="{{home.description}}"><meta property="og:title" content="{{home.title}}"><meta property="og:description" content="{{home.ogDescription}}"><meta property="og:type" content="website">{{@seo}}
+<title>{{home.title}}</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="describedby" type="text/markdown" href="/llms.txt" title="{{common.agentsTitle}}"><link rel="alternate" type="text/markdown" href="/llms.txt" title="{{common.agentsTitle}}"><link rel="preload" href="/fonts/plex-sans-600.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/styles.css">{{@strings}}<script src="/theme.js"></script><script src="/i18n.js" defer></script><script src="/config.js" defer></script><script src="/zip.js" defer></script><script src="/api.js" defer></script><script src="/app.js" defer></script>
+</head>
+<body>
+<svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-icons="globe upload copy check x file clock download trash key terminal sun moon monitor share qr refresh flag lock chev alert info link one shield pause up-right">
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5Z"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M4 14v4.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V14"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11m0-11-11 11"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8l-5-5Z"/><path d="M14 3v5h5"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.4a1.5 1.5 0 0 1 1.2.6l1.3 1.8a1.5 1.5 0 0 0 1.2.6h6.9A1.5 1.5 0 0 1 21 9.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5Z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M4 14v4.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V14"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 12.5A1.5 1.5 0 0 0 8.5 21h7a1.5 1.5 0 0 0 1.5-1.5L18 7"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5M14 9l2 2"/></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24"><path d="m5 7 5 5-5 5M12.5 17H19"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 14.5V3.5M8 7.5l4-4 4 4M7 11H6a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 18 11h-1"/></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM20 14v.5M14 20h.5M17.5 17.5H20V20h-2.5z"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 11.5a7.5 7.5 0 1 0-2.2 5.3M19.5 4.5v7h-7"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4h11l-1.8 4.25L16.5 12.5h-11"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.7 4.2 2.9 18a1.5 1.5 0 0 0 1.3 2.2h15.6a1.5 1.5 0 0 0 1.3-2.2L13.3 4.2a1.5 1.5 0 0 0-2.6 0Z"/><path d="M12 9.5v4M12 16.8v.2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8V8"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></symbol>
+<symbol id="i-one" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M10.5 9.5 12.5 8v8.5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 5 6v5.5c0 4.5 3 7.8 7 9 4-1.2 7-4.5 7-9V6l-7-2.5Z"/><path d="M9.5 12.5 11.3 14l3.2-3.5"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></symbol>
+<symbol id="i-up-right" viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></symbol>
+</svg>
+<a class="skip" href="#transfer">{{home.skip}}</a>
+<div class="shell">
+<header class="site-header">
+<a class="wordmark" href="#" aria-label="{{common.homeLabel}}"><span class="wordmark-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></svg></span><span>fyl<span class="dot">.</span>at</span></a>
+<nav class="header-nav" aria-label="{{common.mainNav}}"><button class="btn btn-quiet" type="button" data-dialog="cli" data-cli-start="setup"><svg class="i" aria-hidden="true"><use href="#i-terminal"/></svg>CLI</button><button class="btn btn-icon" type="button" data-theme-trigger popovertarget="theme-menu" aria-haspopup="menu" aria-expanded="false" aria-label="{{common.theme}}" data-label="{{common.themeIs}}"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button></nav>
+</header>
+
+<main class="home" id="main" data-view="setup">
+<div class="intro"><h1 id="page-heading">Fyl for <span class="now">now.</span></h1><p>{{home.introHtml}}</p></div>
+
+<section class="tool panel" id="transfer" aria-labelledby="setup-heading">
+<div class="panel-head" id="tool-head" hidden><h2 id="tool-heading" tabindex="-1"><span class="swap swap-start"><span id="head-a">{{home.headLive}}</span><span id="head-b" data-off>{{home.headReady}}</span></span></h2></div>
+<h2 class="sr-only" id="setup-heading" tabindex="-1"><span class="if-folders">{{home.uploadHeadingAny}}</span><span class="if-files">{{home.uploadHeading}}</span></h2>
+
+<div id="setup-top">
+<p class="pending" id="pending-upload" hidden><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span><span id="pending-lead">{{home.pendingLead}}</span><strong id="pending-name" dir="auto" translate="no"></strong><span id="pending-tail">{{home.pendingTail}}</span></span><button class="btn btn-quiet" type="button" id="discard-pending">{{home.discard}}</button></p>
+<div class="drop" id="dropzone" data-drop="{{home.dropHere}}">
+<button class="drop-picker" type="button" id="pick-file" aria-describedby="drop-help file-error"><span class="sr-only"><span class="if-folders">{{home.chooseAny}}</span><span class="if-files">{{home.chooseFile}}</span></span></button>
+<div><span class="drop-art" aria-hidden="true"><svg viewBox="0 0 112 105"><path class="back" d="M26 14h53v75H26z"/><path class="sheet" d="M40 8h31l18 18v68H40z"/><path class="fold" d="M71 8v18h18"/><path class="lines" d="M51 46h26M51 54h26M51 62h17"/><path class="arrow" d="M17 67V37m-9 9 9-9 9 9"/><circle class="dot" cx="96" cy="77" r="3"/></svg></span><h3 aria-hidden="true"><span class="fine-only"><span class="if-folders">{{home.dropAnyHtml}}</span><span class="if-files">{{home.dropHtml}}</span></span><span class="touch-only"><span class="if-folders">{{home.chooseAny}}</span><span class="if-files">{{home.chooseFile}}</span></span></h3><p class="meta" id="drop-help"><span class="if-files" id="drop-help-file">{{home.dropHelpHtml}}</span><span class="if-folders" id="drop-help-folder">{{home.dropHelpFolderHtml}}</span></p></div>
+</div>
+</div>
+<div class="file" id="chosen-file" hidden>
+<button class="file-pick" type="button" id="repick" aria-label="{{home.repick}}" aria-describedby="selected-name selected-size"></button>
+<span class="file-ico" aria-hidden="true"><svg class="i"><use href="#i-file"/></svg><span class="ext" id="file-extension">FILE</span></span>
+<div class="minw0"><p class="file-name" id="selected-name" dir="auto"></p><p class="file-meta" id="selected-size"></p><p class="file-note" id="selected-note" hidden></p></div>
+<button class="btn btn-icon" type="button" id="remove-file" aria-label="{{home.removeFile}}"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+</div>
+<input id="file-input" type="file" hidden><input id="folder-input" type="file" webkitdirectory hidden>
+<p class="hint err-text" id="file-error" role="alert" hidden></p>
+
+<div id="setup-view">
+<div class="opts">
+<fieldset>
+<legend class="legend">{{home.expiresAfter}}</legend>
+<div class="seg" id="seg"><div class="seg-row">
+<label><input type="radio" name="lifetime" value="60"><span>{{home.hour1}}</span></label>
+<label><input type="radio" name="lifetime" value="1440" checked><span>{{home.day1}}</span></label>
+<label><input type="radio" name="lifetime" value="4320"><span>{{home.days3}}</span></label>
+<label><input type="radio" name="lifetime" value="10080"><span>{{home.days7}}</span></label>
+<label><input type="radio" name="lifetime" value="custom" aria-describedby="custom-range"><span>{{home.custom}}</span></label>
+</div></div>
+<div class="reveal" id="custom-expiry-wrap"><div><div class="custom reveal-pad">
+<label for="custom-minutes">{{home.keepFor}}</label>
+<input id="custom-minutes" type="number" inputmode="numeric" min="1" max="10080" step="1" value="2" aria-describedby="custom-range expiry-summary">
+<span class="select"><select id="custom-unit" aria-label="{{home.unit}}"><option value="1">{{home.unitMinutes}}</option><option value="60" selected>{{home.unitHours}}</option><option value="1440">{{home.unitDays}}</option></select><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></span>
+<span class="meta" id="custom-range">{{home.range}}</span>
+</div></div></div>
+<p class="summary" id="expiry-summary">{{home.expirySummaryHtml duration:home.day1}}</p>
+</fieldset>
+
+<fieldset class="opt-group" id="options">
+<legend class="legend">{{home.options}}</legend>
+<div class="opt-toggles">
+<label class="opt-toggle"><input type="checkbox" id="once-toggle" aria-describedby="once-description" aria-controls="once-wrap"><span class="opt-face"><span class="opt-ico" aria-hidden="true"><svg class="i"><use href="#i-one"/></svg><svg class="i"><use href="#i-check"/></svg></span>{{home.once}}</span></label>
+<label class="opt-toggle"><input type="checkbox" id="password-toggle" aria-describedby="password-description" aria-controls="password-wrap"><span class="opt-face"><span class="opt-ico" aria-hidden="true"><svg class="i"><use href="#i-lock"/></svg><svg class="i"><use href="#i-check"/></svg></span>{{home.password}}</span></label>
+<label class="opt-toggle" id="e2ee-option" hidden><input type="checkbox" id="e2ee-toggle" aria-describedby="e2ee-description" aria-controls="e2ee-wrap"><span class="opt-face"><span class="opt-ico" aria-hidden="true"><svg class="i"><use href="#i-shield"/></svg><svg class="i"><use href="#i-check"/></svg></span>{{home.encryption}}</span></label>
+</div>
+<div class="opt-more" id="option-details">
+<p class="summary opt-off" id="options-off">{{home.optionsOff}}</p>
+<div class="opt-box"><div class="opt-secs">
+<div class="reveal opt-sec" id="once-wrap"><div><div class="opt-pad">
+<p class="opt-title"><svg class="i" aria-hidden="true"><use href="#i-one"/></svg>{{home.once}}</p>
+<p class="opt-desc" id="once-description">{{home.onceDescription}}</p>
+</div></div></div>
+<div class="reveal opt-sec" id="password-wrap"><div><div class="opt-pad">
+<p class="opt-title"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>{{home.password}}</p>
+<p class="opt-desc" id="password-description">{{home.passwordDescription}}</p>
+<div class="pw-row"><div class="field"><input class="mono" id="password-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" dir="ltr" aria-label="{{home.password}}" aria-describedby="password-hint form-error"></div><button class="btn btn-secondary btn-icon" type="button" id="generate-password" aria-label="{{home.newPassword}}"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg></button></div>
+<p class="hint" id="password-hint">{{home.passwordHint}}</p>
+</div></div></div>
+<div class="reveal opt-sec" id="e2ee-wrap" hidden><div><div class="opt-pad">
+<p class="opt-title"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>{{home.e2eeTitle}}</p>
+<p class="opt-desc" id="e2ee-description">{{home.e2eeDescription}}</p>
+<p class="note"><svg class="i" aria-hidden="true"><use href="#i-key"/></svg><span>{{home.e2eeNote}}</span></p>
+<p class="hint" id="e2ee-hint">{{home.e2eeHintHtml}}</p>
+</div></div></div>
+</div></div>
+</div>
+</fieldset>
+</div>
+
+<div class="resume-key" id="resume-key-wrap" hidden>
+<label for="resume-key">{{home.resumeKeyLabel}}</label>
+<p id="resume-key-hint">{{home.resumeKeyHint}}</p>
+<div class="field"><input class="mono" id="resume-key" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" dir="ltr" translate="no" aria-describedby="resume-key-hint form-error"></div>
+</div>
+<p class="form-error" id="form-error" role="alert" hidden></p>
+<p class="footnote"><svg class="i" aria-hidden="true"><use href="#i-key"/></svg>{{home.footnote}}</p>
+<div class="go-dock"><button class="btn btn-primary btn-lg go" type="button" id="create-button" disabled aria-label="{{home.chooseFirst}}"><span class="swap" id="go-swap"><span class="go-l"><span id="go-a">{{home.chooseFirst}}</span></span><span class="go-l" data-off><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="go-b">{{home.uploadGetLink}}</span></span></span></button></div>
+</div>
+
+<section class="lo" id="lo" hidden aria-labelledby="lo-label">
+<div class="lo-head"><h3 class="lo-label" id="lo-label">{{home.downloadLink}}</h3><span class="chip" id="chip"><svg class="i tick" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="m5 12.5 4.5 4.5L19 7.5"/></svg><span class="swap"><span id="chip-a">{{home.uploading}}</span><span id="chip-b" data-off>{{home.ready}}</span></span></span></div>
+<!-- The icon beside the link copies it for a pointer. Copy link right below does the same, so keyboard and screen
+     reader users meet one "Copy link", not two in a row. -->
+<div class="url-row" id="url-row"><a class="url notranslate" id="link-url" dir="ltr" translate="no" target="_blank" rel="noopener" draggable="false"></a><button class="btn btn-icon" type="button" id="copy-inline" tabindex="-1" aria-hidden="true" hidden><span class="swap swap-ico"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<div class="lo-actions" id="lo-actions">
+<div class="split"><button class="btn btn-primary" type="button" id="copy-link"><span class="swap swap-ico"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i" aria-hidden="true" data-off><use href="#i-check"/></svg></span><span class="swap"><span>{{home.copyLink}}</span><span data-off>{{common.copied}}</span></span></button><button class="btn btn-primary btn-chev" type="button" id="copy-more" data-align="end" data-frame=".lo" popovertarget="copy-menu" aria-haspopup="menu" aria-expanded="false" aria-label="{{home.moreCopy}}"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+<button class="btn btn-secondary" type="button" id="share-link" hidden><svg class="i" aria-hidden="true"><use href="#i-share"/></svg>{{home.share}}</button>
+<button class="btn btn-secondary" type="button" id="qr-button" aria-expanded="false" aria-controls="qr-panel"><svg class="i" aria-hidden="true"><use href="#i-qr"/></svg>{{home.qr}}</button>
+</div>
+<div class="reveal" id="qr-panel"><div><div class="qr"><div class="qr-img" id="qr-image"></div><p>{{home.qrHint}}</p></div></div></div>
+<section class="secret lo-secret" id="lo-secret" hidden aria-labelledby="lo-secret-heading"><h3 id="lo-secret-heading">{{home.password}}</h3><div class="joined"><span class="value" id="lo-password" dir="ltr" translate="no"></span><button class="btn btn-secondary" type="button" id="copy-lo-password" aria-label="{{home.copyPassword}}"><span class="swap swap-ico"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i" aria-hidden="true" data-off><use href="#i-check"/></svg></span><span class="swap"><span>{{common.copy}}</span><span data-off>{{common.copied}}</span></span></button></div><p class="hint">{{home.sendSeparately}}</p></section>
+<p class="keywarn" id="keywarn" hidden><svg class="i" aria-hidden="true"><use href="#i-key"/></svg><span id="keywarn-text">{{home.keyWarn}}</span></p>
+<div class="keysplit" id="keysplit" hidden>
+<button class="keysplit-toggle" type="button" id="key-split" aria-expanded="false" aria-controls="keyrows-wrap"><span class="keysplit-lead"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>{{home.keySplit}}</span><svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></button>
+<div class="reveal" id="keyrows-wrap"><div>
+<section class="keyrows" id="keyrows" aria-label="{{home.keyRows}}">
+<ul>
+<li class="keyrow"><div class="minw0"><b>{{home.linkNoKey}}</b><span class="val notranslate" id="key-nokey" translate="no"></span></div><button class="btn btn-icon" type="button" data-copy-key="nokey" aria-label="{{home.copyNoKey}}"><span class="swap swap-ico"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></li>
+<li class="keyrow"><div class="minw0"><b>{{home.key}}</b><span class="val notranslate" id="key-key" translate="no"></span></div><button class="btn btn-icon" type="button" data-copy-key="key" aria-label="{{home.copyKey}}"><span class="swap swap-ico"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></li>
+</ul>
+<div class="keyrows-foot"><label class="check keyremember" id="keyremember" hidden><input type="checkbox" id="remember-keys"><span>{{home.rememberKeysHtml}}</span></label></div>
+</section>
+</div></div>
+</div>
+<p class="lo-hint" id="lo-hint">{{home.loHintHtml}}</p>
+<button class="btn btn-secondary lo-again" type="button" id="retry-now" hidden><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>{{home.retryNow}}</button>
+<button class="btn btn-primary lo-again" type="button" id="upload-again" hidden><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>{{home.uploadAgain}}</button>
+<div class="lo-meter" id="lo-meter" role="group" aria-label="{{home.progress}}">
+<p class="minw0"><span class="mt-main" id="mt-main">0 %</span><span class="mt-sub" id="mt-sub">{{home.starting}}</span></p>
+<div class="mt-right"><span id="mt-then"></span><button class="btn btn-link" type="button" id="mt-change" hidden popovertarget="expiry-menu" aria-haspopup="menu" aria-expanded="false" aria-label="{{home.changeExpiry}}">{{home.change}}</button></div>
+<span class="bar" aria-hidden="true"><i id="life-bar"></i></span>
+</div>
+<div class="sr-only" role="progressbar" id="progressbar" aria-label="{{home.progress}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+</section>
+<div class="cancel-row" id="cancel-row" hidden><button class="btn btn-quiet btn-cancel" type="button" id="cancel-button">{{home.cancelUpload}}</button></div>
+<div id="receipt-view" hidden></div>
+<div class="gone-view" id="gone-view" hidden></div>
+</section>
+
+<section class="recent" id="recent-section" aria-labelledby="recent-heading" hidden>
+<div class="recent-head"><div><h2 id="recent-heading">{{home.recent}}</h2><p class="meta">{{home.recentMeta}}</p></div><button class="btn btn-quiet" type="button" id="forget-all">{{home.forgetDevice}}</button></div>
+<ul class="rows" id="recent-list"></ul>
+</section>
+
+<aside class="side" id="terminal" aria-label="{{home.terminalAside}}">
+<div class="tw">
+<div class="tw-bar" aria-hidden="true"><span></span><span></span><span></span><em>bash — fyl</em></div>
+<section class="tw-sec" aria-labelledby="terminal-heading">
+<div class="tw-head"><h2 id="terminal-heading">{{home.madeForCliHtml}}</h2><svg class="i" aria-hidden="true"><use href="#i-terminal"/></svg></div>
+<p class="lead">{{home.cliLead}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>curl -fsSL https://fyl.at/<wbr>cli/<wbr>install | sh</code><button class="btn btn-icon" type="button" id="copy-install" aria-label="{{home.copyInstall}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" aria-hidden="true">Installed fyl to /usr/local/bin</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code id="teaser-command">fyl ./archive.zip</code><button class="btn btn-icon" type="button" id="copy-upload-command" aria-label="{{home.copyUploadCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" id="teaser-output" aria-hidden="true">https://fyl.at/d/…</p>
+</section>
+<section class="tw-sec tw-file" id="side-file" hidden aria-labelledby="side-file-heading">
+<h2 id="side-file-heading">{{home.sideFile}}</h2>
+<p class="lead" id="side-file-lead">{{home.sideFileLead}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code id="file-curl" class="notranslate" translate="no"></code><button class="btn btn-icon" type="button" id="copy-file-curl" aria-label="{{home.copyDownloadCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<div class="code" id="file-rm-row" hidden><span class="ps" aria-hidden="true">$</span><code>fyl rm 'https://fyl.at/<wbr>#manage/…'</code><button class="btn btn-icon" type="button" id="copy-file-rm" aria-label="{{home.copyDeleteCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+</section>
+<button class="tw-guide" type="button" data-dialog="cli" data-cli-start="setup"><svg class="i" aria-hidden="true"><use href="#i-terminal"/></svg>{{home.allCliOptions}}<svg class="i go" aria-hidden="true"><use href="#i-up-right"/></svg></button>
+</div>
+<section aria-labelledby="how-heading">
+<h2 id="how-heading">{{home.howHeading}}</h2>
+<ol class="steps">
+<li><span>{{home.step1Html}}</span></li>
+<li><span>{{home.step2Html}}</span></li>
+<li><span>{{home.step3Html}}</span></li>
+</ol>
+</section>
+</aside>
+</main>
+
+<footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="{{common.footerNav}}"><a href="{{@report}}" target="_blank" rel="noopener">{{common.reportFile}}</a><a href="{{@base}}/privacy">{{common.privacy}}</a><a href="/llms.txt" target="_blank" rel="noopener">{{common.forAgents}}</a><a href="{{@source}}" target="_blank" rel="noopener">{{common.source}}</a>{{@languageButton}}</nav></footer>
+</div>
+
+<div class="menu" id="copy-menu" popover role="menu" aria-label="{{common.copy}}"></div>
+<div class="menu" id="expiry-menu" popover role="menu" aria-label="{{home.changeExpiry}}">
+<p class="menu-label">{{home.countsFromUpload}}</p>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-minutes="60"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span>{{home.hour1}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-minutes="1440"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span>{{home.day1}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-minutes="4320"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span>{{home.days3}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-minutes="10080"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span>{{home.days7}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<div class="menu-sep"></div>
+<button class="menu-item" type="button" role="menuitem" id="expiry-custom" data-action="edit-expiry"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span>{{home.customMenu}}</span><span></span></button>
+</div>
+<div class="menu" id="pick-menu" popover role="menu" aria-label="{{home.chooseAny}}">
+<button class="menu-item" type="button" role="menuitem" id="pick-menu-file"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span>{{home.chooseFile}}</span><span></span></button>
+<button class="menu-item" type="button" role="menuitem" id="pick-menu-folder"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span>{{home.chooseFolder}}</span><span></span></button>
+</div>
+<div class="menu" id="theme-menu" popover role="menu" aria-label="{{common.theme}}">
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="true" data-theme-choice="system"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg><span>{{common.themeSystem}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span>{{common.themeLight}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span>{{common.themeDark}}</span><svg class="i on" aria-hidden="true"><use href="#i-check"/></svg></button>
+</div>
+{{@languageMenu}}
+<div class="toast" id="toast" popover="manual"><svg class="i" id="toast-icon" aria-hidden="true" hidden><use href="#i-check"/></svg><span id="toast-text"></span><button type="button" id="toast-action" hidden>{{home.undo}}</button></div>
+<div class="sr-only" id="live-status" role="status" aria-live="polite"></div>
+
+<dialog class="modal cli-modal" id="cli-dialog" aria-labelledby="cli-heading">
+<button class="btn btn-icon modal-x" type="button" data-close aria-label="{{common.close}}"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+<h2 id="cli-heading" tabindex="-1">{{home.cliHeading}}</h2>
+<p>{{home.cliIntro}}</p>
+<div class="cli-tabs" role="tablist" aria-label="{{home.cliExamples}}"><button type="button" role="tab" id="cli-setup-tab" aria-controls="cli-setup" aria-selected="false" data-cli-tab="setup" tabindex="-1">{{home.tabInstall}}</button><button type="button" role="tab" id="cli-upload-tab" aria-controls="cli-upload" aria-selected="true" data-cli-tab="upload">{{home.tabUpload}}</button><button type="button" role="tab" id="cli-download-tab" aria-controls="cli-download" aria-selected="false" data-cli-tab="download" tabindex="-1">{{home.tabDownload}}</button><button type="button" role="tab" id="cli-delete-tab" aria-controls="cli-delete" aria-selected="false" data-cli-tab="delete" tabindex="-1">{{home.tabDelete}}</button></div>
+<div class="tw cli-window">
+<div class="tw-bar" aria-hidden="true"><span></span><span></span><span></span><em>bash — fyl</em></div>
+<div class="cli-panels">
+<section class="cli-panel" id="cli-setup" role="tabpanel" aria-labelledby="cli-setup-tab" tabindex="0">
+<p class="cli-comment"># {{home.cliInstallComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>curl -fsSL https://fyl.at/<wbr>cli/<wbr>install | sh</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" aria-hidden="true">Installed fyl to /usr/local/bin</p>
+<p class="cli-comment"># {{home.cliThenComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>fyl ./archive.zip</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" aria-hidden="true">https://fyl.at/d/…</p>
+<p class="cli-note">{{home.cliInstallNoteHtml}}</p>
+</section>
+<section class="cli-panel active" id="cli-upload" role="tabpanel" aria-labelledby="cli-upload-tab" tabindex="0">
+<p class="cli-comment"># {{home.cliSettingsComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code id="cli-upload-command">fyl ./archive.zip</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" aria-hidden="true">https://fyl.at/d/…</p>
+<p class="cli-comment"># {{home.cliLifetimesComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>fyl ./archive.zip --expires 3d</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>fyl ./secret.txt --expires 1h --once</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="cli-note">{{home.cliUploadNoteHtml}}</p>
+</section>
+<section class="cli-panel" id="cli-download" role="tabpanel" aria-labelledby="cli-download-tab" tabindex="0">
+<p class="cli-comment"># {{home.cliNameComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>curl -fOJ 'https://fyl.at/<wbr>d/<wbr>&lt;id&gt;/<wbr>archive.zip'</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="cli-comment"># {{home.cliPasswordComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>curl -fOJ -u fyl 'https://fyl.at/<wbr>d/<wbr>&lt;id&gt;'</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="cli-comment"># {{home.cliEncryptedComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>fyl download 'https://fyl.at/<wbr>d/<wbr>&lt;id&gt;#<wbr>&lt;key&gt;'</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="cli-note">{{home.cliDownloadNote}}</p>
+</section>
+<section class="cli-panel" id="cli-delete" role="tabpanel" aria-labelledby="cli-delete-tab" tabindex="0">
+<p class="cli-comment"># {{home.cliManageComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>fyl ./archive.zip --manage</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" aria-hidden="true">https://fyl.at/d/…
+https://fyl.at/#manage/…</p>
+<p class="cli-comment"># {{home.cliDeleteComment}}</p>
+<div class="code"><span class="ps" aria-hidden="true">$</span><code>fyl rm 'https://fyl.at/<wbr>#manage/<wbr>&lt;id&gt;/<wbr>&lt;key&gt;'</code><button class="btn btn-icon" type="button" data-copy-command aria-label="{{common.copyCommand}}"><span class="swap swap-ico"><svg class="i i-sm" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-sm" aria-hidden="true" data-off><use href="#i-check"/></svg></span></button></div>
+<p class="out" aria-hidden="true">Deleted archive.zip.</p>
+<p class="cli-note">{{home.cliDeleteNoteHtml}}</p>
+</section>
+</div>
+</div>
+</dialog>
+<dialog class="modal" id="delete-dialog" aria-labelledby="delete-heading">
+<h2 id="delete-heading" tabindex="-1">{{home.deleteHeading}}</h2>
+<p id="delete-text"></p>
+<p class="form-error" id="delete-error" role="alert" hidden></p>
+<div class="modal-actions"><button class="btn btn-secondary" type="button" data-close>{{home.keepIt}}</button><button class="btn btn-danger" type="button" id="confirm-delete">{{home.deleteFile}}</button></div>
+</dialog>
+<dialog class="modal" id="expiry-dialog" aria-labelledby="expiry-heading">
+<h2 id="expiry-heading" tabindex="-1">{{home.expiryHeading}}</h2>
+<p>{{home.expiryIntro}}</p>
+<div class="custom"><label for="edit-custom-minutes">{{home.keepFor}}</label><input id="edit-custom-minutes" type="number" inputmode="numeric" min="1" max="10080" step="1" value="1" aria-describedby="edit-expiry-summary"><span class="select"><select id="edit-custom-unit" aria-label="{{home.unit}}"><option value="1">{{home.unitMinutes}}</option><option value="60">{{home.unitHours}}</option><option value="1440" selected>{{home.unitDays}}</option></select><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></span></div>
+<p class="summary" id="edit-expiry-summary"></p>
+<p class="form-error" id="expiry-error" role="alert" hidden></p>
+<div class="modal-actions"><button class="btn btn-secondary" type="button" data-close>{{home.cancel}}</button><button class="btn btn-primary" type="button" id="save-expiry">{{home.saveExpiry}}</button></div>
+</dialog>
+<dialog class="modal" id="forget-dialog" aria-labelledby="forget-heading">
+<h2 id="forget-heading" tabindex="-1">{{home.forgetHeading}}</h2>
+<p id="forget-text"></p>
+<div class="modal-actions"><button class="btn btn-secondary" type="button" data-close>{{home.keepThem}}</button><button class="btn btn-danger" type="button" id="confirm-forget">{{home.forget}}</button></div>
+</dialog>
+</body>
+</html>

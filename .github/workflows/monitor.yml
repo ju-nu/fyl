@@ -1,0 +1,34 @@
+name: Monitor
+# Hourly: scripts/monitor.py checks the public site's /api/health, the admin host's readiness and what it names for
+# the operator, and the estimate of the open Cloudflare bill against BILLING_ALERT_USD (a repository variable, 15
+# without it). Any problem fails the run, and GitHub mails the failure to whoever last changed the cron line below
+# (with Actions notifications on). The log is public, so it names only the checks that failed; `npm run monitor`
+# run locally shows the details. GitHub disables a schedule after 60 days without repository activity: if the mails
+# stop, enable it again under Actions > Monitor. MONITOR_TOKEN (read-only) and the admin host's Access service token
+# are repository secrets handed to this step alone; docs/OPERATIONS.md#monitor describes them.
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fyl-monitor
+  cancel-in-progress: true
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    # Three requests of up to three tries each (30 s timeout, 10 s apart: about 110 s per request) plus the checkout:
+    # a cancelled run prints nothing and may not mail, so the limit leaves room for all three to stall.
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Health, readiness, attention and the bill
+        env:
+          BILLING_ALERT_USD: ${{ vars.BILLING_ALERT_USD || '15' }}
+          MONITOR_TOKEN: ${{ secrets.MONITOR_TOKEN }}
+          FYL_ACCESS_CLIENT_ID: ${{ secrets.FYL_ACCESS_CLIENT_ID }}
+          FYL_ACCESS_CLIENT_SECRET: ${{ secrets.FYL_ACCESS_CLIENT_SECRET }}
+        run: python3 scripts/monitor.py

@@ -1,0 +1,17 @@
+# No trailing slash: a node_modules symlink (a worktree sharing the main checkout's) is ignored too.
+node_modules
+.wrangler/
+.build/
+__pycache__/
+*.pyc
+.ruff_cache/
+.dev.vars*
+.env
+.env.*
+!.env.example
+cli-rs/target/
+.DS_Store
+# Local agent and browser tooling files: they never belong in the repository.
+.claude/
+.playwright-mcp/
+CLAUDE.md

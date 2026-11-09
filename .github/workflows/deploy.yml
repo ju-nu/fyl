@@ -1,0 +1,46 @@
+name: Deploy gate
+# Cloudflare Workers Builds deploys only the production branch. This workflow fast-forwards production to a main
+# commit once that commit's Checks run passed and main still points at it, so an unchecked commit never deploys.
+# It pushes with the repository secret FYL_DEPLOY_TOKEN, a fine-grained personal access token for this repository only
+# with Contents and Workflows read and write: GitHub refuses GITHUB_TOKEN any branch update that brings in changes to
+# .github/workflows/, and once one such commit lands on main every later fast-forward would carry it. Without the
+# secret, or once the token expired, the run fails and production stays where it is; renew it before it expires.
+# Never push a commit to production that is not on main: every later fast-forward would fail. Pushing a commit
+# that main already has is safe (git push origin <main-sha>:refs/heads/production), for example to recover by hand.
+on:
+  workflow_run:
+    workflows: [Checks]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: fyl-deploy
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: The deploy token is configured
+        env:
+          HAS_TOKEN: ${{ secrets.FYL_DEPLOY_TOKEN != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != true ]; then
+            echo "::error::Set the repository secret FYL_DEPLOY_TOKEN: a fine-grained token for this repository only, with Contents and Workflows read and write (see deploy.yml). Production was not moved."
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          token: ${{ secrets.FYL_DEPLOY_TOKEN }}
+      - name: Fast-forward production to the checked commit
+        run: sh scripts/promote.sh "$SHA"

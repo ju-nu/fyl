@@ -1,0 +1,211 @@
+/* The private dashboard on the admin host, on top of /styles.css (its tokens, header, buttons, panels and the always-dark
+   terminal window .tw). Colours are tokens only, so light, dark and system stay in sync with the site. One series per
+   chart in the --bar cobalt (light #2f5ee8, dark #5b8cff, both at least 3 : 1 on the panel); text stays in ink tokens.
+   CSP style-src 'self': no inline styles; bar lengths go through the CSSOM (--v). */
+
+.dash-shell{width:min(100% - 64px,1200px)}
+.dash-badge{margin-left:4px;height:24px;font-size:12px;letter-spacing:.02em}
+.dash{display:grid;gap:24px;align-content:start;padding:12px 0 72px}
+.dash-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px 24px}
+.dash-head h1{font-size:var(--t-page);font-weight:700;line-height:38px;letter-spacing:-.02em}
+.dash-head .meta{margin-top:4px}
+.dash-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+/* Range: four radios in a well; the chosen one wears the primary fill. */
+.range{display:inline-flex;gap:2px;margin:0;padding:3px;border:0;border-radius:var(--r-well);background:var(--well)}
+/* The pill stays 38 px; the label around it reaches into the well's padding, so each target is 44 px tall. */
+.range label{position:relative;cursor:pointer;padding-block:3px;margin-block:-3px}
+.range input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.range span{display:flex;align-items:center;justify-content:center;min-height:38px;padding:0 14px;border-radius:9px;font-size:var(--t-small);font-weight:500;color:var(--ink-2);white-space:nowrap;transition:color var(--d-hover) ease,background-color var(--d-hover) ease}
+.range input:checked+span{background:var(--accent-fill);color:var(--on-accent);font-weight:600}
+.range label:has(input:focus-visible){outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:9px}
+@media (hover:hover) and (pointer:fine){.range input:not(:checked)+span:hover{color:var(--ink);background:var(--well-2)}}
+
+.notice{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border:1px solid var(--warn-line);border-radius:var(--r-well);background:var(--warn-wash);font-size:var(--t-small);line-height:20px;color:var(--ink)}
+.notice .i{flex:none;color:var(--warn)}
+
+/* The status strip: one line (it wraps on a phone) of what needs the operator, a link to where it is explained; quiet
+   green while all is well, the notice's amber once something needs a look, the parts that do in weight 600. */
+.strip{display:flex;align-items:flex-start;gap:10px;min-height:44px;padding:11px 16px;border:1px solid var(--ok-line);border-radius:var(--r-well);background:var(--ok-wash);
+  font-size:var(--t-small);line-height:20px;color:var(--ink);text-decoration:none;font-variant-numeric:tabular-nums}
+.strip .i{flex:none;width:18px;height:18px;margin-top:1px;color:var(--ok)}
+.strip.is-warn{border-color:var(--warn-line);background:var(--warn-wash)}
+.strip.is-warn .i{color:var(--warn)}
+.strip.is-pending{border-color:var(--line-2);background:var(--well)}
+.strip.is-pending .i{color:var(--ink-3)}
+.strip .bad{font-weight:600}
+.strip:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.strip:hover #strip-text{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}}
+
+/* Totals: one tile each, the number large. */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.kpi{padding:16px 18px;border:1px solid var(--line-2);border-radius:var(--r-panel);background:linear-gradient(180deg,var(--surface-top),var(--surface-bottom))}
+.kpi-label{font-size:var(--t-meta);line-height:20px;font-weight:500;color:var(--ink-3)}
+.kpi-value{margin-top:4px;font-size:30px;line-height:38px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.kpi .meta{margin-top:2px}
+/* "Storage in use" is a figure of now, not of the range: an info button (44 px, in the tile's corner) opens what it counts. */
+.kpi-now{position:relative}
+.kpi-now .kpi-label{padding-right:28px}
+.kpi-help{position:absolute;top:4px;right:4px;color:var(--ink-3)}
+.kpi-help .i{width:18px;height:18px}
+.tip{width:min(320px,calc(100vw - 24px));padding:12px 14px;font-size:var(--t-meta);line-height:20px;color:var(--ink-2)}
+.tip p+p{margin-top:8px}
+.tip em{font-style:normal;font-weight:600;color:var(--ink)}
+
+/* The funnel: five figures in wells, a quiet chevron between them where they sit in one row. */
+.funnel{padding:20px}
+.funnel-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+.funnel h2{font-size:var(--t-lead);font-weight:600;line-height:24px}
+.funnel-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-top:14px;list-style:none}
+.fstep{position:relative;display:grid;align-content:start;padding:12px 14px;border-radius:var(--r-well);background:var(--well)}
+.fstep+.fstep::before{content:'';position:absolute;top:50%;left:-11px;width:6px;height:6px;border-top:1.5px solid var(--ink-3);border-right:1.5px solid var(--ink-3);transform:translateY(-50%) rotate(45deg)}
+.fstep-label{font-size:var(--t-meta);line-height:20px;font-weight:500;color:var(--ink-3)}
+.fstep-value{margin-top:2px;font-size:24px;line-height:32px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+
+/* Charts: SVG drawn for the panel's width; hairline grid, ticks in meta ink, bars with a rounded top. */
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.chart{margin:0;padding:20px}
+.chart figcaption{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.chart h2,.list h2,.events h2{font-size:var(--t-lead);font-weight:600;line-height:24px}
+.plot{margin-top:12px;min-height:184px;overflow:hidden}
+.plot svg{display:block;max-width:100%;height:auto;touch-action:pan-y}
+.plot .grid{stroke:var(--line);stroke-width:1;shape-rendering:crispEdges}
+.plot .axis{fill:var(--ink-3);font-family:var(--sans);font-size:12px;font-variant-numeric:tabular-nums}
+.plot .col{fill:var(--bar);transition:opacity var(--d-hover) ease}
+.plot svg.hovering .col:not(.on){opacity:.45}
+/* Buckets before counting began share a band of track; the running bucket is lighter until it is whole. */
+.plot .band{fill:var(--track)}
+.plot .col.part{opacity:.55}
+.readout{margin-top:6px;min-height:20px;font-variant-numeric:tabular-nums}
+.as-table{margin-top:4px}
+.as-table summary{display:inline-flex;align-items:center;min-height:44px;font-size:var(--t-small);font-weight:500;color:var(--accent-ink);cursor:pointer}
+.table-wrap{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-ctl)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:var(--t-small)}
+.table-wrap th,.table-wrap td{padding:6px 12px;border-bottom:1px solid var(--line);text-align:left;font-weight:400;color:var(--ink-2)}
+.table-wrap thead th{position:sticky;top:0;background:var(--surface);font-weight:600;color:var(--ink)}
+.table-wrap .n{text-align:right}
+
+/* Ranked lists: name and count on a line, the printed share as a bar under them (its length is that share of the card's
+   base, so a bar never reads fuller than its percentage and cards compare). Each card is as tall as its
+   content (no stretching to the row's longest list): at most 8 rows, the eighth a muted "N more" with the whole list
+   behind "Show all"; an empty list is a single line. */
+.lists{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+/* Cards alike: at most five rows each (admin.js), side by side as tall as the tallest, "Show all" at the foot. Each
+   section holds eight cards, so four, two or one column always end in full rows. */
+.list{display:flex;flex-direction:column;padding:18px 20px}
+.list>.bars{flex:1;align-content:start}
+.list.is-empty>.bars{place-content:center;text-align:center}
+.list .more{margin-top:auto}
+/* Opened, the whole list takes the place of the short one and scrolls in about the same space. */
+.list:has(.more[open])>.bars{display:none}
+.list .more[open]{display:flex;flex-direction:column}
+.list .more[open] summary{order:1}
+.more[open] .bars{max-height:236px;overflow-y:auto;padding-right:6px;scrollbar-width:thin}
+.list .more[open] .bars{margin-top:12px}
+.more .more-close,.more[open] .more-open{display:none}
+.more[open] .more-close{display:inline}
+.list-base{margin-top:2px}
+.list-base:empty{display:none}
+.bars .rest .bar-name{color:var(--ink-3)}
+.more summary{display:inline-flex;align-items:center;min-height:44px;margin-top:2px;font-size:var(--t-small);font-weight:500;color:var(--accent-ink);cursor:pointer}
+.more .bars{margin-top:4px}
+.bars{display:grid;gap:10px;margin-top:12px;list-style:none}
+.bars li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:var(--t-small);line-height:20px}
+.bars .empty{display:block}
+.bar-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+/* In a card the name keeps at least 6.5em and is never cut to fit a long count: the count wraps between its parts
+   ("300 · 18 % ·" over "2 % of GB-days"). A long name stays on one line and ends in an ellipsis (its title has it
+   whole), so the cards' rows line up. */
+.list .bars li{grid-template-columns:minmax(min(6.5em,50%),1fr) auto}
+.list .bar-n{text-align:right}
+.list .bar-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-n{color:var(--ink-3)}
+.bar-track{grid-column:1/-1;height:6px;border-radius:99px;background:var(--track);overflow:hidden}
+.bar-fill{display:block;width:calc(var(--v,0) * 100%);min-width:4px;height:100%;border-radius:99px;background:var(--bar)}
+
+/* This billing cycle: the estimate as one figure, then each meter as used / included with the list's thin bar (its
+   share of the allowance, full once past it, where the meter's dollars appear in ink). */
+.bill{padding:20px}
+.bill-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px 24px}
+.bill-head h2{font-size:var(--t-lead);font-weight:600;line-height:24px}
+.bill-head .meta{margin-top:2px}
+.bill-sum{margin-top:14px;font-size:var(--t-lead);line-height:38px;color:var(--ink-2)}
+.bill-figure{font-size:30px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.bill-est{color:var(--ink-3)}
+.bill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px 32px;margin-top:18px}
+.bill-group h3{font-size:var(--t-small);line-height:20px;font-weight:600;color:var(--ink-2)}
+.bill-group .bars{margin-top:10px}
+.meters .over .bar-n{color:var(--ink);font-weight:600}
+/* R2's daily storage peaks under its meters: small cobalt bars, no axis (the line under them gives the figures). */
+.peaks-title{margin-top:16px}
+.peaks{display:block;width:100%;max-width:320px;height:40px;margin-top:8px}
+.peaks .col{fill:var(--bar)}
+.worker-errors{margin-top:6px}
+.worker-errors.bad{color:var(--ink);font-weight:600}
+.bill-problem{grid-column:1/-1;font-size:var(--t-small);line-height:20px;color:var(--ink)}
+.bill-note{max-width:88ch;margin-top:14px}
+.bill-note+.bill-note{margin-top:4px}
+.bill-date{white-space:nowrap}
+
+/* Operations: readiness and the open reports in terminal windows, as the operator scripts print them. */
+.ops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.ops .tw-head h2{font-size:18px;line-height:24px;font-weight:600;letter-spacing:-.01em}
+.tw-cmd{margin:6px 18px 8px;font-size:var(--t-xs);line-height:20px;color:var(--ink)}
+.tw-cmd .ps,.tw .code .ps{color:var(--tw-green)}
+.tw-out{margin:0 18px 16px;font-family:var(--mono);font-variant-ligatures:none;font-size:var(--t-xs);line-height:20px;color:var(--tw-faint);white-space:pre-wrap;overflow-wrap:anywhere}
+.tw-out .bad,.tw-out.bad{color:#fca5a5}
+.cases{display:grid;gap:12px;margin:0 0 4px;list-style:none}
+.rcase{padding:10px 0 0;border-top:1px solid var(--line)}
+.case-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;padding:0 18px 6px;font-size:var(--t-xs);line-height:20px;color:var(--ink-2)}
+.case-id{color:var(--ink)}
+.case-p{padding:0 8px;border-radius:999px;background:var(--well);color:var(--ink)}
+.case-file{color:var(--tw-green)}
+.case-action{margin-left:auto;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--tw-row);color:var(--ink);font-family:var(--mono);font-size:var(--t-xs)}
+.rcase-more{padding:0 18px;font-family:var(--mono);font-size:var(--t-xs)}
+.tw-note{margin:12px 18px 16px;font-size:var(--t-xs);line-height:20px;color:var(--ink-3)}
+.tw-note code{font-family:var(--mono);color:var(--ink-2)}
+
+/* Events of the range: small tables of codes and counts. */
+.events{padding:20px}
+.event-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px 28px;margin-top:12px;align-items:start}
+.event h3{font-size:var(--t-small);line-height:20px;font-weight:600;color:var(--ink-2)}
+.event dl{margin-top:6px}
+.event dl>div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--line);font-size:var(--t-small);line-height:20px}
+.event dt{color:var(--ink-3);overflow-wrap:anywhere}
+.event dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums}
+/* Only groups with something to count are drawn, each with a sentence on what a non-zero value means; the empty ones
+   are named in one line, and every counter waits in a closed table. */
+.event-note{margin-top:6px}
+.events-quiet{margin-top:16px}
+.events-quiet:empty{display:none}
+
+@media (max-width:1100px){
+  .lists{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .charts,.ops{grid-template-columns:minmax(0,1fr)}
+  .funnel-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .fstep+.fstep::before{display:none}
+}
+@media (max-width:560px){
+  .lists{grid-template-columns:minmax(0,1fr)}
+  .dash-shell{width:calc(100% - 32px)}
+  .dash-head h1{font-size:28px;line-height:34px}
+  .dash-tools,.range{width:100%}
+  .range label{flex:1}
+  .range span{padding:0 6px}
+  .chart,.list,.events,.bill,.funnel{padding:16px}
+  .funnel-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .fstep-value{font-size:20px;line-height:28px}
+  .bill-head .btn{width:100%}
+  .bill-figure{font-size:26px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .kpi-value{font-size:24px;line-height:32px}
+}
+@media (prefers-reduced-motion:reduce){
+  .plot .col,.range span{transition:none}
+}
+@media (forced-colors:active){
+  .plot .col,.peaks .col,.bar-fill{fill:CanvasText;background:CanvasText}
+  .range input:checked+span{outline:2px solid CanvasText}
+}
