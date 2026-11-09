@@ -69,7 +69,10 @@ describe('the language switch at /', () => {
     // Where the report form has its own host, its pages go there, in their language.
     const { response } = await manual('/de/report?link=abc', {}, { REPORT_HOST: 'report.fyl.at' } as unknown as Partial<Env>);
     expect([response.status, response.headers.get('Location')]).toEqual([302, 'https://report.fyl.at/de/?link=abc']);
-    for (const path of ['/xx/', '/en/nope', '/en/app.js', '/de/sitemap.xml']) expect((await manual(path)).response.status, path).toBe(404);
+    for (const path of ['/en/app.js', '/de/sitemap.xml']) expect((await manual(path)).response.status, path).toBe(404);
+    // A page address that doesn't exist sends a browser home (tests/edge-routes.test.ts); a script still gets the 404.
+    for (const [path, location] of [['/xx/', '/en/'], ['/en/nope', '/en/']]) expect([path, (await manual(path)).response.headers.get('Location')]).toEqual([path, location]);
+    for (const path of ['/xx/', '/en/nope']) expect((await direct(path, {}, { headers: { Accept: '*/*' }, redirect: 'manual' })).response.status, path).toBe(404);
   });
 });
 

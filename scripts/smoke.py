@@ -262,6 +262,16 @@ def health(base):
     check("max-age=" in headers.get("Strict-Transport-Security", ""), "HSTS is missing.")
 
 
+def missing_cli_file(base):
+    """A version folder that doesn't exist (yet) answers a plain-text 404 that no cache keeps: a SHA256SUMS fetched
+    before its release is published must not stick in a cache for a year as the published files would."""
+    headers, _ = request(base + "/cli/0.0.0/SHA256SUMS", expected=404)
+    check("no-store" in headers.get("Cache-Control", "") and "immutable" not in headers.get("Cache-Control", ""),
+          "A missing CLI file is cacheable.")
+    check(headers.get_content_type() == "text/plain" and headers.get("Content-Disposition") is None,
+          "A missing CLI file keeps the published files' headers.")
+
+
 def pages_after_deploy(base, report, tries=7, wait=10):
     """The deploy's own check (--pages): health, the pages' policies and the kept code's bytes (returns its sums),
     tried again every `wait` seconds for about a minute, because a new version takes that long to reach every location and the build machine's network can stall.
@@ -341,6 +351,7 @@ def main():
     for name, digest in published.items():
         _, downloads[name] = request(folder + name)
         check(hashlib.sha256(downloads[name]).hexdigest() == digest, "Published CLI checksum mismatch: " + name)
+    missing_cli_file(base)
     print("Versioned CLI files passed.")
     with tempfile.TemporaryDirectory(prefix="fyl-smoke-") as directory:
         root = Path(directory)

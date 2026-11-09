@@ -942,6 +942,33 @@ function cliFile(path: string) {
   return /^\/cli\/\d+\.\d+\.\d+\/fyl-((?:linux|macos)-(?:x86_64|arm64))$/.exec(path)?.[1] ?? null;
 }
 
+/** A /cli/ request the asset layer answered with an error: its status, as plain text that no cache keeps. */
+function cliMissing(request: Request, response: Response) {
+  const headers = new Headers(response.headers);
+  headers.delete('Content-Disposition');
+  headers.delete('ETag');
+  headers.set('Content-Type', 'text/plain; charset=utf-8');
+  headers.set('Cache-Control', 'no-store');
+  return new Response(request.method === 'HEAD' ? null : response.status === 404 ? 'Not found.\n' : response.body, { status: response.status, headers });
+}
+
+/**
+ * A browser navigation (a GET for HTML) to a page address that doesn't exist: a mistyped or old link such as /faq or
+ * /en/nonexistent. Never a file (a last segment with an extension other than .html), the API, a download link, the
+ * CLI, /.well-known or the folders of scripts, fonts and pictures: those keep their 404.
+ */
+const STRAY_EXCLUDED = /^\/(?:api|cli|d|\.well-known|_dl|admin|e2ee|vendor|fonts|og|cdn-cgi)(?:\/|$)/;
+function strayNavigation(request: Request, path: string) {
+  if (!navigation(request) || STRAY_EXCLUDED.test(path)) return false;
+  const last = path.slice(path.lastIndexOf('/') + 1);
+  return !last.includes('.') || last.endsWith('.html');
+}
+/** Such a navigation goes to the home page (302): of the address's language, else chosen as `/` chooses it. */
+function strayPage(request: Request, lang: string | null) {
+  const code = lang || negotiate(request.headers.get('Accept-Language'), request.headers.get('CF-IPCountry'));
+  return new Response(null, { status: 302, headers: { Location: `/${code}/`, Vary: 'Accept, Accept-Language', 'Cache-Control': 'no-store' } });
+}
+
 /**
  * The public site's files the dashboard uses too; on the admin host they pass only after the Access check, like everything:
  * assets.run_worker_first is true, so no file of dist/ reaches that host from the asset layer without the Worker.
@@ -1050,6 +1077,11 @@ async function reportSite(request: Request, env: Env, path: string, base: string
       return site.transform(page);
     }
     if (path === '/config.js') return configScript(env);
+    // RFC 9116 is per origin: the same security.txt as fyl.at's, which names this host's address as a Canonical too.
+    if (path === '/.well-known/security.txt') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') throw new ApiError(405, 'Use GET.');
+      return await env.ASSETS.fetch(request);
+    }
     if (path === '/api/reports') {
       originCheck(request);
       return await reportPost(request, env, base, address, ip, subscriber, day);
@@ -1081,8 +1113,10 @@ export default {
       if (path === '/') return await languageSwitch(request, env, url);
       if (OLD_PAGES.has(path)) return moved(`/en${OLD_PAGES.get(path)}${url.search}`);
       if (path === '/api/health') {
-        if (request.method !== 'GET') throw new ApiError(405, 'Use GET.');
-        return json({ service: 'fyl.at', status: 'ok', maxFileBytes: Number(env.MAX_FILE_BYTES), partSize: PART_BYTES, e2ee: e2eeEnabled(env) });
+        // HEAD answers like GET without the body: uptime monitors and load balancers often check with HEAD.
+        if (request.method !== 'GET' && request.method !== 'HEAD') throw new ApiError(405, 'Use GET or HEAD.');
+        const health = json({ service: 'fyl.at', status: 'ok', maxFileBytes: Number(env.MAX_FILE_BYTES), partSize: PART_BYTES, e2ee: e2eeEnabled(env) });
+        return request.method === 'HEAD' ? new Response(null, { status: health.status, headers: health.headers }) : health;
       }
       if (path.startsWith('/d/')) return await download(request, env, ctx, linkId(path), ip, subscriber, base);
       // The dashboard's files exist on the admin host only.
@@ -1105,6 +1139,10 @@ export default {
       // Every other file of dist/, through the asset layer with its _headers and .html handling.
       if (!path.startsWith('/api/')) {
         const response = await env.ASSETS.fetch(request);
+        // A CLI file that isn't there (a version not published yet, say) must not keep the _headers rules of the
+        // published ones: no year-long immutable caching, no attachment, no binary type.
+        if (path.startsWith('/cli/') && response.status >= 400) return cliMissing(request, response);
+        if (response.status === 404 && strayNavigation(request, path)) return strayPage(request, lang);
         const fetched = cliFile(path);
         if (fetched && request.method === 'GET' && response.status === 200 && clientOf(request) !== 'own') metric(env, 'cli_fetch', fetched);
         return response;

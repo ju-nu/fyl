@@ -82,6 +82,21 @@ class SmokeTests(unittest.TestCase):
             self.assertEqual(str(raised.exception), message)
         self.assertEqual(self.elsewhere.requests, [])
 
+    def test_a_missing_cli_file_must_not_be_cacheable(self):
+        route = ('GET', '/cli/0.0.0/SHA256SUMS')
+        self.server.routes[route] = (404, b'Not found.\n', {'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store'})
+        self.smoke.missing_cli_file(self.origin)
+        for answer, message in (
+                ((404, b'', {'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=31536000, immutable'}), 'A missing CLI file is cacheable.'),
+                ((404, b'', {'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store'}), "A missing CLI file keeps the published files' headers."),
+                ((404, b'', {'Content-Type': 'text/plain', 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment'}),
+                 "A missing CLI file keeps the published files' headers."),
+                ((200, b'x', {'Content-Type': 'text/plain', 'Cache-Control': 'no-store'}), 'Unexpected HTTP status: 200; expected 404.')):
+            self.server.routes[route] = answer
+            with self.assertRaises(RuntimeError) as raised:
+                self.smoke.missing_cli_file(self.origin)
+            self.assertEqual(str(raised.exception), message)
+
     def test_hotlinks_are_refused_and_followed_links_open_the_page(self):
         url = self.origin + '/d/' + ID
         page = b'<html><script type="application/json" id="fyl-state">{"state": "ready", "once": true}</script></html>'
