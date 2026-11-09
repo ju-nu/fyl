@@ -388,7 +388,8 @@ Besides the operator token and the Access service token it needs `CLOUDFLARE_API
 list the objects through the Cloudflare API; a token with only Workers Scripts Read is enough, and the token goes only
 to `https://api.cloudflare.com` (`FYL_CLOUDFLARE_API` may name a loopback fake, nothing else). `--all` sweeps objects
 without stored data too (they stay empty). `ADMIN_RATE` allows 10 batches a minute; a refused batch is sent again
-after 15 seconds. The run prints and logs counts only, and running it again is harmless.
+after 15 seconds. A listing with no objects to sweep, or one that is not the list the API documents, exits 1 and sends
+nothing. The run prints and logs counts only, and running it again is harmless.
 
 ## Static assets
 

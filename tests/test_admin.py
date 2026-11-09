@@ -644,6 +644,28 @@ class SweepTests(unittest.TestCase):
             self.assertIn('must be https://api.cloudflare.com/', str(foreign.exception))
             opener.assert_not_called()
 
+    def test_an_empty_or_malformed_listing_is_not_a_clean_run(self):
+        # No objects, or none with stored data: exit 1 with a message, never "Swept 0 objects".
+        for objects in ([], [{'id': '{:064x}'.format(1), 'hasStoredData': False}]):
+            self.cloudflare.routes[('GET', OBJECTS + '?limit=1000')] = (200, {'success': True, 'result': objects, 'result_info': {'cursor': ''}})
+            for args in (('sweep',), ('sweep', '--dry-run')):
+                empty = self.admin(*args)
+                self.assertEqual(empty.returncode, 1, args)
+                self.assertIn('Nothing to sweep: the listing returned no objects with stored data', empty.stderr)
+                self.assertNotIn('Swept', empty.stdout)
+        # --all with an empty namespace says so too.
+        self.cloudflare.routes[('GET', OBJECTS + '?limit=1000')] = (200, {'success': True, 'result': [], 'result_info': {'cursor': ''}})
+        self.assertIn('Nothing to sweep: the listing returned no objects.', self.admin('sweep', '--all').stderr)
+        # A result that is not a list, or an item that is not an object, stops before anything is sent.
+        for result, message in (({'objects': []}, 'object listing was not a list'), (['x' * 64], 'not a JSON object')):
+            self.cloudflare.routes[('GET', OBJECTS + '?limit=1000')] = (200, {'success': True, 'result': result, 'result_info': {}})
+            malformed = self.admin('sweep')
+            self.assertEqual(malformed.returncode, 1)
+            self.assertIn(message, malformed.stderr)
+        self.cloudflare.routes[('GET', NAMESPACES + '?page=1&per_page=100')] = (200, {'success': True, 'result': {'id': 'ns-transfer'}, 'result_info': {}})
+        self.assertIn('namespace listing was not a list', self.admin('sweep').stderr)
+        self.assertEqual(self.server.requests, [])
+
     def test_a_rate_limited_batch_is_sent_again(self):
         self.answers((429, {'error': 'Too many requests. Please try again shortly.', 'code': 'rate_limited'}),
                      (200, {'checked': 50, 'stored': 50, 'fixed': 0, 'leftover': 0, 'failed': 0}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'leftover': 0, 'failed': 0}))

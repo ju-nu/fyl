@@ -559,7 +559,9 @@ def transfer_objects(everything):
     namespaces, page = [], 1
     while True:
         result, info = cloudflare("/accounts/{}/workers/durable_objects/namespaces".format(account), {"page": page, "per_page": 100})
-        namespaces += result if isinstance(result, list) else []
+        if not isinstance(result, list):
+            sys.exit("The Cloudflare API's namespace listing was not a list. Nothing was sent.")
+        namespaces += result
         if not result or page >= (info.get("total_pages") or page):
             break
         page += 1
@@ -570,7 +572,11 @@ def transfer_objects(everything):
     while True:
         query = {"limit": 1000, **({"cursor": cursor} if cursor else {})}
         result, info = cloudflare("/accounts/{}/workers/durable_objects/namespaces/{}/objects".format(account, found[0].get("id")), query)
-        for item in result if isinstance(result, list) else []:
+        if not isinstance(result, list):
+            sys.exit("The Cloudflare API's object listing was not a list. Nothing was sent.")
+        for item in result:
+            if not isinstance(item, dict):
+                sys.exit("The Cloudflare API listed an object that is not a JSON object. Nothing was sent.")
             listed += 1
             if everything or item.get("hasStoredData") is True:
                 if not OBJECT_ID.fullmatch(str(item.get("id"))):
@@ -587,6 +593,10 @@ def sweep(args):
     batches = math.ceil(len(ids) / SWEEP_BATCH)
     which = "objects" if args.all else "objects with stored data"
     print("Listed:    {} Transfer objects, {} {}".format(listed, len(ids), which))
+    if not ids:
+        # Never a clean run: a namespace that has served transfers has stored objects, so the account, the namespace or
+        # the API's answer is not what this command expects.
+        sys.exit("Nothing to sweep: the listing returned no {}. Check the account and namespace; nothing was sent.".format(which))
     if args.dry_run:
         print("Dry run: would sweep {} {} in {} batches of up to {}. Nothing was sent.".format(len(ids), which, batches, SWEEP_BATCH))
         return
