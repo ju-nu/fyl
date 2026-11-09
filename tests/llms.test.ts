@@ -66,7 +66,7 @@ describe('the public source', () => {
     for (const code of LOCALES) for (const page of ['/', '/privacy', '/report', '/download']) {
       const path = `/${code}${page}`, html = await (await direct(path, { REPORT_HOST: '' } as unknown as Partial<Env>, { headers: { Accept: 'text/html' } })).response.text();
       const footer = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
-      expect([path, (footer.match(/href="https:\/\/github\.com\/ju-nu\/fyl"/g) || []).length]).toEqual([path, 1]);
+      expect([path, (footer.match(/href="https:\/\/github\.com\/ju-nu\/fyl-at"/g) || []).length]).toEqual([path, 1]);
       const github = [...html.matchAll(/https?:\/\/(?:www\.)?github\.com[^"'\s<)]*/g)].map(match => match[0]);
       expect([path, github.every(url => ['https://github.com/ju-nu/fyl-at', 'https://github.com/ju-nu/fyl-at/releases'].includes(url))]).toEqual([path, true]);
       if (page === '/privacy') expect([path, html.includes('href="https://github.com/ju-nu/fyl-at/releases"')]).toEqual([path, true]);
