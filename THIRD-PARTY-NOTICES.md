@@ -55,14 +55,14 @@ dev-dependencies are not part of the binaries and are not listed.
 | `cmov` | 0.5.4 | Apache-2.0 OR MIT |
 | `const-oid` | 0.10.2 | Apache-2.0 OR MIT |
 | `cpufeatures` | 0.3.1 | MIT OR Apache-2.0 |
-| `crc32fast` | 1.5.0 | MIT OR Apache-2.0 |
+| `crc32fast` | 1.5.4 | MIT OR Apache-2.0 |
 | `crypto-common` | 0.2.2 | MIT OR Apache-2.0 |
 | `ctutils` | 0.4.8 | Apache-2.0 OR MIT |
 | `curve25519-dalek` | 5.0.0 | BSD-3-Clause |
 | `digest` | 0.11.3 | MIT OR Apache-2.0 |
 | `errno` | 0.3.14 | MIT OR Apache-2.0 |
 | `getrandom` | 0.2.17 | MIT OR Apache-2.0 |
-| `getrandom` | 0.3.4 | MIT OR Apache-2.0 |
+| `getrandom` | 0.4.3 | MIT OR Apache-2.0 |
 | `hkdf` | 0.13.0 | MIT OR Apache-2.0 |
 | `hmac` | 0.13.0 | MIT OR Apache-2.0 |
 | `http` | 1.5.0 | MIT OR Apache-2.0 |

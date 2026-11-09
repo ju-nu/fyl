@@ -1,8 +1,29 @@
 # Changelog
 
+## Unreleased
+
+Server and repository only; the CLI is unchanged.
+
+- **Old tombstones:** a one-off sweep (2026-11-09, a temporary operator route and `npm run admin -- sweep`, both
+  removed again) fixed the last 24 tombstones from before 2026-10-30, with 0 left over, so the Transfer constructor's
+  guard for them is removed.
+- **CLI files:** a `/cli/` file that doesn't exist (a version not published yet) answers a plain-text 404 that no
+  cache keeps, instead of the published files' year-long immutable caching.
+- **Pages:** every indexed page carries `og:title`, `og:description` and `og:type`, the privacy and report pages too.
+  A browser opening a page address that doesn't exist (`/faq`, `/en/nonexistent`) goes to the home page of its
+  language instead of an empty 404.
+- **API:** `HEAD /api/health` answers like `GET`, without a body.
+- **Report host:** `report.fyl.at` serves `/.well-known/security.txt`, which names both canonical addresses.
+- **Deploys:** the Worker version message names the commit (`fyl <version> <commit>`), so builds that share a tag
+  can be told apart in `npm run rollback`.
+- **Repository:** the deploy key and the monitor's tokens live in the GitHub environments `production` and `monitor`,
+  limited to `main`; the repository-level copies are deleted once the environments have served a Deploy gate and a
+  Monitor run ([Monitor](docs/OPERATIONS.md#monitor)). The Monitor runs at minute 23 and its hints name the
+  environment `monitor`.
+
 ## 1.0.1 — 2026-11-09
 
-- **CLI dependencies:** getrandom 0.4 and crc32fast 1.5.3. Encryption, checksums and the zip format are unchanged;
+- **CLI dependencies:** getrandom 0.4 and crc32fast 1.5.4. Encryption, checksums and the zip format are unchanged;
   every test vector passes as before.
 - **CLI downloads:** `/cli/version.json` names the current release for every client, and only the versioned
   `/cli/<version>/` paths are served. The update path for CLIs from before 1.0.0 (the 2.5.1 build in `/cli/2.5.1/`)

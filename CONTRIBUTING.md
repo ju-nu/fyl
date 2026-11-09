@@ -19,8 +19,10 @@ npm run dev    # http://127.0.0.1:4173 with local R2, Durable Objects and genera
 that), regenerates the locale pages first, and generates random local secrets once into `.wrangler/dev-secrets.env`
 (ignored, never printed). It needs no Cloudflare account. The admin dashboard runs at `http://admin.localhost:4173/`
 without Access and with sample statistics ([admin host](docs/OPERATIONS.md#admin-host-and-statistics)). Point the CLI
-at its upload endpoint with `FYL_API_URL=http://127.0.0.1:4173/api/upload fyl ./file` (an installed `fyl`, or `dist/cli/<version>/fyl-<os>-<arch>`). The report form works without Turnstile locally (readiness
-says `incomplete`).
+at its upload endpoint with `FYL_API_URL=http://127.0.0.1:4173/api/upload fyl ./file` (an installed `fyl`, or `dist/cli/<version>/fyl-<os>-<arch>`). The report form is served locally at
+`http://127.0.0.1:4173/en/report` (`npm run dev` empties `REPORT_HOST`, so it no longer redirects to report.fyl.at) and
+works without Turnstile there (readiness says `incomplete`). The built pages' "Report" links still point to
+report.fyl.at: open the local address yourself, never the production form, to test a report.
 
 `.env.example` lists the variables the operator scripts and wrangler read against a real deployment; you don't need
 any of them for development. Never commit a value.

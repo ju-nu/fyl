@@ -2,9 +2,12 @@
 import contextlib
 import io
 import json
+import os
+import re
+import subprocess
 import unittest
 
-from native import load_script
+from native import ROOT, load_script
 
 
 VERSIONS = [
@@ -16,7 +19,8 @@ VERSIONS = [
     {'id': 'tagged-2-4-0', 'metadata': {'created_on': '2026-10-30T11:30:00Z'}, 'annotations': {'workers/tag': 'v2.4.0', 'workers/message': 'fyl 2.4.0'}},
     {'id': 'tagged-2-5-1', 'metadata': {'created_on': '2026-11-09T10:00:00Z'}, 'annotations': {'workers/tag': 'v2.5.1', 'workers/message': 'fyl 2.5.1'}},
     {'id': 'tagged-1-0-0', 'metadata': {'created_on': '2026-11-10T10:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.0', 'workers/message': 'fyl 1.0.0'}},
-    {'id': 'tagged-1-0-1', 'metadata': {'created_on': '2026-11-10T12:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.1', 'workers/message': 'fyl 1.0.1'}},
+    {'id': 'tagged-1-0-1', 'metadata': {'created_on': '2026-11-10T12:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.1', 'workers/message': 'fyl 1.0.1 4ba433e2b1c0d3f4a5b6c7d8e9f0a1b2c3d4e5f6'}},
+    {'id': '32a6b7f1-55b2-42cc-918f-fbc1e69dd91b', 'metadata': {'created_on': '2026-11-10T11:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.1', 'workers/message': 'fyl 1.0.1'}},
     {'id': 'hotfix-0-9-0', 'metadata': {'created_on': '2026-11-10T13:00:00Z'}, 'annotations': {'workers/tag': 'v0.9.0'}},
     {'id': 'uploaded-1-0-2', 'metadata': {'created_on': '2026-11-10T14:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.2'}},
 ]
@@ -62,10 +66,26 @@ class RollbackTests(unittest.TestCase):
         for name in ('old-checkout', 'tagged-2-3-0', 'tagged-2-4-0', 'tagged-2-5-1'):
             self.assertRegex(verdicts[name], r'  old numbering  ', name)
         self.assertRegex(verdicts['hotfix-0-9-0'], r'  below the floor  ')
+        self.assertRegex(verdicts['32a6b7f1-55b2-42cc-918f-fbc1e69dd91b'], r'  withdrawn  ')
         self.assertRegex(verdicts['tagged-1-0-0'], r'  target  ')
         self.assertRegex(verdicts['tagged-1-0-1'], r'  serving  ')
         self.assertRegex(verdicts['uploaded-1-0-2'], r'  target, never served  ')
         self.assertEqual(self.ran, [])
+
+    def test_deploy_names_the_commit_in_the_version_message(self):
+        # Several builds share a tag (it names the package version): the message tells them apart by commit.
+        deploy = json.loads((ROOT / 'package.json').read_text())['scripts']['deploy']
+        message = re.search(r'--message ("[^"]*")', deploy)[1]
+        self.assertIn('--tag v$npm_package_version ', deploy)
+        for sha, expected in (('4ba433e2b1c0d3f4a5b6c7d8e9f0a1b2c3d4e5f6', 'fyl 1.0.1 4ba433e2b1c0d3f4a5b6c7d8e9f0a1b2c3d4e5f6'), (None, 'fyl 1.0.1 local')):
+            env = {key: value for key, value in os.environ.items() if key != 'WORKERS_CI_COMMIT_SHA'}
+            env.update({'npm_package_version': '1.0.1', **({'WORKERS_CI_COMMIT_SHA': sha} if sha else {})})
+            result = subprocess.run(['sh', '-c', 'printf %s ' + message], env=env, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.stdout, expected)
+        # The listing shows that message beside the tag.
+        code, out = self.rollback()
+        self.assertEqual(code, 0)
+        self.assertRegex(out, r'(?m)^tagged-1-0-1  2026-11-10 12:00 UTC  v1\.0\.1 +serving +fyl 1\.0\.1 4ba433e2b1c0d3f4a5b6c7d8e9f0a1b2c3d4e5f6$')
 
     def test_untagged_older_and_unknown_versions_are_refused(self):
         # The old numbering's releases came before 1.0.0, whatever their numbers say.
@@ -73,6 +93,7 @@ class RollbackTests(unittest.TestCase):
                                ('tagged-2-3-0', 'v2.3.0 is of the old numbering (v2.0.0 to v2.5.1), from before v1.0.0'),
                                ('old-checkout', 'v2.1.2 is of the old numbering'), ('tagged-2-4-0', 'v2.4.0 is of the old numbering'),
                                ('tagged-2-5-1', 'v2.5.1 is of the old numbering'), ('hotfix-0-9-0', 'v0.9.0 is older than the floor v1.0.0'),
+                               ('32a6b7f1-55b2-42cc-918f-fbc1e69dd91b', 'this build is withdrawn: the temporary sweep of old Transfer tombstones (#8'),
                                ('not-listed', 'not among the Worker')):
             for args in ((), ('--yes', '--accept-caveats')):
                 code, _ = self.rollback(target, *args)

@@ -8,9 +8,9 @@
 Only versions that `npm run deploy` tagged v<ROLLBACK_FLOOR> or later are targets. Untagged versions (deploys
 before 2.3.0 of the old numbering, secret or dashboard changes, uploads) are refused, and so is every version tagged
 in the old numbering (v2.0.0 to v2.5.1, before the public release started over at 1.0.0): it is older than the
-floor whatever its number says. A tagged version that never served traffic (uploaded, never deployed), or one that
-lacks what CAVEATS lists, also needs --accept-caveats. After a rollback, and after the deploy that fixes forward, run
-npm run admin -- reconcile.
+floor whatever its number says. A build listed in WITHDRAWN is refused whatever its tag. A tagged version that never
+served traffic (uploaded, never deployed), or one that lacks what CAVEATS lists, also needs --accept-caveats. After a
+rollback, and after the deploy that fixes forward, run npm run admin -- reconcile.
 """
 import argparse
 from datetime import datetime, timezone
@@ -31,6 +31,11 @@ OLD_NUMBERING = ("2.0.0", "2.5.1")
 # (since, text): what a target older than `since` lacks or breaks; such a rollback needs --accept-caveats. Add one
 # when a release changes something an older version would mishandle without being unsafe (else raise the floor).
 CAVEATS = []
+# Builds that carry a valid tag but must never serve again, by Worker version id: why. Tags and (before the deploy
+# after 1.0.1) messages don't tell them apart from their neighbours.
+WITHDRAWN = {
+    "32a6b7f1-55b2-42cc-918f-fbc1e69dd91b": "the temporary sweep of old Transfer tombstones (#8, 2026-11-09 15:12 UTC), removed again by #9",
+}
 NEVER_SERVED = "This version never served traffic: it was uploaded but is in none of the Worker's deployments since then."
 SECRETS = ("The target runs with the secret values it was deployed with; wrangler names any secret changed since then. "
            "Set a secret rotated since (GRANT_SIGNING_KEY, ADMIN_TOKEN, MONITOR_TOKEN, NETWORK_HASH_KEY) again afterwards.")
@@ -79,6 +84,8 @@ def old_numbering(number):
 def refusal(version):
     """Why the version is no rollback target, or None when it is one: it needs a release tag of the new numbering at
     or above the floor."""
+    if version.get("id") in WITHDRAWN:
+        return "withdrawn"
     number = release(tag_of(version))
     if number is None:
         return "untagged"
@@ -144,6 +151,8 @@ def main(argv):
     if reason == "old numbering":
         sys.exit("Refused: {} is of the old numbering (v{} to v{}), from before v{}. Fix forward instead. Nothing was changed.".format(
             tag_of(target), OLD_NUMBERING[0], OLD_NUMBERING[1], ROLLBACK_FLOOR))
+    if reason == "withdrawn":
+        sys.exit("Refused: this build is withdrawn: {}. Fix forward instead. Nothing was changed.".format(WITHDRAWN[target["id"]]))
     if reason:
         sys.exit("Refused: {} is older than the floor v{}. Fix forward instead. Nothing was changed.".format(tag_of(target), ROLLBACK_FLOOR))
     number = release(tag_of(target))

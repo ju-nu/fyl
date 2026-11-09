@@ -87,7 +87,8 @@ pull request ─ merge ─▶ main ─ Checks (GitHub) green ─▶ Deploy gate 
 - `.github/workflows/deploy.yml` (Deploy gate) runs when `Checks` completes on a push to `main` in this repository.
   Only on success, and only while `main` still points at that commit, `scripts/promote.sh` fast-forwards `production`
   to it (never `--force`; it skips when production already contains it and creates the branch if it is missing).
-- It pushes over SSH with the repository secret `FYL_DEPLOY_KEY`, the private half of the repository's write deploy
+- It pushes over SSH with `FYL_DEPLOY_KEY`, a secret of the GitHub environment `production` (deployment branches:
+  `main` only, so a workflow on any other branch never gets it), the private half of the repository's write deploy
   key "Deploy gate"; the `production` ruleset lets deploy keys through and everyone else but admins not. `GITHUB_TOKEN`
   can't be used: GitHub refuses it any branch update that brings in changes to `.github/workflows/`. A deploy key
   reaches this repository only and doesn't expire. Without the secret the run fails with a clear message and
@@ -107,7 +108,8 @@ pull request ─ merge ─▶ main ─ Checks (GitHub) green ─▶ Deploy gate 
 | API token | Created and stored by Cloudflare; not in Git |
 
 `npm run deploy` regenerates the CLI index, builds `.build/assets` ([static assets](#static-assets)), runs
-`scripts/check_secrets.mjs`, then `wrangler deploy --assets .build/assets --tag v<version> --message "fyl <version>"`,
+`scripts/check_secrets.mjs`, then `wrangler deploy --assets .build/assets --tag v<version> --message "fyl <version> <commit>"` (the full commit
+from Workers Builds' `WORKERS_CI_COMMIT_SHA`, `local` for a deploy from a laptop),
 then `python3 scripts/smoke.py --pages`. `check_secrets.mjs` refuses the deploy when `NETWORK_HASH_KEY`,
 `GRANT_SIGNING_KEY` or `ADMIN_TOKEN` is missing or a development-only secret (`DEV_ACCESS_BYPASS`, `DEV_FAKE_STATS`)
 is set; it warns when `MONITOR_TOKEN`, `CF_ANALYTICS_TOKEN` or `ADMIN_EMAILS` is missing or
@@ -166,8 +168,14 @@ npm run rollback -- <version-id> --yes [--message TEXT]
 npm run admin -- reconcile                         # right after a rollback, and again after the fix-forward deploy
 ```
 
+- A tag names the package version, not one build: every deploy between two releases (a dependency bump, a server fix)
+  carries the same tag. Pick the target by its time, its id, or the commit in its message (`fyl <version> <commit>`,
+  since the deploy after 1.0.1; older ones say only `fyl <version>`), and check that commit on `main` first. Of the
+  builds tagged `v1.0.1`, the one of #8 (the temporary sweep of old tombstones, removed again by #9; version
+  `32a6b7f1-55b2-42cc-918f-fbc1e69dd91b`, 2026-11-09 15:12 UTC) is not one to roll back to: `WITHDRAWN` in
+  `scripts/rollback.py` refuses it.
 - Only versions tagged `v1.0.0` or later are targets (`ROLLBACK_FLOOR`). Untagged versions (secret or dashboard
-  changes, uploads) are refused, and so is every version tagged in the old numbering (`v2.0.0` to `v2.5.1`,
+  changes, uploads) and the builds in `WITHDRAWN` are refused, and so is every version tagged in the old numbering (`v2.0.0` to `v2.5.1`,
   `OLD_NUMBERING`), which came before 1.0.0 whatever its number says. The first possible target is the `v1.0.0`
   version itself, once something newer serves.
 - A tagged version that provably never served traffic (uploaded, in none of the listed deployments) also needs
@@ -188,18 +196,18 @@ missing. Generate them with `openssl rand -base64 48` (64 characters). Never pri
 | `NETWORK_HASH_KEY` | Worker only | HMAC of client networks for budgets, one-time sessions, password tries and reports | Every request that needs a network hash (downloads, uploads, reports) answers 503 `misconfigured`; one shorter than 32 characters still hashes, but readiness reports it missing |
 | `GRANT_SIGNING_KEY` | Worker only | Signs download grants (`fyl-grant:`) and the password part of init fingerprints (`fyl-password:`) | Password uploads and the unlock form answer 503 `misconfigured`, no grant passes; HTTP Basic downloads still work |
 | `GRANT_SIGNING_KEY_PREVIOUS`, `GRANT_SIGNING_KEY_ROTATED_AT` | Worker, only while rotating | The previous key passes grants that expire within an hour (and a minute) of the rotation time | Nothing: they are optional |
-| `MONITOR_TOKEN` | Worker and GitHub repository secret, same value | Read-only: `GET /api/admin/ready` and, on the admin host, `GET /api/billing` only | The Monitor workflow fails ([monitor](#monitor)) |
+| `MONITOR_TOKEN` | Worker and a secret of the GitHub environment `monitor`, same value | Read-only: `GET /api/admin/ready` and, on the admin host, `GET /api/billing` only | The Monitor workflow fails ([monitor](#monitor)) |
 | `ADMIN_EMAILS` | Worker only | The operator's Access identities (comma-separated e-mail addresses) that read the dashboard's data without the operator token | Fails closed: no identity is the operator, so the dashboard's reads answer 401 in the browser; the service token and operator token still work; `npm run deploy` warns |
 | `TURNSTILE_SECRET` | Worker only | Siteverify of the report form's Turnstile token; on only together with the `TURNSTILE_SITE_KEY` var | The report form works without the check and loads nothing from Cloudflare, readiness shows `turnstile: incomplete`. A value Cloudflare rejects: reports answer 503 `misconfigured` |
 | `CF_ANALYTICS_TOKEN` | Worker only (optional) | Read-only API token (Account Analytics Read) for the admin host's statistics and billing estimate ([how to create it](#admin-host-and-statistics)) | `/api/stats` answers 503 `stats_unconfigured`, `/api/billing` 503 `billing_unconfigured`, so the Monitor workflow fails on its billing check; `npm run deploy` warns. Expired, revoked or without the permission: 503 `billing_refused` |
-| `FYL_DEPLOY_KEY` | GitHub repository secret (private key of the write deploy key "Deploy gate") | Deploy gate pushes `production` | The Deploy gate fails and production stays put |
-| `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` | Ignored local `.env` and GitHub repository secrets; not on the Worker | The Cloudflare Access service token (the app's non-identity policy) that lets `npm run admin`, the monitor and the smoke test through to `admin.fyl.at`; its expiry is `TOKEN_EXPIRES` in `scripts/monitor.py` | Those tools stop at Access ("Cloudflare Access refused"); the public site is not affected |
+| `FYL_DEPLOY_KEY` | Secret of the GitHub environment `production` (private key of the write deploy key "Deploy gate") | Deploy gate pushes `production` | The Deploy gate fails and production stays put |
+| `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` | Ignored local `.env` and secrets of the GitHub environment `monitor`; not on the Worker | The Cloudflare Access service token (the app's non-identity policy) that lets `npm run admin`, the monitor and the smoke test through to `admin.fyl.at`; its expiry is `TOKEN_EXPIRES` in `scripts/monitor.py` | Those tools stop at Access ("Cloudflare Access refused"); the public site is not affected |
 
 Rotation (each `wrangler secret put` deploys a new version at once):
 
 - `ADMIN_TOKEN`: `token="$(openssl rand -base64 48)"`, `printf '%s' "$token" | npx wrangler secret put ADMIN_TOKEN`,
   then put the same value into `FYL_ADMIN_TOKEN` in `.env` and `unset token`. No effect on users.
-- `MONITOR_TOKEN`: the same way, putting one value on the Worker and with `printf '%s' "$token" | gh secret set MONITOR_TOKEN`;
+- `MONITOR_TOKEN`: the same way, putting one value on the Worker and with `printf '%s' "$token" | gh secret set MONITOR_TOKEN --env monitor`;
   the monitor fails until both match.
 - `GRANT_SIGNING_KEY`: (1) if you still have the current value, `printf '%s' "$old" | npx wrangler secret put GRANT_SIGNING_KEY_PREVIOUS`;
   (2) `openssl rand -base64 48 | npx wrangler secret put GRANT_SIGNING_KEY`;
@@ -216,33 +224,21 @@ Rotation (each `wrangler secret put` deploys a new version at once):
   download sessions can't be continued (the same network now looks like another one, which gets 410 `consumed`).
 - `ADMIN_EMAILS`: `npx wrangler secret put ADMIN_EMAILS` and type the addresses. Secrets survive later deploys.
 - `FYL_DEPLOY_KEY`: `ssh-keygen -t ed25519 -N '' -f deploy`, add `deploy.pub` as a write deploy key
-  (`gh repo deploy-key add deploy.pub --allow-write --title "Deploy gate"`), `gh secret set FYL_DEPLOY_KEY < deploy`,
+  (`gh repo deploy-key add deploy.pub --allow-write --title "Deploy gate"`), `gh secret set FYL_DEPLOY_KEY --env production < deploy`,
   delete both files and the old key.
 - `CF_ANALYTICS_TOKEN`: create a new read-only token as in [admin host and statistics](#admin-host-and-statistics),
   `npx wrangler secret put CF_ANALYTICS_TOKEN`, then delete the old token. The dashboard keeps working throughout.
 - Access service token, before it expires: in Zero Trust → Access → Service credentials → Service Tokens either
   refresh the token in place (it keeps its credentials and gets a new expiry), or create a new one, add it to the
-  app's service-token policy, replace both values in `.env` and with `gh secret set FYL_ACCESS_CLIENT_ID` /
-  `gh secret set FYL_ACCESS_CLIENT_SECRET`, and delete the old token. Then run Actions → Monitor once and update
+  app's service-token policy, replace both values in `.env` and with `gh secret set FYL_ACCESS_CLIENT_ID --env monitor` /
+  `gh secret set FYL_ACCESS_CLIENT_SECRET --env monitor`, and delete the old token. Then run Actions → Monitor once and update
   `TOKEN_EXPIRES` in `scripts/monitor.py`.
 - `TURNSTILE_SECRET`: rotate the widget's secret key in the Cloudflare dashboard (Turnstile), then
   `npx wrangler secret put TURNSTILE_SECRET` and paste the new key. A new site key goes into `wrangler.jsonc` and is
   deployed like code.
 
-**Moving `ADMIN_EMAILS` from a var to the secret** (once, for a Worker deployed with `ADMIN_EMAILS` in `vars`).
-wrangler refuses `wrangler secret put NAME` while the deployed Worker has a plain var of that name, so the order is
-fixed:
-
-1. Deploy the release that drops the var (the normal flow, or `npm run deploy`). The deploy prints
-   "Warning: ADMIN_EMAILS is not set". Until step 2 the operator's browser sign-in reads nothing on the dashboard
-   (`/api/admin/ready`, `/api/admin/uploads`, `/api/admin/reports`, `/api/stats` and `/api/billing` answer 401 there),
-   because `src/access.ts` fails closed; the operator token with the service token (`npm run admin`), the monitor and
-   the public site keep working. Do it in a quiet window and run step 2 right after.
-2. `npx wrangler secret put ADMIN_EMAILS` and type the address (comma-separated for several). No redeploy is needed:
-   the secret put creates a new version itself.
-3. Verify: `npx wrangler secret list` names `ADMIN_EMAILS`; the dashboard on `https://admin.fyl.at` shows readiness,
-   uploads and reports in the operator's browser; `npm run admin -- ready` still works; a later `npm run deploy`
-   prints no `ADMIN_EMAILS` warning.
+`ADMIN_EMAILS` was a plain var before 1.0.0 and moved to the secret then (wrangler refuses `secret put` while a var of
+that name is deployed); set it only as a secret.
 
 ## Turnstile
 
@@ -316,8 +312,8 @@ name, the exact size, `head`, `meta` and each part's pinned MD5; it never sees a
 
 ## TLS, firewall and caching
 
-Zone TLS is Full (strict), minimum TLS 1.2, with Always Use HTTPS and six-month HSTS (no subdomain inclusion or
-preload). Browser Integrity Check stays enabled for the website. Bot Fight Mode and JavaScript detections are disabled;
+Zone TLS is Full (strict), minimum TLS 1.2, with Always Use HTTPS and twelve-month HSTS with `includeSubDomains`,
+no preload. Browser Integrity Check stays enabled for the website. Bot Fight Mode and JavaScript detections are disabled;
 Free-plan Bot Fight Mode does not support route exceptions.
 
 The custom firewall ruleset (`<ruleset-id>`) has the rule `fyl_machine_clients`. It matches host `fyl.at` and paths
@@ -332,7 +328,8 @@ The cache ruleset (`<ruleset-id>`) has the rule `fyl_private_no_cache`, which di
 a cached one-time download would bypass the access policy. The image preview sends `public, max-age` of at most 300
 seconds and never past the expiry, which the cache rule still keeps out of Cloudflare's cache. Static assets stay
 cacheable: `/cli/<version>/` files, fonts and the vendored QR and MD5 scripts for a year as immutable, `/cli/latest`,
-`/cli/version.json` and `/cli/install` for 60 seconds, `/llms.txt` for an hour. The download page's code revalidates on
+`/cli/version.json` and `/cli/install` for 60 seconds, `/llms.txt` for an hour. A `/cli/` path that doesn't exist (a
+version not published yet) answers a plain-text 404 with `no-store`, never the immutable caching. The download page's code revalidates on
 every load (`no-cache`): `download.js`, `theme.js`, `e2ee/`, `_dl/` and the vendored ChaCha20-Poly1305
 (`vendor/noble-ciphers-2.4.0/`), so a fixed deployment takes effect on the next page load (`dist/_headers`,
 [E2EE.md §9.5](E2EE.md#95-page-rules)). Re-check these rules after zone-wide security or cache changes. For an
@@ -361,7 +358,7 @@ decisions until 183 days after closing. The web client keeps recent uploads with
 storage (up to 20, each until forgotten or a day after its link expires), passwords and encryption keys only in the
 tab's session storage unless the sender ticks "Remember the password on this device" or "Remember keys on this
 device", and an interrupted upload with its key (no password, no encryption key) until it finishes, is discarded or
-its 24-hour window ends. The CLI keeps no state on disk.
+its 24-hour window ends. The CLI keeps no settings; it stores only the time of its last update check, in its cache folder.
 
 ## Static assets
 
@@ -400,14 +397,25 @@ tested first. `.build/` is ignored by git, biome and Vitest.
 
 ## Monitor
 
-`.github/workflows/monitor.yml` runs hourly (minute 17) and on demand ("Run workflow"). `scripts/monitor.py` checks
+`.github/workflows/monitor.yml` runs hourly (minute 23) and on demand ("Run workflow"). `scripts/monitor.py` checks
 `https://fyl.at/api/health`, then `GET https://admin.fyl.at/api/admin/ready` and `GET https://admin.fyl.at/api/billing`
-with the repository secret `MONITOR_TOKEN` and the Access service token (repository secrets `FYL_ACCESS_CLIENT_ID`,
-`FYL_ACCESS_CLIENT_SECRET`), and fails when health or readiness fail, readiness names any reason (`open_reports`,
+with `MONITOR_TOKEN` and the Access service token (`FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET`), and fails when health or readiness fail, readiness names any reason (`open_reports`,
 `overdue_cleanups`, `storage_60`, `daily_60`, or a code added later), or the estimated bill so far reached the alert.
 A failed run is GitHub's e-mail to the account that last changed the cron line in `monitor.yml` (a failed manual run
 goes to whoever started it), with Actions notifications on.
 
+- **Environments.** The monitor job runs in the GitHub environment `monitor`, which holds `MONITOR_TOKEN`,
+  `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` and the variable `BILLING_ALERT_USD`; the Deploy gate's job runs in
+  `production`, which holds `FYL_DEPLOY_KEY`. Both admit the branch `main` only, so a workflow pushed on any other
+  branch never gets them. None of them is meant to be a repository secret or variable: a repository copy reaches
+  workflows on every branch, and the environment's value wins only inside these jobs.
+  **One-time cleanup (owner).** Before the workflows used the environments, `FYL_DEPLOY_KEY`, `MONITOR_TOKEN`,
+  `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` (repository secrets) and `BILLING_ALERT_USD` (repository variable)
+  lived on the repository, and their copies are still there until this step is done. Once the change that moved them is on `main` and the next Deploy gate and Monitor runs passed
+  from the environments, delete the repository copies: `gh secret delete FYL_DEPLOY_KEY`, `gh secret delete
+  MONITOR_TOKEN`, `gh secret delete FYL_ACCESS_CLIENT_ID`, `gh secret delete FYL_ACCESS_CLIENT_SECRET` and `gh variable
+  delete BILLING_ALERT_USD` (no `--env`). Not before: until then `main`'s workflows still read them. `gh secret list`
+  and `gh variable list` (no `--env`) then list none of them.
 - **What the log shows.** The Actions log of a public repository is public, so there the monitor prints only whether
   the run passed and the names of the checks that failed (health, readiness, attention, billing, setup): no dollars,
   capacity, counts, pause state or hints. `npm run monitor` run locally (with `MONITOR_TOKEN` and the service token in
@@ -419,11 +427,11 @@ goes to whoever started it), with Actions notifications on.
   `billing_unconfigured` (`CF_ANALYTICS_TOKEN` or `BILLING_CYCLE_DAY` missing on the Worker), 503 `billing_refused`
   (Cloudflare refused `CF_ANALYTICS_TOKEN`; [create a new one](#admin-host-and-statistics)).
 - **Billing alert.** The estimate is the dashboard's ([billing estimate](#admin-host-and-statistics)). The run fails
-  once the total so far is at or above the repository variable `BILLING_ALERT_USD` (default **15**), and then every
+  once the total so far is at or above `BILLING_ALERT_USD`, a variable of the environment `monitor` (default **15**), and then every
   hour until the cycle starts over or the alert is raised. Locally the run also prints the meters above their
   allowances and `Pace:`, a rough figure for the whole cycle (informational, it never fails a run). Set the variable
-  (not a secret) with `gh variable set BILLING_ALERT_USD --body 18`, then "Run workflow" once;
-  `gh variable delete BILLING_ALERT_USD` brings back 15. It takes a plain number of dollars above 0 (`18`, `12.50`);
+  (not a secret) with `gh variable set BILLING_ALERT_USD --env monitor --body 18`, then "Run workflow" once;
+  `gh variable delete BILLING_ALERT_USD --env monitor` brings back 15. It takes a plain number of dollars above 0 (`18`, `12.50`);
   anything else fails the run. The total is compared as shown, in cents rounded half up. Locally:
   `BILLING_ALERT_USD=18 npm run monitor`.
 - **Two alerts on the bill.** Cloudflare's own account budget alert mails only once the cycle's usage charges reach its
@@ -583,11 +591,12 @@ Structured log events: `request_failed`, `operation_failed`, `cleanup_retry_sche
 - **Analytics:** server-side events go to Workers Analytics Engine `fyl_events` ([METRICS.md](METRICS.md)). Cloudflare
   Web Analytics is not enabled for fyl.at, and the "Disable RUM" configuration rule keeps its beacon out
   ([E2EE](#end-to-end-encryption)). Cloudflare's Custom Dashboards can't chart Analytics Engine.
-- **E-mail DNS:** `TXT fyl.at "v=spf1 -all"`, `TXT _dmarc.fyl.at "v=DMARC1; p=reject; adkim=s; aspf=s"` and a null
-  `MX fyl.at 0 .`, since fyl.at sends no mail, so spoofed `@fyl.at` senders are rejected. The null MX also means the
-  zone receives no mail: the security contact `security@fyl.at` ([SECURITY.md](../SECURITY.md), `security.txt`)
-  needs a mail route first, for example Cloudflare Email Routing, which replaces the null MX with its own MX records
-  and forwards the address to the operator; SPF and DMARC stay as they are. DNSSEC is off.
+- **E-mail:** Cloudflare Email Routing receives mail for fyl.at (`MX` `route1.mx.cloudflare.net`,
+  `route2.mx.cloudflare.net`, `route3.mx.cloudflare.net`) and forwards the security contact `security@fyl.at`
+  ([SECURITY.md](../SECURITY.md), `security.txt`) to the operator. SPF is `TXT fyl.at "v=spf1
+  include:_spf.mx.cloudflare.net ~all"`, as Email Routing sets it; `TXT _dmarc.fyl.at "v=DMARC1; p=reject; adkim=s;
+  aspf=s"` still rejects spoofed `@fyl.at` senders, since fyl.at sends no mail of its own. Check the route after any
+  change with a test mail from an outside account (the read-only API token can't read Email Routing). DNSSEC is off.
 
 ## Verification
 

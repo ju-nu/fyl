@@ -371,9 +371,10 @@ extraction with the UT mtimes restored. The six > 4 GiB cases up to the 50 GiB l
 passed `zipfile.testzip()` and `unzip -t` on 2026-11-06 (`--big`, about 6 minutes; not in CI). Also on Linux in a
 review (2026-11-06): 7-Zip 23.01 and bsdtar 3.7.2 (libarchive) list and test every zip; 7-Zip, `unzip` and `zipfile` extract
 names byte for byte, while bsdtar folds names to NFC, so the NFC and NFD `ä.txt` of a folder extract there as one file
-(the second overwrites the first; [§2.3](#23-names)). Not yet checked on real devices: Windows Explorer, macOS Archive
-Utility and `ditto`; do so before release (ZIP64 archives over 4 GiB are where old Archive Utility versions had
-trouble).
+(the second overwrites the first; [§2.3](#23-names)). **Open item:** not yet checked on real devices, although
+folder zips shipped in 2.5.0 and in the public 1.0.0 and 1.0.1: Windows Explorer, macOS Archive Utility and `ditto`,
+each with a ZIP64 zip over 4 GiB too (where old Archive Utility versions had trouble). Record the results here once
+they are done.
 
 ## 11. Decisions
 

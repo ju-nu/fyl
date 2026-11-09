@@ -20,7 +20,7 @@
     "build:i18n": "node scripts/build_i18n.mjs",
     "build:assets": "node scripts/build_i18n.mjs && node scripts/minify_assets.mjs",
     "build": "npm run build:cli && npm run build:assets && wrangler deploy --dry-run --outdir .build --assets .build/assets",
-    "deploy": "npm run build:cli && npm run build:assets && node scripts/check_secrets.mjs && wrangler deploy --assets .build/assets --tag v$npm_package_version --message \"fyl $npm_package_version\" && python3 scripts/smoke.py --pages",
+    "deploy": "npm run build:cli && npm run build:assets && node scripts/check_secrets.mjs && wrangler deploy --assets .build/assets --tag v$npm_package_version --message \"fyl $npm_package_version ${WORKERS_CI_COMMIT_SHA:-local}\" && python3 scripts/smoke.py --pages",
     "rollback": "python3 scripts/rollback.py",
     "ci": "npm run lint && npm run check && npm test && npm run test:cli && npm run build"
   },

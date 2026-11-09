@@ -208,7 +208,7 @@ class MonitorTests(unittest.TestCase):
         code, out = self.check(token='  ')
         self.assertEqual(code, 1)
         self.assertIn('Health:     ok', out)
-        self.assertIn('Problem:    Set the repository secret MONITOR_TOKEN', out)
+        self.assertIn('Problem:    Set the secret MONITOR_TOKEN of the GitHub environment monitor (or in .env)', out)
         self.assertEqual(self.paths(), [('/api/health', None)])
 
     def test_readiness_errors_fail_the_run(self):
@@ -293,8 +293,8 @@ class MonitorTests(unittest.TestCase):
         for value in ('abc', '0', '0.00', '-5', '1e3', 'inf', 'nan', '15 USD', '$15', '1,000', '12.'):
             code, out = self.check(BILLING_ALERT_USD=value)
             self.assertEqual(code, 1, value)
-            self.assertIn('Problem:    BILLING_ALERT_USD must be a number of dollars above 0, such as 15 or 12.50 (the repository variable, '
-                          'see docs/OPERATIONS.md#monitor); the billing estimate is not compared until it is.\n', out)
+            self.assertIn('Problem:    BILLING_ALERT_USD must be a number of dollars above 0, such as 15 or 12.50 (the variable of the GitHub environment '
+                          'monitor, see docs/OPERATIONS.md#monitor); the billing estimate is not compared until it is.\n', out)
             # The estimate is still read and shown, but compared with nothing: $23.00 is above the default and fails nothing here.
             self.assertIn('Billing:    about $23.00 so far (28 Oct – 27 Nov, day 4 of 31)\n', out)
             self.assertEqual(out.count('Problem:'), 1, out)
@@ -377,11 +377,12 @@ class MonitorTests(unittest.TestCase):
 
     def test_readiness_on_the_admin_host_needs_the_service_token(self):
         # The default admin host (no FYL_BASE_URL), health on the public site (here the fake one): without the service
-        # token readiness is not asked, and the run fails naming the repository secrets.
+        # token readiness is not asked, and the run fails naming the secrets of the environment monitor.
         code, out = self.check(FYL_BASE_URL='', FYL_PUBLIC_URL=self.origin)
         self.assertEqual(code, 1)
         self.assertIn('Health:     ok', out)
-        self.assertIn('Problem:    Set the repository secrets FYL_ACCESS_CLIENT_ID and FYL_ACCESS_CLIENT_SECRET to the Cloudflare Access '
+        self.assertIn('Problem:    Set the secrets FYL_ACCESS_CLIENT_ID and FYL_ACCESS_CLIENT_SECRET of the GitHub environment monitor (or in '
+                      '.env) to the Cloudflare Access '
                       'service token of admin.fyl.at', out)
         self.assertEqual(self.paths(), [('/api/health', None)])
         for answer in ((302, {}, {'Location': SIGN_IN}), (403, b'<html>Forbidden</html>')):

@@ -970,7 +970,7 @@ From the second review (conformance, misuse, robustness):
 
 ## Interoperability evidence
 
-Recorded 2026-10-30 on a Linux machine (Ubuntu 24.04, x86_64, i7-7700) for the cores of this commit. Browser: `dist/e2ee`
+Recorded 2026-10-30 on a Linux machine (Ubuntu 24.04, x86_64) for the cores of this commit. Browser: `dist/e2ee`
 (WebCrypto, vendored `@noble/ciphers` 2.4.0) on Node v22.23.1 and in the vitest Workers runtime. Rust:
 `cli-rs/src/e2ee.rs`, rustc 1.99.1, `chacha20poly1305` 0.10.1, `x25519-dalek` 2.0.1, `hkdf` 0.12.4, `hmac` 0.12.1,
 `sha2` 0.10.9, `md-5` 0.10.6. Reference: `age`/`age-keygen` 1.1.1 (`apt-get download age`, Ubuntu
@@ -997,7 +997,7 @@ identity. All 24 pass in both suites; one changed digit in a recorded part MD5 f
 **CLI 1.0.0.** Re-checked 2026-11-09 after the Rust core moved to `chacha20poly1305` 0.11.0, `x25519-dalek` 3.0.0
 (`curve25519-dalek` 5.0.0), `hkdf` 0.13.0, `hmac` 0.13.0, `sha2` 0.11.1 and `md-5` 0.11.0: `cargo test --locked`
 passes every vector above (cross, CCTV, content, decrypt, key check, layout, link, meta, name) and the folder-zip
-vectors with the files unchanged. The oracle and 1 GiB runs below were not repeated.
+vectors: the vectors passed unchanged with the 1.0.0 crate versions, no file was rewritten. The oracle and 1 GiB runs below were not repeated.
 
 **Locally.** `node scripts/e2ee_interop.mjs oracle --age AGE… --keygen AGE_KEYGEN…`: age 1.1.1 and v1.2.1 decrypt the
 content and the meta of all 16 browser and Rust vectors to the exact plaintext, and both `age-keygen -y` give every

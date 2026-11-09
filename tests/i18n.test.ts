@@ -69,7 +69,10 @@ describe('the language switch at /', () => {
     // Where the report form has its own host, its pages go there, in their language.
     const { response } = await manual('/de/report?link=abc', {}, { REPORT_HOST: 'report.fyl.at' } as unknown as Partial<Env>);
     expect([response.status, response.headers.get('Location')]).toEqual([302, 'https://report.fyl.at/de/?link=abc']);
-    for (const path of ['/xx/', '/en/nope', '/en/app.js', '/de/sitemap.xml']) expect((await manual(path)).response.status, path).toBe(404);
+    for (const path of ['/en/app.js', '/de/sitemap.xml']) expect((await manual(path)).response.status, path).toBe(404);
+    // A page address that doesn't exist sends a browser home (tests/edge-routes.test.ts); a script still gets the 404.
+    for (const [path, location] of [['/xx/', '/en/'], ['/en/nope', '/en/']]) expect([path, (await manual(path)).response.headers.get('Location')]).toEqual([path, location]);
+    for (const path of ['/xx/', '/en/nope']) expect((await direct(path, {}, { headers: { Accept: '*/*' }, redirect: 'manual' })).response.status, path).toBe(404);
   });
 });
 
@@ -89,6 +92,11 @@ describe('the pages in every language', () => {
       const alternates = [...text.matchAll(/<link rel="alternate" hreflang="([a-z-]+)" href="([^"]+)">/g)].map(match => [match[1], match[2]]);
       expect(alternates, where).toEqual([...LOCALES.map(other => [other, canonical(other, page)]), ['x-default', fallback]]);
       expect(text, where).toContain(`<meta property="og:url" content="${canonical(code, page)}"><meta property="og:locale" content="${OG[code]}">`);
+      // Link previews: exactly one og:title, og:description and og:type each, from the page's own strings.
+      for (const tag of ['og:title', 'og:description', 'og:type'])
+        expect([where, tag, text.match(new RegExp(`<meta property="${tag}" content="[^"]+">`, 'g'))?.length]).toEqual([where, tag, 1]);
+      expect(text, where).toContain('<meta property="og:type" content="website">');
+      expect(text, where).toContain(`<meta property="og:title" content="${(/<title>([^<]+)<\/title>/.exec(text) || [])[1]}">`);
       expect([...text.matchAll(/<meta property="og:locale:alternate" content="([a-z_A-Z]+)">/g)].map(match => match[1]), where).toEqual(LOCALES.filter(other => other !== code).map(other => OG[other]));
       expect(text, where).toMatch(/<title>[^<{}]+<\/title>/);
       // Every placeholder was filled: no {{…}} and no message key outside the scripts' JSON block.

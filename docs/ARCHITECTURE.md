@@ -60,8 +60,13 @@ and the Worker; [i18n/README.md](../i18n/README.md) has the catalog rules and th
   and catalogs, never `dist/<lang>/`. A missing key falls back to English; `tests/i18n.test.ts` fails while a present
   catalog misses or adds a key, changes a placeholder or markup, or a generated file is stale
   (`node scripts/build_i18n.mjs --check` says which).
-- **Routing** (`src/index.ts`, `src/i18n.ts`): `/` only picks a language, 302 (never 301) to `/<lang>/` by
-  `Accept-Language` with `Vary: Accept-Language` and `no-store`, keeping the query; it is hreflang's x-default.
+- **Routing** (`src/index.ts`, `src/i18n.ts`): `/` picks a language for browsers, 302 (never 301) to `/<lang>/` by
+  `Accept-Language` with `Vary: Accept, Accept-Language` and `no-store`, keeping the query; it is hreflang's
+  x-default. A request to `/` that doesn't ask for HTML (curl, most agents' fetch tools) gets `llms.txt` itself
+  (`text/markdown`, with `Link` headers `rel="describedby"` and `rel="alternate"`); crawlers and link-preview bots
+  always get the switch. A browser navigation to a page address that doesn't exist (not a file, nor under `/api`,
+  `/cli`, `/d`, `/.well-known`, `/_dl`, `/admin`, `/e2ee`, `/vendor`, `/fonts`, `/og` or `/cdn-cgi`: `STRAY_EXCLUDED`
+  in `src/index.ts`) answers 302 to the home page of its language.
   `/<lang>/`, `/<lang>/privacy`, `/<lang>/report` (302 to `report.fyl.at/<lang>/` where the report host is set) and the
   bare `/<lang>/download` never redirect by language. Old addresses (`/index.html`, `/privacy`, `/report` without a
   report host, `/download`, any `*.html`, `/<lang>`) answer 301 to the English (or the locale's) page. Download links
@@ -113,9 +118,9 @@ enforces the byte and upload caps authoritatively. None of these caps is a Cloud
 storage cap, R2 storage alone costs about $82 a month ([costs](COSTS.md)).
 
 **Retention.** A successful cleanup aborts the multipart upload, deletes the R2 object and releases the budget
-reservation, then clears the name, fingerprint, password hash, salt and tries, quarantine and one-time session from
-the record, drops every other table, and schedules the purge 7 days later, when `deleteAll()` drops the object
-completely (the link then answers 404 instead of 410). The tombstone keeps the id, size, lifetime settings, times,
+reservation, then clears the name, fingerprint, password hash, salt and tries, quarantine, one-time session, the encrypted
+header and metadata (`head`, `meta`) and `client` from the record, drops every other table, and schedules the purge 7 days later, when `deleteAll()` drops the object
+completely (the link then answers 404 instead of 410). The tombstone keeps the id, size, mode (raw or `e2ee`), lifetime settings, times,
 status, download count, object key and the hashes of the management key, resume token and completion (so the sender's
 `DELETE` still answers). Takedowns are never purged: a client can derive the same id again from its client key and
 Idempotency-Key, so the record keeps the id from taking a new upload. Released Budget reservations (with their daily

@@ -92,8 +92,9 @@ describe('robots.txt and sitemap.xml', () => {
     const text = await response.text();
     expect([response.status, response.headers.get('Content-Type')]).toEqual([200, 'text/plain; charset=utf-8']);
     const fields = Object.fromEntries(text.trim().split('\n').map(line => [line.slice(0, line.indexOf(':')), line.slice(line.indexOf(':') + 1).trim()]));
-    expect(fields).toMatchObject({ Contact: 'mailto:security@fyl.at', 'Preferred-Languages': 'en, de', Canonical: 'https://fyl.at/.well-known/security.txt',
-      Policy: 'https://github.com/ju-nu/fyl-at/blob/main/SECURITY.md' });
+    expect(fields).toMatchObject({ Contact: 'mailto:security@fyl.at', 'Preferred-Languages': 'en, de', Policy: 'https://github.com/ju-nu/fyl-at/blob/main/SECURITY.md' });
+    // RFC 9116 is per origin: the report host serves the same file (tests/edge-routes.test.ts), so both addresses are canonical.
+    expect([...text.matchAll(/^Canonical: (.+)$/gm)].map(match => match[1])).toEqual(['https://fyl.at/.well-known/security.txt', 'https://report.fyl.at/.well-known/security.txt']);
     // Expires must lie in the future and less than a year and a day ahead (RFC 9116 §2.5.5 recommends at most a year).
     const left = Date.parse(fields.Expires) - Date.now();
     expect(left > 0 && left < 366 * 86400000, fields.Expires).toBe(true);

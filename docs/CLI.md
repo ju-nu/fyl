@@ -96,7 +96,7 @@ Running `fyl` without a file prints a short usage hint. Mistakes produce a short
 
 ## Passwords
 
-`--password` asks for the password twice on the terminal (`/dev/tty`) without showing it. Press Enter instead to have fyl generate one (three words and two digits, such as `tide-lamp-moss-41`); it prints `Password: <passphrase>` on stderr, also without `--verbose`. A password you type is never printed. In scripts, `FYL_PASSWORD` sets it (only together with `--password`). fyl refuses control characters before anything is sent and leaves the length to the service, which counts 6 to 200 characters after Unicode normalisation; a password it refuses ends the run before any part is sent. Against a server without password support (before 2.2.0) fyl cancels the upload before any part.
+`--password` asks for the password twice on the terminal (`/dev/tty`) without showing it. Press Enter instead to have fyl generate one (three words and two digits, such as `tide-lamp-moss-41`); it prints `Password: <passphrase>` on stderr, also without `--verbose`. A password you type is never printed. In scripts, `FYL_PASSWORD` sets it (only together with `--password`). fyl refuses control characters before anything is sent and leaves the length to the service, which counts 6 to 200 characters after Unicode normalisation; a password it refuses ends the run before any part is sent.
 
 The link of a protected upload has no file name: `https://fyl.at/d/<id>`. Recipients type the password on the download page, or let curl ask for it with `curl -fOJ -u fyl "$url"`. Rules and limits: [CLI-API.md](CLI-API.md#passwords).
 

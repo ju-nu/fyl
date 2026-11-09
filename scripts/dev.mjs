@@ -17,7 +17,9 @@ const reached = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
 const origin = process.env.PUBLIC_BASE_URL || `http://${reached.includes(':') ? `[${reached}]` : reached}:${port}`;
 // Encrypted uploads are on locally whatever the emergency switch in wrangler.jsonc says (docs/E2EE.md §17), unless
 // E2EE_ENABLED in the environment says otherwise.
-const args = ['--ip', host, '--port', port, '--var', `PUBLIC_BASE_URL:${origin}`, '--var', `E2EE_ENABLED:${process.env.E2EE_ENABLED || 'true'}`];
+// REPORT_HOST is emptied, so the report form is served locally at /<lang>/report instead of sending to report.fyl.at
+// (a --var overrides wrangler.jsonc's vars, which env files can't).
+const args = ['--ip', host, '--port', port, '--var', `PUBLIC_BASE_URL:${origin}`, '--var', `E2EE_ENABLED:${process.env.E2EE_ENABLED || 'true'}`, '--var', 'REPORT_HOST:'];
 // Every other argument goes to wrangler dev as given, e.g. --persist-to DIR for a throwaway state (tests/test_local_worker.py).
 args.push(...forwarded.filter((value, index) => !(value === '--port' || value.startsWith('--port=') || forwarded[index - 1] === '--port')));
 // The Worker has no development fallback for its secrets: local ones are generated once (random, never printed) into
