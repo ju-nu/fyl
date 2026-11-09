@@ -30,8 +30,9 @@ changes something takes --dry-run, which shows the exact target and changes noth
 
 sweep (temporary, removed after its one run; docs/OPERATIONS.md#one-off-sweep-temporary) lists the Transfer
 namespace's objects through the Cloudflare API with CLOUDFLARE_API_TOKEN (environment or .env), only those with
-stored data unless --all is given, and posts their ids in batches of 50 to /api/admin/sweep. It prints counts only;
---dry-run lists and counts without posting. Running it again is harmless.
+stored data unless --all is given, and posts their ids in batches of 50 to /api/admin/sweep. It prints counts only
+and exits 1 when an object failed or a record is left over (still holds a name, fingerprint or session with no cleanup
+left to remove it); --dry-run lists and counts without posting. Running it again is harmless.
 """
 import argparse
 import json
@@ -589,7 +590,7 @@ def sweep(args):
     if args.dry_run:
         print("Dry run: would sweep {} {} in {} batches of up to {}. Nothing was sent.".format(len(ids), which, batches, SWEEP_BATCH))
         return
-    totals = {"checked": 0, "stored": 0, "fixed": 0, "failed": 0}
+    totals = {"checked": 0, "stored": 0, "fixed": 0, "leftover": 0, "failed": 0}
     for number, start in enumerate(range(0, len(ids), SWEEP_BATCH), 1):
         batch = ids[start:start + SWEEP_BATCH]
         for attempt in range(SWEEP_RETRIES + 1):
@@ -604,9 +605,13 @@ def sweep(args):
             sys.exit("The Worker's sweep answer had no counts for this batch; is this command known to its version?")
         for name, value in counts.items():
             totals[name] += value
-        print("Batch {}/{}: {checked} checked · {stored} stored · {fixed} fixed · {failed} failed".format(number, batches, **totals))
-    print("Swept {checked} objects: {stored} stored, {fixed} fixed, {failed} failed.".format(**totals))
-    if totals["failed"]:
+        print("Batch {}/{}: {checked} checked · {stored} stored · {fixed} fixed · {leftover} leftover · {failed} failed".format(number, batches, **totals))
+    print("Swept {checked} objects: {stored} stored, {fixed} fixed, {leftover} leftover, {failed} failed.".format(**totals))
+    if totals["leftover"]:
+        print("{} stored records still hold a file name, fingerprint or session with no cleanup left to remove it; the "
+              "constructor's guard does not fix these. Keep the guard and look into them before removing it.".format(totals["leftover"]),
+              file=sys.stderr)
+    if totals["failed"] or totals["leftover"]:
         sys.exit(1)
 
 

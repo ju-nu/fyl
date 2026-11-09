@@ -349,7 +349,7 @@ describe('the one-off tombstone sweep', () => {
     const refusing = { limit: async () => ({ success: false }) };
     expect((await admin('/api/admin/sweep', await service(), { method: 'POST', body: JSON.stringify({ ids: [hex] }), headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPERATOR_TOKEN } }, { ADMIN_RATE: refusing })).status).toBe(429);
     // None of these reached the object: its first sweep still fixes it.
-    expect(await (await swept([hex])).json()).toEqual({ checked: 1, stored: 1, fixed: 1, failed: 0 });
+    expect(await (await swept([hex])).json()).toEqual({ checked: 1, stored: 1, fixed: 1, leftover: 0, failed: 0 });
   });
 
   it('checks every id before reaching any object: a bad one refuses the whole request', async () => {
@@ -362,7 +362,7 @@ describe('the one-off tombstone sweep', () => {
     }
     expect((await admin('/api/admin/sweep', await service(), { method: 'POST', body: 'not json', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPERATOR_TOKEN } })).status).toBe(400);
     // Nothing was reached: the stale record is fixed by the first good sweep only.
-    expect(await (await swept([hex])).json()).toEqual({ checked: 1, stored: 1, fixed: 1, failed: 0 });
+    expect(await (await swept([hex])).json()).toEqual({ checked: 1, stored: 1, fixed: 1, leftover: 0, failed: 0 });
   });
 
   it('fixes a stale tombstone addressed by its hex id once, answers counts only and logs nothing identifying', async () => {
@@ -372,7 +372,7 @@ describe('the one-off tombstone sweep', () => {
     const response = await swept(ids);
     expect(response.status).toBe(200);
     const text = await response.text();
-    expect(JSON.parse(text)).toEqual({ checked: 3, stored: 3, fixed: 2, failed: 0 });
+    expect(JSON.parse(text)).toEqual({ checked: 3, stored: 3, fixed: 2, leftover: 0, failed: 0 });
     for (const secret of [...ids, first.id, second.id, clean.session.uploadId, 'kept.txt']) expect(text).not.toContain(secret);
     for (const { id, stub } of [first, second]) {
       const fixed = await record(id);
@@ -382,17 +382,33 @@ describe('the one-off tombstone sweep', () => {
       expect(await runInDurableObject(stub, (_instance, ctx) => ctx.storage.getAlarm())).toBe(fixed.purgeAt);
     }
     // A second sweep finds nothing to fix: the live instances reported theirs, evicted ones start from a clean record.
-    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, failed: 0 });
+    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, leftover: 0, failed: 0 });
     await evictDurableObject(first.stub);
-    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, failed: 0 });
+    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, leftover: 0, failed: 0 });
     const logged = JSON.stringify(logs.flatMap(spy => spy.mock.calls));
     for (const secret of [...ids, first.id, second.id, 'kept.txt']) expect(logged).not.toContain(secret);
+  });
+
+  it('counts a record that still holds a name with nothing left to remove it as leftover, which it does not fix', async () => {
+    // An early upload whose cleanup gave up: closed, not clean, name and fingerprint kept, no alarm.
+    const { session } = await file(true), stub = env.TRANSFERS.getByName(session.uploadId);
+    await edit(session.uploadId, record => { Object.assign(record, { status: 'expired', name: 'stuck.txt', fingerprint: 'e'.repeat(64) }); delete record.purgeAt; });
+    await runInDurableObject(stub, (_instance, ctx) => ctx.storage.deleteAlarm());
+    await evictDurableObject(stub);
+    const fresh = await file(), tomb = await stale();
+    const ids = [stub.id.toString(), env.TRANSFERS.idFromName(fresh.session.uploadId).toString(), tomb.hex];
+    const response = await swept(ids), text = await response.text();
+    // A ready transfer holds its name but has its expiry alarm; the stale tombstone is fixed, not left over.
+    expect(JSON.parse(text)).toEqual({ checked: 3, stored: 3, fixed: 1, leftover: 1, failed: 0 });
+    expect(text).not.toContain('stuck.txt');
+    expect((await record(session.uploadId)).name).toBe('stuck.txt');
+    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, leftover: 1, failed: 0 });
   });
 
   it('reports an object without a record as not stored and leaves it without storage', async () => {
     const empty = env.TRANSFERS.idFromName('never-used-' + crypto.randomUUID());
     const ids = [empty.toString(), ...Array.from({ length: 49 }, (_, index) => env.TRANSFERS.idFromName(`never-${index}-${crypto.randomUUID()}`).toString())];
-    expect(await (await swept(ids)).json()).toEqual({ checked: 50, stored: 0, fixed: 0, failed: 0 });
+    expect(await (await swept(ids)).json()).toEqual({ checked: 50, stored: 0, fixed: 0, leftover: 0, failed: 0 });
     const tables = await runInDurableObject(env.TRANSFERS.get(empty), (_instance, ctx) =>
       ctx.storage.sql.exec<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE '\\_%' ESCAPE '\\'").toArray().map(row => row.name));
     expect(tables).toEqual([]);

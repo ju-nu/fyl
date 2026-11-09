@@ -374,15 +374,21 @@ constructor fixes such a record whenever a request reaches its object. The sweep
 ```sh
 npm run admin -- sweep --dry-run   # lists the Transfer namespace's objects with stored data and counts them; sends nothing
 npm run admin -- sweep             # posts their ids in batches of 50; prints running totals, then
-                                   # "Swept N objects: S stored, F fixed, E failed." (exit 1 if E > 0)
-npm run admin -- sweep             # once more: expect 0 fixed
+                                   # "Swept N objects: S stored, F fixed, L leftover, E failed." (exit 1 if L or E > 0)
+npm run admin -- sweep             # once more: expect 0 fixed, 0 leftover, 0 failed
 ```
+
+Only a second run with 0 fixed, 0 leftover and 0 failed is the evidence for the follow-up that removes the guard; record
+its counts and time there. `leftover` counts records that still hold a file name, fingerprint or one-time session
+although they are clean or no alarm will ever reach them, such as an early upload whose cleanup gave up before
+cleanups were retried. The constructor's guard handles clean records only, so the sweep cannot fix these: keep the
+guard and look into them first.
 
 Besides the operator token and the Access service token it needs `CLOUDFLARE_API_TOKEN` (environment or `.env`) to
 list the objects through the Cloudflare API; a token with only Workers Scripts Read is enough, and the token goes only
-to `https://api.cloudflare.com` (`FYL_CLOUDFLARE_API` may name a loopback fake, nothing else). `--all` sweeps objects without stored data too
-(they stay empty). `ADMIN_RATE` allows 10 batches a minute; a refused batch is sent again after 15 seconds. The run
-prints and logs counts only, and running it again is harmless.
+to `https://api.cloudflare.com` (`FYL_CLOUDFLARE_API` may name a loopback fake, nothing else). `--all` sweeps objects
+without stored data too (they stay empty). `ADMIN_RATE` allows 10 batches a minute; a refused batch is sent again
+after 15 seconds. The run prints and logs counts only, and running it again is harmless.
 
 ## Static assets
 

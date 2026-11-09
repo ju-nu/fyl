@@ -549,7 +549,7 @@ class SweepTests(unittest.TestCase):
         return [(request[1], request[2]['ids']) for request in self.server.requests]
 
     def test_sweeps_the_stored_objects_of_the_transfer_namespace_in_batches(self):
-        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 7, 'failed': 0}), (200, {'checked': 24, 'stored': 23, 'fixed': 1, 'failed': 0}))
+        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 7, 'leftover': 0, 'failed': 0}), (200, {'checked': 24, 'stored': 23, 'fixed': 1, 'leftover': 0, 'failed': 0}))
         result = self.admin('sweep')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.listed(), [NAMESPACES + '?page=1&per_page=100', NAMESPACES + '?page=2&per_page=100',
@@ -557,9 +557,9 @@ class SweepTests(unittest.TestCase):
         self.assertEqual(self.posted(), [('/api/admin/sweep', self.stored[:50]), ('/api/admin/sweep', self.stored[50:])])
         lines = result.stdout.splitlines()
         self.assertEqual(lines, ['Listed:    110 Transfer objects, 74 objects with stored data',
-                                 'Batch 1/2: 50 checked · 50 stored · 7 fixed · 0 failed',
-                                 'Batch 2/2: 74 checked · 73 stored · 8 fixed · 0 failed',
-                                 'Swept 74 objects: 73 stored, 8 fixed, 0 failed.'])
+                                 'Batch 1/2: 50 checked · 50 stored · 7 fixed · 0 leftover · 0 failed',
+                                 'Batch 2/2: 74 checked · 73 stored · 8 fixed · 0 leftover · 0 failed',
+                                 'Swept 74 objects: 73 stored, 8 fixed, 0 leftover, 0 failed.'])
         # Counts only: no object id is printed.
         self.assertNotIn(self.stored[0], result.stdout + result.stderr)
 
@@ -571,21 +571,29 @@ class SweepTests(unittest.TestCase):
         self.assertIn('Listed:    110 Transfer objects, 110 objects', everything.stdout)
         self.assertIn('Dry run: would sweep 110 objects in 3 batches of up to 50.', everything.stdout)
         self.assertEqual(self.server.requests, [])
-        self.answers(*[(200, {'checked': size, 'stored': size, 'fixed': 0, 'failed': 0}) for size in (50, 50, 10)])
+        self.answers(*[(200, {'checked': size, 'stored': size, 'fixed': 0, 'leftover': 0, 'failed': 0}) for size in (50, 50, 10)])
         result = self.admin('sweep', '--all')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([len(ids) for _, ids in self.posted()], [50, 50, 10])
         self.assertEqual(sum((ids for _, ids in self.posted()), []), [item['id'] for item in self.objects])
-        self.assertIn('Swept 110 objects: 110 stored, 0 fixed, 0 failed.', result.stdout)
+        self.assertIn('Swept 110 objects: 110 stored, 0 fixed, 0 leftover, 0 failed.', result.stdout)
 
     def test_a_failed_object_or_batch_exits_1(self):
-        self.answers((200, {'checked': 50, 'stored': 49, 'fixed': 2, 'failed': 1}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'failed': 0}))
+        self.answers((200, {'checked': 50, 'stored': 49, 'fixed': 2, 'leftover': 0, 'failed': 1}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'leftover': 0, 'failed': 0}))
         failed = self.admin('sweep')
         self.assertEqual(failed.returncode, 1)
-        self.assertIn('Swept 74 objects: 73 stored, 2 fixed, 1 failed.', failed.stdout)
+        self.assertIn('Swept 74 objects: 73 stored, 2 fixed, 0 leftover, 1 failed.', failed.stdout)
+        # A record left over (nothing removes its name) exits 1 too, with a warning that the guard must stay.
+        self.server.requests.clear()
+        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 0, 'leftover': 2, 'failed': 0}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'leftover': 1, 'failed': 0}))
+        left = self.admin('sweep')
+        self.assertEqual(left.returncode, 1)
+        self.assertIn('Swept 74 objects: 74 stored, 0 fixed, 3 leftover, 0 failed.', left.stdout)
+        self.assertIn('3 stored records still hold a file name, fingerprint or session', left.stderr)
+        self.assertIn('Keep the guard', left.stderr)
         # A refused batch stops the run with the Worker's message, after the totals so far.
         self.server.requests.clear()
-        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 0, 'failed': 0}), (400, {'error': 'Send {"ids": [...]}.', 'code': 'request_failed'}))
+        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 0, 'leftover': 0, 'failed': 0}), (400, {'error': 'Send {"ids": [...]}.', 'code': 'request_failed'}))
         refused = self.admin('sweep')
         self.assertEqual(refused.returncode, 1)
         self.assertIn('Batch 1/2: 50 checked', refused.stdout)
@@ -638,7 +646,7 @@ class SweepTests(unittest.TestCase):
 
     def test_a_rate_limited_batch_is_sent_again(self):
         self.answers((429, {'error': 'Too many requests. Please try again shortly.', 'code': 'rate_limited'}),
-                     (200, {'checked': 50, 'stored': 50, 'fixed': 0, 'failed': 0}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'failed': 0}))
+                     (200, {'checked': 50, 'stored': 50, 'fixed': 0, 'leftover': 0, 'failed': 0}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'leftover': 0, 'failed': 0}))
         module = load_script('admin')
         module.BASE, module.CLOUDFLARE_API, module.ENV_FILE = self.origin, self.api, Path(tempfile.gettempdir()) / 'fyl-sweep-no-env' / '.env'
         output = io.StringIO()
@@ -647,7 +655,7 @@ class SweepTests(unittest.TestCase):
             module.main(['sweep'])
         self.assertEqual(slept.call_args_list, [mock.call(module.SWEEP_RETRY_SECONDS)])
         self.assertEqual([len(ids) for _, ids in self.posted()], [50, 50, 24])
-        self.assertIn('Swept 74 objects: 74 stored, 0 fixed, 0 failed.', output.getvalue())
+        self.assertIn('Swept 74 objects: 74 stored, 0 fixed, 0 leftover, 0 failed.', output.getvalue())
         # It gives up after SWEEP_RETRIES more tries.
         self.server.requests.clear()
         self.answers(*[(429, {'error': 'Too many requests.', 'code': 'rate_limited'})] * (module.SWEEP_RETRIES + 1))

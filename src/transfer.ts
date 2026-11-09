@@ -82,13 +82,19 @@ export class Transfer extends DurableObject<Env> {
    * Temporary, for the one-off tombstone sweep (POST /api/admin/sweep, to be removed after its run): does nothing itself.
    * Reaching the object constructed it, and the constructor fixed a stale record; this reports whether a record is
    * stored and whether this instance's construction fixed it (once: a second sweep of a live instance reports false).
-   * Counts only, never a field of the record. A read tolerates a missing table, so an empty object stays empty.
+   * `leftover` is the evidence the guard's removal needs: a record that still holds a name, fingerprint or session
+   * although it is clean, or although no alarm will ever reach it (a cleanup that gave up before retries existed leaves
+   * such a record not clean, which the guard does not fix). Counts only, never a field of the record. A read tolerates
+   * a missing table, so an empty object stays empty.
    */
   async sweep() {
-    return guarded(() => {
+    return guarded(async () => {
       const fixed = this.repaired;
       this.repaired = false;
-      return { stored: this.read() !== null, fixed };
+      const record = this.read();
+      const leftover = record !== null && Boolean(record.name || record.fingerprint || record.session)
+        && (record.clean || await this.ctx.storage.getAlarm() === null);
+      return { stored: record !== null, fixed, leftover };
     });
   }
 
