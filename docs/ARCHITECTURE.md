@@ -173,8 +173,8 @@ source (`sh scripts/build_native.sh --bridge`), carries the rule that a binary o
 outside it as newer. `/cli/version.json` answers a User-Agent `fyl-cli/2.0.0` to `fyl-cli/2.5.0` with the index of
 2.5.1 (`dist/cli/bridge.json`), and everyone else with the current version, so `fyl update` takes 2.5.0 to 2.5.1 and
 then to the current release. CLIs before 2.5.0 have no `fyl update` and install again with
-`curl -fsSL https://fyl.at/cli/install | sh`. `dist/cli/2.5.1/` stays for good, and the GitHub release `v2.5.1` carries
-the same files (published once, never marked Latest), so its checksums can be compared like any release's.
+`curl -fsSL https://fyl.at/cli/install | sh`. `dist/cli/2.5.1/` stays for good, with its `SHA256SUMS` beside the binaries; it has no
+GitHub release, since releases follow the new numbering only.
 
 ## Compatibility code
 

@@ -275,37 +275,21 @@ class ReleaseTests(GitTestCase):
         self.assertEqual(Path(str(self.log) + '.notes.v9.9.9').read_text(),
                          'See [the CLI](https://github.com/ju-nu/fyl-at/blob/{}/docs/CLI.md).\n'.format(self.sha))
         self.assertEqual((self.lines(self.curl_log), self.lines(self.sleep_log)), (['-fs --max-time 15 https://fyl.at/cli/latest'], []))
-        # Then the bridge, which every fyl 2.5.0 updates to, once and never as Latest.
-        bridge = self.bridge
-        self.assertEqual(calls[3:], ['release view v{} --repo ju-nu/fyl-at'.format(bridge),
-                                     'release create v{0} {1} --repo ju-nu/fyl-at --target {2} --title fyl.at v{0} --notes-file {3}/bridge.md --latest=false'.format(
-                                         bridge, self.assets(bridge), self.sha, self.temp)])
-        self.assertIn('Released v{}.'.format(bridge), result.stdout)
-        notes = Path(str(self.log) + '.notes.v' + bridge).read_text()
-        self.assertIn('fyl {} is the bridge from the old version numbers'.format(bridge), notes)
-        self.assertIn('(https://github.com/ju-nu/fyl-at/blob/{}/docs/CLI.md#install-and-update)'.format(self.sha), notes)
-        # A later run finds both and creates nothing.
+        # Only this version: the bridge of the old numbering gets no GitHub release (fyl.at serves it).
+        self.assertEqual(len(calls), 3)
+        # A later run finds the release and creates nothing.
         self.publish('9.9.9')
-        self.publish(bridge)
         result, calls = self.release()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse([call for call in calls if call.startswith('release create')])
-        self.assertIn('Release v{} exists and carries the committed SHA256SUMS.'.format(bridge), result.stdout)
+        self.assertIn('Release v9.9.9 exists and carries the committed SHA256SUMS.', result.stdout)
 
-    def test_the_bridge_is_released_once_beside_an_existing_version(self):
+    def test_the_bridge_gets_no_release_but_must_report_its_version(self):
         self.publish('9.9.9')
         result, calls = self.release()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual([call.split()[2] for call in calls if call.startswith('release create')], ['v' + self.bridge])
-        self.assertEqual(self.lines(self.curl_log), [])
-        # A bridge release with other checksums fails the run: published files never change.
-        (self.releases / ('v' + self.bridge)).write_text('0' * 64 + '  fyl-linux-x86_64\n')
-        result, calls = self.release()
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('Release v{0} exists with other files than dist/cli/{0}/SHA256SUMS'.format(self.bridge), result.stderr)
         self.assertFalse([call for call in calls if call.startswith('release create')])
-        # The bridge's binary must report its version, as this version's must.
-        (self.releases / ('v' + self.bridge)).unlink()
+        self.assertFalse([call for call in calls if 'v' + self.bridge in call])
         (self.work / 'dist' / 'cli' / self.bridge / 'fyl-linux-x86_64').write_text('#!/bin/sh\necho "fyl 9.9.9"\n')
         result, calls = self.release()
         self.assertEqual(result.returncode, 1)
@@ -320,7 +304,7 @@ class ReleaseTests(GitTestCase):
         self.assertEqual((len(self.lines(self.curl_log)), self.lines(self.sleep_log)), (4, ['20'] * 3))
         self.assertIn('fyl.at serves nothing readable at /cli/latest, not 9.9.9 yet; waiting for the Workers Build.', result.stdout)
         self.assertIn('fyl.at serves 9.9.8 at /cli/latest, not 9.9.9 yet', result.stdout)
-        self.assertTrue(result.stdout.endswith('Released v9.9.9.\nReleased v{}.\n'.format(self.bridge)), result.stdout)
+        self.assertTrue(result.stdout.endswith('Released v9.9.9.\n'), result.stdout)
         self.assertEqual(len([call for call in calls if call.startswith('release create v9.9.9 ')]), 1)
 
     def test_no_release_when_fyl_at_never_serves_the_version(self):
