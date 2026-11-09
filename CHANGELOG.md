@@ -1,14 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Operators
-
-- **One-off tombstone sweep (temporary):** `npm run admin -- sweep` lists the Transfer objects through the Cloudflare
-  API and reaches each once through the new operator route `POST /api/admin/sweep`, so old tombstones lose a kept
-  file name, fingerprint or one-time session and get their purge date. Counts only; the command, the route and the
-  constructor's guard are removed after the run ([runbook](docs/OPERATIONS.md#one-off-sweep-temporary)).
-
 ## 1.0.1 — 2026-11-09
 
 - **CLI dependencies:** getrandom 0.4 and crc32fast 1.5.3. Encryption, checksums and the zip format are unchanged;
