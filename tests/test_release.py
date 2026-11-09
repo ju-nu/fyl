@@ -80,7 +80,7 @@ class DeployGateTests(GitTestCase):
         head = self.push('b')
         result = self.script('promote.sh', head)
         self.assertEqual(result.returncode, 1)
-        self.assertIn('GitHub refused the push: production has a commit that is not on main, or FYL_DEPLOY_TOKEN', result.stderr)
+        self.assertIn('GitHub refused the push: production has a commit that is not on main, or the deploy key (FYL_DEPLOY_KEY)', result.stderr)
         self.assertEqual(self.production(), stray)
 
     def test_an_origin_that_cannot_be_read_fails_the_run(self):

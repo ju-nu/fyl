@@ -87,10 +87,11 @@ pull request ─ merge ─▶ main ─ Checks (GitHub) green ─▶ Deploy gate 
 - `.github/workflows/deploy.yml` (Deploy gate) runs when `Checks` completes on a push to `main` in this repository.
   Only on success, and only while `main` still points at that commit, `scripts/promote.sh` fast-forwards `production`
   to it (never `--force`; it skips when production already contains it and creates the branch if it is missing).
-- It pushes with the repository secret `FYL_DEPLOY_TOKEN`: a fine-grained personal access token for this repository
-  only, with Contents and Workflows read and write. `GITHUB_TOKEN` can't be used: GitHub refuses it any branch update
-  that brings in changes to `.github/workflows/`. Without the secret, or once the token expired, the run fails with a
-  clear message and production stays where it is.
+- It pushes over SSH with the repository secret `FYL_DEPLOY_KEY`, the private half of the repository's write deploy
+  key "Deploy gate"; the `production` ruleset lets deploy keys through and everyone else but admins not. `GITHUB_TOKEN`
+  can't be used: GitHub refuses it any branch update that brings in changes to `.github/workflows/`. A deploy key
+  reaches this repository only and doesn't expire. Without the secret the run fails with a clear message and
+  production stays where it is.
 - **Never push to `production` by hand.** A commit on production that isn't on main makes every later fast-forward
   fail. The one safe manual recovery is pushing a commit that main already has:
   `git push origin <main-sha>:refs/heads/production`.
@@ -193,7 +194,7 @@ missing. Generate them with `openssl rand -base64 48` (64 characters). Never pri
 | `ADMIN_EMAILS` | Worker only | The operator's Access identities (comma-separated e-mail addresses) that read the dashboard's data without the operator token | Fails closed: no identity is the operator, so the dashboard's reads answer 401 in the browser; the service token and operator token still work; `npm run deploy` warns |
 | `TURNSTILE_SECRET` | Worker only | Siteverify of the report form's Turnstile token; on only together with the `TURNSTILE_SITE_KEY` var | The report form works without the check and loads nothing from Cloudflare, readiness shows `turnstile: incomplete`. A value Cloudflare rejects: reports answer 503 `misconfigured` |
 | `CF_ANALYTICS_TOKEN` | Worker only (optional) | Read-only API token (Account Analytics Read) for the admin host's statistics and billing estimate ([how to create it](#admin-host-and-statistics)) | `/api/stats` answers 503 `stats_unconfigured`, `/api/billing` 503 `billing_unconfigured`, so the Monitor workflow fails on its billing check; `npm run deploy` warns. Expired, revoked or without the permission: 503 `billing_refused` |
-| `FYL_DEPLOY_TOKEN` | GitHub repository secret | Deploy gate pushes `production` | The Deploy gate fails and production stays put |
+| `FYL_DEPLOY_KEY` | GitHub repository secret (private key of the write deploy key "Deploy gate") | Deploy gate pushes `production` | The Deploy gate fails and production stays put |
 | `FYL_ACCESS_CLIENT_ID`, `FYL_ACCESS_CLIENT_SECRET` | Ignored local `.env` and GitHub repository secrets; not on the Worker | The Cloudflare Access service token (the app's non-identity policy) that lets `npm run admin`, the monitor and the smoke test through to `admin.fyl.at`; its expiry is `TOKEN_EXPIRES` in `scripts/monitor.py` | Those tools stop at Access ("Cloudflare Access refused"); the public site is not affected |
 
 Rotation (each `wrangler secret put` deploys a new version at once):
@@ -216,8 +217,9 @@ Rotation (each `wrangler secret put` deploys a new version at once):
   running and stored uploads stay with the old hash (the cap effectively restarts for up to 8 days), and open one-time
   download sessions can't be continued (the same network now looks like another one, which gets 410 `consumed`).
 - `ADMIN_EMAILS`: `npx wrangler secret put ADMIN_EMAILS` and type the addresses. Secrets survive later deploys.
-- `FYL_DEPLOY_TOKEN`: create a new fine-grained token (this repository only, Contents and Workflows read and write),
-  `gh secret set FYL_DEPLOY_TOKEN`, revoke the old one.
+- `FYL_DEPLOY_KEY`: `ssh-keygen -t ed25519 -N '' -f deploy`, add `deploy.pub` as a write deploy key
+  (`gh repo deploy-key add deploy.pub --allow-write --title "Deploy gate"`), `gh secret set FYL_DEPLOY_KEY < deploy`,
+  delete both files and the old key.
 - `CF_ANALYTICS_TOKEN`: create a new read-only token as in [admin host and statistics](#admin-host-and-statistics),
   `npx wrangler secret put CF_ANALYTICS_TOKEN`, then delete the old token. The dashboard keeps working throughout.
 - Access service token, before it expires: in Zero Trust → Access → Service credentials → Service Tokens either

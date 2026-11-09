@@ -51,21 +51,22 @@ class WorkflowTests(unittest.TestCase):
         for key in named:
             self.assertIn(key, keys)
 
-    def test_the_deploy_gate_pushes_with_the_deploy_token(self):
+    def test_the_deploy_gate_pushes_with_the_deploy_key(self):
         # GITHUB_TOKEN may not move production across changes to .github/workflows/, so it gets no write access;
-        # the fine-grained FYL_DEPLOY_TOKEN pushes, and without it the run fails before anything else.
+        # the repository's write deploy key FYL_DEPLOY_KEY pushes, and without it the run fails before anything else.
         deploy = self.read('deploy.yml')
-        self.assertIn('token: ${{ secrets.FYL_DEPLOY_TOKEN }}', deploy)
+        self.assertIn('ssh-key: ${{ secrets.FYL_DEPLOY_KEY }}', deploy)
+        self.assertNotIn('FYL_DEPLOY_TOKEN', deploy)
         self.assertNotIn('create-github-app-token', deploy)
         self.assertNotIn('FYL_DEPLOY_APP', deploy)
         self.assertNotRegex(deploy, r'(?m)^\s+contents: write')
         self.assertIn('run: sh scripts/promote.sh "$SHA"', deploy)
-        self.assertLess(deploy.index('- name: The deploy token is configured'), deploy.index('uses: actions/checkout'))
-        guard = step(deploy, 'The deploy token is configured')
+        self.assertLess(deploy.index('- name: The deploy key is configured'), deploy.index('uses: actions/checkout'))
+        guard = step(deploy, 'The deploy key is configured')
         for has, code in (('true', 0), ('false', 1)):
             result = subprocess.run(['bash', '-e', '-c', guard], env={**os.environ, 'HAS_TOKEN': has}, capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, code, has)
-        self.assertIn('::error::Set the repository secret FYL_DEPLOY_TOKEN', result.stdout)
+        self.assertIn('::error::Set the repository secret FYL_DEPLOY_KEY', result.stdout)
 
     def test_a_release_follows_the_deploy_gate(self):
         release = self.read('release.yml')
