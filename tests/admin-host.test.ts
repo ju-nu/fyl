@@ -1,10 +1,12 @@
 import { env } from 'cloudflare:workers';
+import { evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import config from '../wrangler.jsonc?raw';
 import { forgetAccessKeys } from '../src/access';
 import { COUNTED_SINCE, DATASET, SHAPE_VERSION, midnight, sampleSince, shape, statsCacheKey, statsQueries, windowOf } from '../src/stats';
 import { BILLING_QUERY, ERRORS_QUERY, SCRIPT, billingCacheKey, cycleOf } from '../src/billing';
-import { ACCESS_CERTS as CERTS, ADMIN, OWNER_EMAIL, accessJwt as jwt, accessKeys, call, direct, file, jwkOf, operator, pause, post, serviceJwt as service, OPERATOR_TOKEN, useNetworkPrefix } from './helpers';
+import { TOMBSTONE_TTL_MS } from '../src/shared';
+import { ACCESS_CERTS as CERTS, ADMIN, OWNER_EMAIL, accessJwt as jwt, accessKeys, call, direct, edit, file, jwkOf, operator, pause, post, record, serviceJwt as service, OPERATOR_TOKEN, useNetworkPrefix } from './helpers';
 
 useNetworkPrefix('198.18.13.');
 
@@ -311,6 +313,90 @@ describe('the operator API on the public host', () => {
     }
     // The admin host still answers.
     expect((await admin('/api/admin/ready', await jwt())).status).toBe(200);
+  });
+});
+
+// Temporary, with the route: the one-off tombstone sweep (POST /api/admin/sweep), removed after its run.
+describe('the one-off tombstone sweep', () => {
+  /** A one-time transfer's record as cleanups until 2026-10-27 left it (see the constructor's guard in tests/worker.test.ts), evicted. */
+  const stale = async () => {
+    const { session } = await file(true), stub = env.TRANSFERS.getByName(session.uploadId);
+    await edit(session.uploadId, record => {
+      Object.assign(record, { status: 'expired', clean: true, name: 'kept.txt', fingerprint: 'f'.repeat(64), session: { network: 'a'.repeat(64), guesser: 'g', startedAt: 1, lastAt: 1, open: 0 } });
+      delete record.purgeAt; delete record.verifyAt;
+    });
+    await runInDurableObject(stub, (_instance, ctx) => ctx.storage.deleteAlarm());
+    await evictDurableObject(stub);
+    return { id: session.uploadId, hex: env.TRANSFERS.idFromName(session.uploadId).toString(), stub };
+  };
+  const swept = async (ids: unknown, token: string | null = OPERATOR_TOKEN, headers: Record<string, string> = {}) =>
+    admin('/api/admin/sweep', await service(), { method: 'POST', body: JSON.stringify({ ids }), headers: { 'Content-Type': 'application/json', ...token ? { Authorization: 'Bearer ' + token } : {}, ...headers } });
+
+  it('needs the operator token on the admin host: not the monitor token, not the owner identity; the public host has no such route', async () => {
+    const { hex } = await stale();
+    expect((await swept([hex], null)).status).toBe(401);
+    expect((await swept([hex], MONITOR_TOKEN)).status).toBe(401);
+    expect((await swept([hex], 'x'.repeat(40))).status).toBe(401);
+    const owner = await admin('/api/admin/sweep', await jwt(), { method: 'POST', body: JSON.stringify({ ids: [hex] }), headers: { 'Content-Type': 'application/json' } });
+    expect(owner.status).toBe(401);
+    expect((await admin('/api/admin/sweep', await jwt(), bearer(OPERATOR_TOKEN))).status).toBe(405);
+    expect((await swept([hex], OPERATOR_TOKEN, { Origin: 'https://evil.example' })).status).toBe(403);
+    const pub = await call('/api/admin/sweep', { method: 'POST', body: JSON.stringify({ ids: [hex] }), headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPERATOR_TOKEN } });
+    expect([pub.status, await pub.text()]).toEqual([404, 'Not found.\n']);
+    // Without Access nothing at all.
+    expect((await admin('/api/admin/sweep', null, { method: 'POST', body: JSON.stringify({ ids: [hex] }), headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPERATOR_TOKEN } })).status).toBe(403);
+    // Under ADMIN_RATE like every operator change.
+    const refusing = { limit: async () => ({ success: false }) };
+    expect((await admin('/api/admin/sweep', await service(), { method: 'POST', body: JSON.stringify({ ids: [hex] }), headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPERATOR_TOKEN } }, { ADMIN_RATE: refusing })).status).toBe(429);
+    // None of these reached the object: its first sweep still fixes it.
+    expect(await (await swept([hex])).json()).toEqual({ checked: 1, stored: 1, fixed: 1, failed: 0 });
+  });
+
+  it('checks every id before reaching any object: a bad one refuses the whole request', async () => {
+    const { hex } = await stale(), other = env.BUDGET.idFromName('global').toString();
+    for (const ids of [undefined, [], hex, [hex.toUpperCase()], [hex.slice(1)], [hex + '0'], [hex, 7], [hex, null], Array(51).fill(hex), [hex, ` ${hex}`.slice(0, 64) + ' '],
+      [hex, 'f'.repeat(64)], [hex, other]]) {
+      const response = await swept(ids);
+      expect([JSON.stringify(ids)?.slice(0, 40), response.status]).toEqual([JSON.stringify(ids)?.slice(0, 40), 400]);
+      expect(JSON.stringify(await response.json())).not.toContain(hex);
+    }
+    expect((await admin('/api/admin/sweep', await service(), { method: 'POST', body: 'not json', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + OPERATOR_TOKEN } })).status).toBe(400);
+    // Nothing was reached: the stale record is fixed by the first good sweep only.
+    expect(await (await swept([hex])).json()).toEqual({ checked: 1, stored: 1, fixed: 1, failed: 0 });
+  });
+
+  it('fixes a stale tombstone addressed by its hex id once, answers counts only and logs nothing identifying', async () => {
+    const logs = [vi.spyOn(console, 'log'), vi.spyOn(console, 'error'), vi.spyOn(console, 'warn')];
+    const first = await stale(), second = await stale(), clean = await file();
+    const ids = [first.hex, second.hex, env.TRANSFERS.idFromName(clean.session.uploadId).toString()];
+    const response = await swept(ids);
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(JSON.parse(text)).toEqual({ checked: 3, stored: 3, fixed: 2, failed: 0 });
+    for (const secret of [...ids, first.id, second.id, clean.session.uploadId, 'kept.txt']) expect(text).not.toContain(secret);
+    for (const { id, stub } of [first, second]) {
+      const fixed = await record(id);
+      expect([fixed.name, fixed.fingerprint]).toEqual(['', '']);
+      expect(fixed).not.toHaveProperty('session');
+      expect(fixed.purgeAt).toBeGreaterThan(Date.now() + TOMBSTONE_TTL_MS - 60000);
+      expect(await runInDurableObject(stub, (_instance, ctx) => ctx.storage.getAlarm())).toBe(fixed.purgeAt);
+    }
+    // A second sweep finds nothing to fix: the live instances reported theirs, evicted ones start from a clean record.
+    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, failed: 0 });
+    await evictDurableObject(first.stub);
+    expect(await (await swept(ids)).json()).toEqual({ checked: 3, stored: 3, fixed: 0, failed: 0 });
+    const logged = JSON.stringify(logs.flatMap(spy => spy.mock.calls));
+    for (const secret of [...ids, first.id, second.id, 'kept.txt']) expect(logged).not.toContain(secret);
+  });
+
+  it('reports an object without a record as not stored and leaves it without storage', async () => {
+    const empty = env.TRANSFERS.idFromName('never-used-' + crypto.randomUUID());
+    const ids = [empty.toString(), ...Array.from({ length: 49 }, (_, index) => env.TRANSFERS.idFromName(`never-${index}-${crypto.randomUUID()}`).toString())];
+    expect(await (await swept(ids)).json()).toEqual({ checked: 50, stored: 0, fixed: 0, failed: 0 });
+    const tables = await runInDurableObject(env.TRANSFERS.get(empty), (_instance, ctx) =>
+      ctx.storage.sql.exec<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE '\\_%' ESCAPE '\\'").toArray().map(row => row.name));
+    expect(tables).toEqual([]);
+    expect(await runInDurableObject(env.TRANSFERS.get(empty), (_instance, ctx) => ctx.storage.getAlarm())).toBeNull();
   });
 });
 

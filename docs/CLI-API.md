@@ -197,6 +197,7 @@ Operator routes require `Authorization: Bearer <ADMIN_TOKEN>` and exist only whe
 | `/api/admin/reconcile` | POST | | `{drift: {aggregate: difference}}` after the Budget's sweep and reconciliation |
 | `/api/admin/takedown` | POST | `{id, note}` (≤ 8 KiB) | `{removed: true, existed}`, plus `reportsUpdated: false` if the open cases could not record it |
 | `/api/admin/quarantine`, `/api/admin/restore` | POST | `{id, note}` (≤ 8 KiB) | The transfer view (below), plus `reportsUpdated: false` if the open cases could not record it |
+| `/api/admin/sweep` | POST | `{ids}` (≤ 8 KiB), temporary (below) | `{checked, stored, fixed, failed}` |
 | `/api/admin/transfers/<id>` | GET | | `{id, exists, status, name, size, createdAt, expiresAt, once, protected, quarantine, clean, openReports, openCases}` |
 | `/api/admin/reports` | GET | query `status` (`open` default, `closed`, `all`), `limit` (1–200, default 50), `after` (a case id), `transfer` (an id) | `{reports: [case, …], next}` |
 | `/api/admin/reports/<case>` | GET | | The case with `events: [{at, action, note}]` |
@@ -208,6 +209,7 @@ Operator routes require `Authorization: Bearer <ADMIN_TOKEN>` and exist only whe
 - `openReports` and `openCases` (the first 20 open case ids in queue order) are null when the Reports object didn't answer; the view still works.
 - A case is `{case, createdAt, transferId, category, details, name, email, network, status, outcome, updatedAt, closedAt, priority, fileAvailable}`. `status` is `open` or `closed`; `outcome` is `removed`, `restored`, `rejected` or `expired`; `priority` is 1 (CSAM), 2 (malware, phishing), 3 (illegal, privacy) or 4 (copyright, other). The open queue is sorted by priority, then oldest first; closed and all cases newest first. `next` is the last case of a full page, to pass as `after`; a cursor whose case is gone gets 400 `invalid_cursor`.
 - Decisions: `quarantine` (the case stays open), `restore` (closes as `restored`), `remove` (the takedown; closes as `removed`), `reject` (closes as `rejected`; the transfer stays as it is) and `note` (adds an event, also to a closed case). A decision on a closed case gets 409 `closed`; rejecting the last open case of a quarantined transfer gets 409 `quarantined` (restore or remove decide it). Events record `received`, every action with its note, and the outcome when a case closes by itself.
+- One-off sweep (temporary, removed after its one run; [runbook](OPERATIONS.md#one-off-sweep-temporary)): `ids` holds 1 to 50 Durable Object ids of the Transfer namespace (64 lowercase hex digits, as the Cloudflare API lists them). Every id is checked before any object is reached, and one that is malformed or not of that namespace answers 400 for the whole request. Reaching an object lets its constructor fix an old tombstone; the answer counts the objects reached, those with a stored record, those whose record was fixed and those that failed. No id or field of a record is answered or logged. `npm run admin -- sweep` wraps it.
 
 Readiness answers `{ready, attention, reasons, checks, turnstile, e2ee, paused, backlog, capacity, openReports, oldestOpenReportAge, highestOpenPriority, version}`:
 

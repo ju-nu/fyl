@@ -363,6 +363,26 @@ tab's session storage unless the sender ticks "Remember the password on this dev
 device", and an interrupted upload with its key (no password, no encryption key) until it finishes, is discarded or
 its 24-hour window ends. The CLI keeps no state on disk.
 
+### One-off sweep (temporary)
+
+Temporary: this section, `npm run admin -- sweep`, `POST /api/admin/sweep` and `Transfer.sweep()` go away after the
+sweep has run once in production, together with the constructor's guard for old tombstones
+([compatibility code](ARCHITECTURE.md#compatibility-code)). Tombstones cleaned up before 2026-10-27 may still carry the
+file name and fingerprint and no purge date, and some before 2026-10-30 16:40 UTC a one-time session; the `Transfer`
+constructor fixes such a record whenever a request reaches its object. The sweep reaches every object once:
+
+```sh
+npm run admin -- sweep --dry-run   # lists the Transfer namespace's objects with stored data and counts them; sends nothing
+npm run admin -- sweep             # posts their ids in batches of 50; prints running totals, then
+                                   # "Swept N objects: S stored, F fixed, E failed." (exit 1 if E > 0)
+npm run admin -- sweep             # once more: expect 0 fixed
+```
+
+Besides the operator token and the Access service token it needs `CLOUDFLARE_API_TOKEN` (environment or `.env`, with
+Workers Scripts Read) to list the objects through the Cloudflare API; `--all` sweeps objects without stored data too
+(they stay empty). `ADMIN_RATE` allows 10 batches a minute; a refused batch is sent again after 15 seconds. The run
+prints and logs counts only, and running it again is harmless.
+
 ## Static assets
 
 `dist/` is the site's source and what `npm run dev` and the tests serve; its pages `dist/<lang>/*.html` and

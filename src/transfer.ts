@@ -57,6 +57,8 @@ const CHANGED = 'This part differs from the one this upload pinned: the file cha
 export class Transfer extends DurableObject<Env> {
   /** Set once the record is known to be stored; its tables are created on the first write, not on reads. */
   private stored = false;
+  /** Temporary, for the one-off tombstone sweep (sweep()): whether this instance's construction fixed a stale record. */
+  private repaired = false;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -72,7 +74,22 @@ export class Transfer extends DurableObject<Env> {
         if (!previous.verifyAt) this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
       }
       this.save(previous);
+      this.repaired = true;
     }
+  }
+
+  /**
+   * Temporary, for the one-off tombstone sweep (POST /api/admin/sweep, to be removed after its run): does nothing itself.
+   * Reaching the object constructed it, and the constructor fixed a stale record; this reports whether a record is
+   * stored and whether this instance's construction fixed it (once: a second sweep of a live instance reports false).
+   * Counts only, never a field of the record. A read tolerates a missing table, so an empty object stays empty.
+   */
+  async sweep() {
+    return guarded(() => {
+      const fixed = this.repaired;
+      this.repaired = false;
+      return { stored: this.read() !== null, fixed };
+    });
   }
 
   // Probing a random ID must not materialise storage, so reads tolerate a missing table.

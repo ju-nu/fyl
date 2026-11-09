@@ -1,4 +1,7 @@
 """scripts/admin.py, the operator CLI, against a fake operator API on loopback."""
+import contextlib
+import io
+import json
 import os
 from pathlib import Path
 import shutil
@@ -9,7 +12,15 @@ import unittest
 from unittest import mock
 
 from fake_operator import ACCESS, ACCESS_NAMES, ADMIN, CASE, CLIENT_ID, CLIENT_SECRET, ID, NOTE_REQUIRED, OTHER, SIGN_IN, TOKEN, serve, view
-from native import load_script
+from native import ROOT, load_script
+
+# The one-off tombstone sweep (temporary, removed with the command): the Cloudflare API token it lists objects with,
+# and the Worker and account of wrangler.jsonc that it lists them for.
+CF_TOKEN = 'cloudflare-' + 'c' * 40
+_CONFIG = json.loads('\n'.join(line for line in (ROOT / 'wrangler.jsonc').read_text().splitlines() if not line.lstrip().startswith('//')))
+ACCOUNT, SCRIPT = _CONFIG['account_id'], _CONFIG['name']
+NAMESPACES = '/client/v4/accounts/{}/workers/durable_objects/namespaces'.format(ACCOUNT)
+OBJECTS = NAMESPACES + '/ns-transfer/objects'
 
 
 class AdminTests(unittest.TestCase):
@@ -487,6 +498,158 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(self.admin('status').stderr.strip(), 'HTTP 401: Operator token required.')
         self.routes[('GET', '/api/admin/uploads')] = (200, b'<html>')
         self.assertIn('not a JSON object', self.admin('status').stderr)
+
+
+class SweepTests(unittest.TestCase):
+    """npm run admin -- sweep against a fake operator API and a fake Cloudflare API, both on loopback."""
+
+    def setUp(self):
+        self.server, self.cloudflare = serve(self), serve(self)
+        self.origin = 'http://127.0.0.1:{}'.format(self.server.server_port)
+        self.api = 'http://127.0.0.1:{}/client/v4'.format(self.cloudflare.server_port)
+        # 110 objects over two pages, every third without stored data: 74 with it, in batches of 50 and 24.
+        self.objects = [{'id': '{:064x}'.format(index + 1), 'hasStoredData': index % 3 != 2} for index in range(110)]
+        self.stored = [item['id'] for item in self.objects if item['hasStoredData']]
+
+        def ok(result, **info):
+            return 200, {'success': True, 'errors': [], 'result': result, 'result_info': info}
+        self.cloudflare.routes.update({
+            ('GET', NAMESPACES + '?page=1&per_page=100'): ok([{'id': 'ns-other', 'name': 'other_Transfer', 'script': 'other', 'class': 'Transfer'},
+                                                              {'id': 'ns-budget', 'name': SCRIPT + '_Budget', 'script': SCRIPT, 'class': 'Budget'}],
+                                                             page=1, per_page=100, total_pages=2),
+            ('GET', NAMESPACES + '?page=2&per_page=100'): ok([{'id': 'ns-transfer', 'name': SCRIPT + '_Transfer', 'script': SCRIPT, 'class': 'Transfer'}],
+                                                             page=2, per_page=100, total_pages=2),
+            ('GET', OBJECTS + '?limit=1000'): ok(self.objects[:60], count=60, cursor='page-two'),
+            ('GET', OBJECTS + '?limit=1000&cursor=page-two'): ok(self.objects[60:], count=50, cursor=''),
+        })
+
+    def answers(self, *answers):
+        """The Worker's sweep answers, one per request in order."""
+        queue = list(answers)
+        self.server.routes[('POST', '/api/admin/sweep')] = lambda headers: queue.pop(0)
+
+    def admin(self, *args):
+        env = {**{name: value for name, value in os.environ.items() if name not in ACCESS_NAMES + ('CLOUDFLARE_API_TOKEN',)},
+               'FYL_ADMIN_TOKEN': TOKEN, 'FYL_BASE_URL': self.origin, 'FYL_CLOUDFLARE_API': self.api, 'CLOUDFLARE_API_TOKEN': CF_TOKEN,
+               'PYTHONDONTWRITEBYTECODE': '1'}
+        result = subprocess.run([sys.executable, '-I', str(ADMIN), *args], stdin=subprocess.DEVNULL, capture_output=True, text=True, env=env, timeout=30)
+        for secret in (TOKEN, CF_TOKEN):
+            self.assertNotIn(secret, result.stdout + result.stderr)
+        return result
+
+    def listed(self):
+        """The Cloudflare API requests, each with the Cloudflare token (never the operator's)."""
+        for request in self.cloudflare.requests:
+            self.assertEqual(request[3], 'Bearer ' + CF_TOKEN)
+        return [request[1] for request in self.cloudflare.requests]
+
+    def posted(self):
+        for request in self.server.requests:
+            self.assertEqual(request[3], 'Bearer ' + TOKEN)
+        return [(request[1], request[2]['ids']) for request in self.server.requests]
+
+    def test_sweeps_the_stored_objects_of_the_transfer_namespace_in_batches(self):
+        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 7, 'failed': 0}), (200, {'checked': 24, 'stored': 23, 'fixed': 1, 'failed': 0}))
+        result = self.admin('sweep')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.listed(), [NAMESPACES + '?page=1&per_page=100', NAMESPACES + '?page=2&per_page=100',
+                                         OBJECTS + '?limit=1000', OBJECTS + '?limit=1000&cursor=page-two'])
+        self.assertEqual(self.posted(), [('/api/admin/sweep', self.stored[:50]), ('/api/admin/sweep', self.stored[50:])])
+        lines = result.stdout.splitlines()
+        self.assertEqual(lines, ['Listed:    110 Transfer objects, 74 objects with stored data',
+                                 'Batch 1/2: 50 checked · 50 stored · 7 fixed · 0 failed',
+                                 'Batch 2/2: 74 checked · 73 stored · 8 fixed · 0 failed',
+                                 'Swept 74 objects: 73 stored, 8 fixed, 0 failed.'])
+        # Counts only: no object id is printed.
+        self.assertNotIn(self.stored[0], result.stdout + result.stderr)
+
+    def test_all_takes_every_object_and_dry_run_sends_nothing(self):
+        dry = self.admin('sweep', '--dry-run')
+        self.assertEqual(dry.returncode, 0, dry.stderr)
+        self.assertIn('Dry run: would sweep 74 objects with stored data in 2 batches of up to 50. Nothing was sent.', dry.stdout)
+        everything = self.admin('sweep', '--all', '--dry-run')
+        self.assertIn('Listed:    110 Transfer objects, 110 objects', everything.stdout)
+        self.assertIn('Dry run: would sweep 110 objects in 3 batches of up to 50.', everything.stdout)
+        self.assertEqual(self.server.requests, [])
+        self.answers(*[(200, {'checked': size, 'stored': size, 'fixed': 0, 'failed': 0}) for size in (50, 50, 10)])
+        result = self.admin('sweep', '--all')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([len(ids) for _, ids in self.posted()], [50, 50, 10])
+        self.assertEqual(sum((ids for _, ids in self.posted()), []), [item['id'] for item in self.objects])
+        self.assertIn('Swept 110 objects: 110 stored, 0 fixed, 0 failed.', result.stdout)
+
+    def test_a_failed_object_or_batch_exits_1(self):
+        self.answers((200, {'checked': 50, 'stored': 49, 'fixed': 2, 'failed': 1}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'failed': 0}))
+        failed = self.admin('sweep')
+        self.assertEqual(failed.returncode, 1)
+        self.assertIn('Swept 74 objects: 73 stored, 2 fixed, 1 failed.', failed.stdout)
+        # A refused batch stops the run with the Worker's message, after the totals so far.
+        self.server.requests.clear()
+        self.answers((200, {'checked': 50, 'stored': 50, 'fixed': 0, 'failed': 0}), (400, {'error': 'Send {"ids": [...]}.', 'code': 'request_failed'}))
+        refused = self.admin('sweep')
+        self.assertEqual(refused.returncode, 1)
+        self.assertIn('Batch 1/2: 50 checked', refused.stdout)
+        self.assertNotIn('Swept', refused.stdout)
+        self.assertIn('HTTP 400: Send {"ids": [...]}.', refused.stderr)
+        # A Worker without the route.
+        del self.server.routes[('POST', '/api/admin/sweep')]
+        older = self.admin('sweep')
+        self.assertEqual(older.returncode, 1)
+        self.assertIn('is this command known to its version?', older.stderr)
+        # An answer without its counts.
+        self.answers((200, {'ok': True}))
+        self.assertIn('had no counts', self.admin('sweep').stderr)
+
+    def test_the_cloudflare_listing_must_be_clean(self):
+        # No token: nothing is listed or sent.
+        env = {name: value for name, value in os.environ.items() if name != 'CLOUDFLARE_API_TOKEN'}
+        module = load_script('admin')
+        module.ENV_FILE = Path(tempfile.gettempdir()) / 'fyl-sweep-no-env' / '.env'
+        with mock.patch.dict(os.environ, env, clear=True), self.assertRaises(SystemExit) as missing:
+            module.cloudflare('/x')
+        self.assertIn('Set CLOUDFLARE_API_TOKEN', str(missing.exception))
+        # Cloudflare refuses the token: its message, never the token.
+        self.cloudflare.routes[('GET', NAMESPACES + '?page=1&per_page=100')] = (403, {'success': False, 'errors': [{'code': 10000, 'message': 'Authentication error'}], 'result': None})
+        denied = self.admin('sweep', '--dry-run')
+        self.assertEqual(denied.returncode, 1)
+        self.assertIn('Cloudflare API HTTP 403: Authentication error', denied.stderr)
+        # No Transfer namespace of this Worker.
+        self.cloudflare.routes[('GET', NAMESPACES + '?page=1&per_page=100')] = (200, {'success': True, 'result': [], 'result_info': {'total_pages': 1}})
+        absent = self.admin('sweep')
+        self.assertIn('lists 0 Durable Object namespaces of {} class Transfer'.format(SCRIPT), absent.stderr)
+        # An id that is not 64 lowercase hex digits stops everything before a batch is sent.
+        self.setUp()
+        self.objects[70]['id'] = 'F' * 64
+        bad = self.admin('sweep')
+        self.assertEqual(bad.returncode, 1)
+        self.assertIn('not 64 lowercase hex digits. Nothing was sent.', bad.stderr)
+        self.assertEqual(self.server.requests, [])
+        # The token only travels over HTTPS, or plain HTTP on loopback.
+        module.CLOUDFLARE_API = 'http://api.cloudflare.com/client/v4'
+        with mock.patch.dict(os.environ, {'CLOUDFLARE_API_TOKEN': CF_TOKEN}), self.assertRaises(SystemExit) as plain:
+            module.cloudflare('/x')
+        self.assertIn('must start with https://', str(plain.exception))
+
+    def test_a_rate_limited_batch_is_sent_again(self):
+        self.answers((429, {'error': 'Too many requests. Please try again shortly.', 'code': 'rate_limited'}),
+                     (200, {'checked': 50, 'stored': 50, 'fixed': 0, 'failed': 0}), (200, {'checked': 24, 'stored': 24, 'fixed': 0, 'failed': 0}))
+        module = load_script('admin')
+        module.BASE, module.CLOUDFLARE_API, module.ENV_FILE = self.origin, self.api, Path(tempfile.gettempdir()) / 'fyl-sweep-no-env' / '.env'
+        output = io.StringIO()
+        with mock.patch.dict(os.environ, {'FYL_ADMIN_TOKEN': TOKEN, 'CLOUDFLARE_API_TOKEN': CF_TOKEN}), \
+                mock.patch.object(module.time, 'sleep') as slept, contextlib.redirect_stdout(output):
+            module.main(['sweep'])
+        self.assertEqual(slept.call_args_list, [mock.call(module.SWEEP_RETRY_SECONDS)])
+        self.assertEqual([len(ids) for _, ids in self.posted()], [50, 50, 24])
+        self.assertIn('Swept 74 objects: 74 stored, 0 fixed, 0 failed.', output.getvalue())
+        # It gives up after SWEEP_RETRIES more tries.
+        self.server.requests.clear()
+        self.answers(*[(429, {'error': 'Too many requests.', 'code': 'rate_limited'})] * (module.SWEEP_RETRIES + 1))
+        with mock.patch.dict(os.environ, {'FYL_ADMIN_TOKEN': TOKEN, 'CLOUDFLARE_API_TOKEN': CF_TOKEN}), \
+                mock.patch.object(module.time, 'sleep'), contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as stopped:
+            module.main(['sweep'])
+        self.assertIn('still rate limited', str(stopped.exception))
+        self.assertEqual(len(self.server.requests), module.SWEEP_RETRIES + 1)
 
 
 if __name__ == '__main__':
