@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { evictDurableObject, runInDurableObject, runDurableObjectAlarm } from 'cloudflare:test';
+import { runInDurableObject, runDurableObjectAlarm } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { randomToken, networkOf, networkHash, digest, budget, unwrap, PART_BYTES, TOMBSTONE_TTL_MS } from '../src/shared';
 import { call, post, init, part, finish, file, pathOf, pageOf, operator, record, edit, swap, useNetworkPrefix, type Session } from './helpers';
@@ -435,34 +435,6 @@ describe('fyl.at Worker + real local R2/SQLite bindings', () => {
       expect((await operator('/api/admin/takedown', { method: 'POST', body: JSON.stringify({ id: receipt.id, note: 'during a download' }) })).status).toBe(200);
       expect(await record(session.uploadId)).toMatchObject({ status: 'removed', clean: true });
       expect(await record(session.uploadId)).not.toHaveProperty('session');
-    });
-    it('clears the name of a clean record that kept one and gives it a purge date when it next starts; a takedown keeps none', async () => {
-      // As cleanups until 2026-10-27 left them: name, fingerprint and a one-time session kept, no purge date, no alarm.
-      const stale = async (status: string) => {
-        const { session, receipt } = await file(true), stub = env.TRANSFERS.getByName(session.uploadId);
-        await edit(session.uploadId, record => {
-          Object.assign(record, { status, clean: true, name: 'kept.txt', fingerprint: 'f'.repeat(64), session: { network: 'a'.repeat(64), guesser: 'g', startedAt: 1, lastAt: 1, open: 0 } });
-          delete record.purgeAt; delete record.verifyAt;
-        });
-        await runInDurableObject(stub, (_instance, ctx) => ctx.storage.deleteAlarm());
-        await evictDurableObject(stub);
-        return { session, receipt, stub };
-      };
-      const { session, receipt, stub } = await stale('expired');
-      const view = await (await operator(`/api/admin/transfers/${receipt.id}`)).json<{ name: string | null }>();
-      expect(view.name).toBeNull();
-      const fixed = await record(session.uploadId);
-      expect([fixed.name, fixed.fingerprint]).toEqual(['', '']);
-      expect(fixed).not.toHaveProperty('session');
-      expect(fixed.purgeAt).toBeGreaterThan(Date.now() + TOMBSTONE_TTL_MS - 60000);
-      expect(await runInDurableObject(stub, (_instance, ctx) => ctx.storage.getAlarm())).toBe(fixed.purgeAt);
-      expect((await call(pathOf(receipt.url))).status).toBe(410);
-      // A takedown loses the name too but stays for good: no purge date, no alarm.
-      const removed = await stale('removed');
-      expect((await call(pathOf(removed.receipt.url))).status).toBe(410);
-      const kept = await record(removed.session.uploadId);
-      expect([kept.name, kept.fingerprint, kept.purgeAt]).toEqual(['', '', undefined]);
-      expect(await runInDurableObject(removed.stub, (_instance, ctx) => ctx.storage.getAlarm())).toBeNull();
     });
   });
 

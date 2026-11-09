@@ -57,46 +57,6 @@ const CHANGED = 'This part differs from the one this upload pinned: the file cha
 export class Transfer extends DurableObject<Env> {
   /** Set once the record is known to be stored; its tables are created on the first write, not on reads. */
   private stored = false;
-  /** Temporary, for the one-off tombstone sweep (sweep()): whether this instance's construction fixed a stale record. */
-  private repaired = false;
-
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
-    // A clean record keeps no name, fingerprint or download session, and every closed link but a takedown has a purge
-    // date. Cleanups until 2026-10-27 kept the name and fingerprint and set no purge date, so no alarm ever reaches such
-    // a record; cleanups before 2026-10-30 16:40 UTC kept a one-time link's session, and takedowns keep theirs for good.
-    // Such a record is fixed when a request next reaches it, so this stays for good (docs/ARCHITECTURE.md).
-    const previous = this.read();
-    if (previous?.clean && (previous.name || previous.fingerprint || previous.session || (!previous.purgeAt && previous.status !== 'removed'))) {
-      previous.name = ''; previous.fingerprint = ''; delete previous.session;
-      if (!previous.purgeAt && previous.status !== 'removed') {
-        previous.purgeAt = Date.now() + TOMBSTONE_TTL_MS;
-        if (!previous.verifyAt) this.ctx.waitUntil(this.ctx.storage.setAlarm(previous.purgeAt));
-      }
-      this.save(previous);
-      this.repaired = true;
-    }
-  }
-
-  /**
-   * Temporary, for the one-off tombstone sweep (POST /api/admin/sweep, to be removed after its run): does nothing itself.
-   * Reaching the object constructed it, and the constructor fixed a stale record; this reports whether a record is
-   * stored and whether this instance's construction fixed it (once: a second sweep of a live instance reports false).
-   * `leftover` is the evidence the guard's removal needs: a record that still holds a name, fingerprint or session
-   * although it is clean, or although no alarm will ever reach it (a cleanup that gave up before retries existed leaves
-   * such a record not clean, which the guard does not fix). Counts only, never a field of the record. A read tolerates
-   * a missing table, so an empty object stays empty.
-   */
-  async sweep() {
-    return guarded(async () => {
-      const fixed = this.repaired;
-      this.repaired = false;
-      const record = this.read();
-      const leftover = record !== null && Boolean(record.name || record.fingerprint || record.session)
-        && (record.clean || await this.ctx.storage.getAlarm() === null);
-      return { stored: record !== null, fixed, leftover };
-    });
-  }
 
   // Probing a random ID must not materialise storage, so reads tolerate a missing table.
   private read(): TransferRecord | null {
