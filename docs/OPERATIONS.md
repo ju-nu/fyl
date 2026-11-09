@@ -171,9 +171,11 @@ npm run admin -- reconcile                         # right after a rollback, and
 - A tag names the package version, not one build: every deploy between two releases (a dependency bump, a server fix)
   carries the same tag. Pick the target by its time, its id, or the commit in its message (`fyl <version> <commit>`,
   since the deploy after 1.0.1; older ones say only `fyl <version>`), and check that commit on `main` first. Of the
-  builds tagged `v1.0.1`, the one of #8 (the temporary sweep of old tombstones, removed again by #9) is not one to roll back to.
+  builds tagged `v1.0.1`, the one of #8 (the temporary sweep of old tombstones, removed again by #9; version
+  `32a6b7f1-55b2-42cc-918f-fbc1e69dd91b`, 2026-11-09 15:12 UTC) is not one to roll back to: `WITHDRAWN` in
+  `scripts/rollback.py` refuses it.
 - Only versions tagged `v1.0.0` or later are targets (`ROLLBACK_FLOOR`). Untagged versions (secret or dashboard
-  changes, uploads) are refused, and so is every version tagged in the old numbering (`v2.0.0` to `v2.5.1`,
+  changes, uploads) and the builds in `WITHDRAWN` are refused, and so is every version tagged in the old numbering (`v2.0.0` to `v2.5.1`,
   `OLD_NUMBERING`), which came before 1.0.0 whatever its number says. The first possible target is the `v1.0.0`
   version itself, once something newer serves.
 - A tagged version that provably never served traffic (uploaded, in none of the listed deployments) also needs

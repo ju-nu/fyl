@@ -20,6 +20,7 @@ VERSIONS = [
     {'id': 'tagged-2-5-1', 'metadata': {'created_on': '2026-11-09T10:00:00Z'}, 'annotations': {'workers/tag': 'v2.5.1', 'workers/message': 'fyl 2.5.1'}},
     {'id': 'tagged-1-0-0', 'metadata': {'created_on': '2026-11-10T10:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.0', 'workers/message': 'fyl 1.0.0'}},
     {'id': 'tagged-1-0-1', 'metadata': {'created_on': '2026-11-10T12:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.1', 'workers/message': 'fyl 1.0.1 4ba433e2b1c0d3f4a5b6c7d8e9f0a1b2c3d4e5f6'}},
+    {'id': '32a6b7f1-55b2-42cc-918f-fbc1e69dd91b', 'metadata': {'created_on': '2026-11-10T11:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.1', 'workers/message': 'fyl 1.0.1'}},
     {'id': 'hotfix-0-9-0', 'metadata': {'created_on': '2026-11-10T13:00:00Z'}, 'annotations': {'workers/tag': 'v0.9.0'}},
     {'id': 'uploaded-1-0-2', 'metadata': {'created_on': '2026-11-10T14:00:00Z'}, 'annotations': {'workers/tag': 'v1.0.2'}},
 ]
@@ -65,6 +66,7 @@ class RollbackTests(unittest.TestCase):
         for name in ('old-checkout', 'tagged-2-3-0', 'tagged-2-4-0', 'tagged-2-5-1'):
             self.assertRegex(verdicts[name], r'  old numbering  ', name)
         self.assertRegex(verdicts['hotfix-0-9-0'], r'  below the floor  ')
+        self.assertRegex(verdicts['32a6b7f1-55b2-42cc-918f-fbc1e69dd91b'], r'  withdrawn  ')
         self.assertRegex(verdicts['tagged-1-0-0'], r'  target  ')
         self.assertRegex(verdicts['tagged-1-0-1'], r'  serving  ')
         self.assertRegex(verdicts['uploaded-1-0-2'], r'  target, never served  ')
@@ -91,6 +93,7 @@ class RollbackTests(unittest.TestCase):
                                ('tagged-2-3-0', 'v2.3.0 is of the old numbering (v2.0.0 to v2.5.1), from before v1.0.0'),
                                ('old-checkout', 'v2.1.2 is of the old numbering'), ('tagged-2-4-0', 'v2.4.0 is of the old numbering'),
                                ('tagged-2-5-1', 'v2.5.1 is of the old numbering'), ('hotfix-0-9-0', 'v0.9.0 is older than the floor v1.0.0'),
+                               ('32a6b7f1-55b2-42cc-918f-fbc1e69dd91b', 'this build is withdrawn: the temporary sweep of old Transfer tombstones (#8'),
                                ('not-listed', 'not among the Worker')):
             for args in ((), ('--yes', '--accept-caveats')):
                 code, _ = self.rollback(target, *args)
