@@ -31,7 +31,7 @@
     "tests/vectors/ change, and weekly."
   ],
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
+    "@biomejs/biome": "2.6.3",
     "@cloudflare/vitest-plugin": "1.4.9",
     "esbuild": "0.28.2",
     "typescript": "7.0.2",
