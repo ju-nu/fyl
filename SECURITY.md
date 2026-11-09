@@ -206,11 +206,11 @@ upload.
 
 ### Source, builds and deploys
 
-No credential is in this repository: secrets live in Cloudflare and in GitHub repository secrets, local `.dev.vars`,
-`.env*` (except `.env.example`, which lists names only) and `.wrangler/` are ignored, and `Checks` runs gitleaks over
+No credential is in this repository: secrets live in Cloudflare and in the secrets of the GitHub environments
+`production` and `monitor` (both limited to `main`); local `.dev.vars`, `.env*` (except `.env.example`, which lists names only) and `.wrangler/` are ignored, and `Checks` runs gitleaks over
 the tree and every change's commits (and the whole history weekly). Production deploys come only from the
-`production` branch, which the Deploy gate moves after `Checks` passed, using a fine-grained token limited to this
-repository; previews never get production storage. Actions are pinned to immutable commits, which Dependabot updates
+`production` branch, which the Deploy gate moves after `Checks` passed, using this repository's write deploy key (secret
+`FYL_DEPLOY_KEY`), which reaches only this repository and which the production ruleset lets through; previews never get production storage. Actions are pinned to immutable commits, which Dependabot updates
 through reviewed pull requests; release publishing runs only for the commit production has. The CLI binaries are
 rebuilt and compared byte for byte in CI. Secret rotation, emergency takedown and operational limits are in
 [docs/OPERATIONS.md](docs/OPERATIONS.md).
@@ -228,6 +228,6 @@ rebuilt and compared byte for byte in CI. Secret rotation, emergency takedown an
 - **No malware scanning.** Raw files are stored as sent; encrypted ones can't be scanned at all.
 - **Password pauses can be repeated** by a distributed guesser (50 wrong tries from anywhere pause the link for 15
   minutes); the sender can lift them.
-- **HSTS** runs six months without `includeSubDomains` or preload.
+- **HSTS** (12 months, `includeSubDomains`) is not preloaded.
 - The macOS binaries are signed ad hoc, not notarised: a browser-downloaded binary is blocked by Gatekeeper.
 - Further accepted trade-offs of the design are listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#known-limitations).

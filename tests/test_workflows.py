@@ -65,7 +65,9 @@ class WorkflowTests(unittest.TestCase):
         for has, code in (('true', 0), ('false', 1)):
             result = subprocess.run(['bash', '-e', '-c', guard], env={**os.environ, 'HAS_TOKEN': has}, capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, code, has)
-        self.assertIn('::error::Set the repository secret FYL_DEPLOY_KEY', result.stdout)
+        self.assertIn('::error::Set FYL_DEPLOY_KEY in the environment production', result.stdout)
+        # The key is a secret of the environment production, which admits main only; the promote job names it.
+        self.assertRegex(deploy, r'(?m)^  promote:\n(?:    .*\n)*?    environment: production\n')
 
     def test_a_release_follows_the_deploy_gate(self):
         release = self.read('release.yml')
@@ -77,7 +79,11 @@ class WorkflowTests(unittest.TestCase):
 
     def test_the_monitor_runs_hourly_and_keeps_its_tokens_to_the_script(self):
         monitor = self.read('monitor.yml')
-        self.assertRegex(monitor, r"(?m)^    - cron: '[0-5]?[0-9] \* \* \* \*'$")
+        self.assertRegex(monitor, r"(?m)^    - cron: '23 \* \* \* \*'$")
+        # Its secrets and the alert variable live in the environment monitor, which admits main only.
+        self.assertRegex(monitor, r'(?m)^  monitor:\n    environment: monitor\n')
+        operations = (ROOT / 'docs' / 'OPERATIONS.md').read_text()
+        self.assertIn('runs hourly (minute 23)', operations)
         self.assertIn('workflow_dispatch:', monitor)
         self.assertIn('60 days', monitor)
         # The billing alert (a repository variable, 15 dollars without it), the monitor token and the admin host's Access
