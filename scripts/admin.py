@@ -227,12 +227,12 @@ def show_status(status):
             print("            " + " · ".join("{} {}".format(name, plain(value, name)) for name, value in rest.items()))
     network = status.get("network")
     if isinstance(network, dict):
-        # Stored at once: what the uploads a network started may hold until they are cleaned up (- from older Workers).
-        stored = field(network, "maxStored", "maxStoredBytes")
+        # Stored at once: what the uploads a network started may hold until they are cleaned up.
+        stored = network.get("maxStored")
         print("Network:   per day {} and {} uploads · {} running at once · {} stored at once".format(
             size(network["maxBytes"]) if count(network.get("maxBytes")) else "-", network.get("maxUploads", "-"),
             network.get("maxActive", "-"), size(stored) if count(stored) else "-"))
-        rest = {name: value for name, value in network.items() if name not in ("maxBytes", "maxUploads", "maxActive", "maxStored", "maxStoredBytes")}
+        rest = {name: value for name, value in network.items() if name not in ("maxBytes", "maxUploads", "maxActive", "maxStored")}
         if rest:
             print("            " + " · ".join("{} {}".format(name, plain(value, name)) for name, value in rest.items()))
     if "openReports" in status:

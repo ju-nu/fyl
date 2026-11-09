@@ -821,7 +821,7 @@ function pageLanguage(request: Request) {
 }
 
 /**
- * Answers a download link opened in a browser with dist/download.html: <html data-state> and its flags pick what
+ * Answers a download link opened in a browser with dist/<lang>/download.html (i18n/templates/download.html): <html data-state> and its flags pick what
  * it shows, and the JSON block in <head> carries the details. The page is served from /d/<id>/<name>, so its
  * assets use absolute paths (no <base>: it would send in-page links such as #content to /). Pages never send
  * WWW-Authenticate, so browsers never show their own password dialog. An encrypted transfer's page is

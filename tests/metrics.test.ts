@@ -149,7 +149,8 @@ describe('operational metrics', () => {
     const payload = new TextEncoder().encode('channel fixture');
     // A stable id (client key and Idempotency-Key), so its Transfer can count before the first request reaches it.
     const started = async (agent: string, extra: Record<string, unknown> = {}) => {
-      const clientKey = 'k'.repeat(40) + String(Math.floor(Math.random() * 900) + 100), idempotency = 'idem-' + clientKey.slice(-3) + '-0123456789';
+      // Unique per call: two calls on one key would replay each other's start (409).
+      const unique = crypto.randomUUID().replaceAll('-', ''), clientKey = 'k'.repeat(11) + unique, idempotency = 'idem-' + unique;
       const id = await digest(clientKey + ':' + idempotency), metrics = dataset();
       const restore = await swap(env.TRANSFERS.getByName(id), () => ({ METRICS: metrics.METRICS }));
       try {

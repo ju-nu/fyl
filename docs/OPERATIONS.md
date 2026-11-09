@@ -140,8 +140,8 @@ release, and 2.0.0 to 2.5.1 are never used again.
    `scripts/release.sh`: only for the commit production has, it waits until `https://fyl.at/cli/latest` serves the new
    version (60 tries, 20 s apart) and publishes the GitHub release `v<version>` with the four binaries and
    `SHA256SUMS`, its notes being only that version's CHANGELOG section (`scripts/release_notes.py`). An existing
-   release must carry exactly the committed `SHA256SUMS`; it is never overwritten. The bridge `v2.5.1` is published
-   the same way the first time this runs, without the Latest mark, and checked on every later run.
+   release must carry exactly the committed `SHA256SUMS`; it is never overwritten. The bridge 2.5.1 gets no release
+   (fyl.at serves it from `dist/cli/2.5.1/`); its binary must still report its version.
 5. Check that `/cli/latest` and `/cli/<version>/SHA256SUMS` match the release assets, run `npm run admin -- ready` and
    `npm run smoke` (`-- --multipart` after any change to the upload or download path).
 
@@ -154,7 +154,7 @@ through `workflow_run`, which GitHub allows to chain only three levels deep: kee
 
 Dependabot (`.github/dependabot.yml`) opens weekly update PRs for npm, Cargo (`cli-rs/`) and GitHub Actions (minor and
 patch grouped per ecosystem, majors separately, versions at least 14 days old). They go through `Checks` like any PR,
-and merging one deploys; a Cargo update changes the CLI, so it needs a version bump and `npm run build:native`.
+and merging one deploys; a Cargo update changes the CLI, so it needs a version bump, `npm run build:native` and `python3 scripts/cli_licenses.py` (the license texts of the linked crates; the native job checks them).
 
 ### Rollback
 

@@ -195,7 +195,7 @@ export function statsQueries(days: number, now: number): Record<keyof typeof LIM
 }
 
 /**
- * The dashboard's days are Vienna days (the owner's); hours are UTC hours, which are Vienna's hours too (its offsets are
+ * The dashboard's days are Vienna days (TIME_ZONE, the operator's); hours are UTC hours, which are Vienna's hours too (its offsets are
  * whole hours), so only their labels change. Days are 23 to 25 hours long around a DST change.
  */
 const TIME_ZONE = 'Europe/Vienna';

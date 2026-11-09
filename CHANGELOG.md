@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — 2026-11-09
+
+- **CLI dependencies:** getrandom 0.4 and crc32fast 1.5.3. Encryption, checksums and the zip format are unchanged;
+  every test vector passes as before.
+- **Releases** follow the new numbering only: the 2.5.1 bridge for installed 2.x CLIs stays on fyl.at
+  (`/cli/2.5.1/`) and gets no GitHub release.
+
 ## 1.0.0 — 2026-11-09
 
 The first public release of fyl.at: anonymous, temporary file sharing on Cloudflare Workers, with its source open
@@ -31,7 +38,7 @@ under the [GNU AGPL-3.0](LICENSE). Drop a file or a folder, choose when the link
   and a file under review can't be downloaded.
 - **No account, no tracking cookie,** fair-use limits per network, and [llms.txt](https://fyl.at/llms.txt) for agents.
 
-### New in this release
+### Changes since 2.5.1 (for 2.x users and operators)
 
 - **Public source.** Every page's footer links the source repository, and the privacy page says that the code of
   fyl.at and the CLI is public and where each release lists its checksums. `/.well-known/security.txt` names

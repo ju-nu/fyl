@@ -18,14 +18,14 @@ Crates:
   cmov 0.5.4 (Apache-2.0 OR MIT)
   const-oid 0.10.2 (Apache-2.0 OR MIT)
   cpufeatures 0.3.1 (MIT OR Apache-2.0)
-  crc32fast 1.5.0 (MIT OR Apache-2.0)
+  crc32fast 1.5.4 (MIT OR Apache-2.0)
   crypto-common 0.2.2 (MIT OR Apache-2.0)
   ctutils 0.4.8 (Apache-2.0 OR MIT)
   curve25519-dalek 5.0.0 (BSD-3-Clause)
   digest 0.11.3 (MIT OR Apache-2.0)
   errno 0.3.14 (MIT OR Apache-2.0)
   getrandom 0.2.17 (MIT OR Apache-2.0)
-  getrandom 0.3.4 (MIT OR Apache-2.0)
+  getrandom 0.4.3 (MIT OR Apache-2.0)
   hkdf 0.13.0 (MIT OR Apache-2.0)
   hmac 0.13.0 (MIT OR Apache-2.0)
   http 1.5.0 (MIT OR Apache-2.0)
@@ -2454,7 +2454,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ====================================================================================================
-crc32fast 1.5.0 (MIT OR Apache-2.0)
+crc32fast 1.5.4 (MIT OR Apache-2.0)
 ====================================================================================================
 
 --- LICENSE-APACHE ---
@@ -3904,7 +3904,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ====================================================================================================
-getrandom 0.3.4 (MIT OR Apache-2.0)
+getrandom 0.4.3 (MIT OR Apache-2.0)
 ====================================================================================================
 
 --- LICENSE-APACHE ---
@@ -4113,7 +4113,7 @@ limitations under the License.
 
 --- LICENSE-MIT ---
 
-Copyright (c) 2018-2025 The rust-random Project Developers
+Copyright (c) 2018-2026 The rust-random Project Developers
 Copyright (c) 2014 The Rust Project Developers
 
 Permission is hereby granted, free of charge, to any

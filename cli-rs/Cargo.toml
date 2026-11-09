@@ -1,6 +1,6 @@
 [package]
 name = "fyl"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 rust-version = "1.88"
 description = "fyl.at command-line client: upload a file, get a download link"
@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 ureq = { version = "3", default-features = false, features = ["rustls"] }
 serde_json = "1"
-getrandom = "0.3"
+getrandom = "0.4"
 signal-hook = "0.4"
 md-5 = "0.11"
 sha2 = "0.11"
@@ -25,7 +25,7 @@ hkdf = { version = "0.13.0", default-features = false }
 hmac = { version = "0.13.0", default-features = false }
 # Folder uploads (docs/FOLDER-ZIP.md): the CRC-32 of every file in the zip, and combining the CRCs of the runs a part
 # read to check the bytes sent (§7.3)
-crc32fast = { version = "1.5.0", default-features = false }
+crc32fast = { version = "1.5.3", default-features = false }
 
 [dev-dependencies]
 # inflates the zlib-compressed CCTV vectors (docs/E2EE.md §16)

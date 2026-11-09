@@ -1,4 +1,4 @@
-# No trailing slash: a node_modules symlink (a worktree sharing the main checkout's) is ignored too.
+# No trailing slash: a node_modules symlink (a symlinked node_modules) is ignored too.
 node_modules
 .wrangler/
 .build/

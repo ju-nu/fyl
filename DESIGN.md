@@ -15,7 +15,7 @@ The product's main idea is that **the link exists before the file**. The interfa
 
 There is one sequence of motion that was designed as a whole: the button becomes the link, the line fills, turns green, then shows the time left. Everything else that moves is feedback.
 
-End-to-end encryption (2.4.0, docs/E2EE.md) is on for everyone: its option shows while the Worker's `/config.js` sets `e2ee: true` (`E2EE_ENABLED`, kept only as an emergency switch; encrypted transfers stay downloadable and resumable when it is off). The upload page encrypts in the browser (`api.js` with the core in `dist/e2ee/` and the part worker `e2ee/worker.js`), and the download page decrypts (`download.js`, the same worker, and the download service worker `/_dl/sw.js`). The encrypted states below fit the 2.3.0 design: no new colours, no new components, no "Preview" wording.
+End-to-end encryption (docs/E2EE.md) is on for everyone: its option shows while the Worker's `/config.js` sets `e2ee: true` (`E2EE_ENABLED`, kept only as an emergency switch; encrypted transfers stay downloadable and resumable when it is off). The upload page encrypts in the browser (`api.js` with the core in `dist/e2ee/` and the part worker `e2ee/worker.js`), and the download page decrypts (`download.js`, the same worker, and the download service worker `/_dl/sw.js`). The encrypted states below fit the 2.3.0 design: no new colours, no new components, no "Preview" wording.
 
 ## Themes and colour
 
@@ -26,7 +26,7 @@ The site follows the visitor's system theme by default. One 44 px button in the 
 - The choice is stored in `localStorage` under `fyl-theme`.
 - There is one `theme-color` meta per scheme: `#f5f7fb` and `#070b14`.
 
-**The design.** The layout, components, copy and behaviour, dressed in the palette of fyl.at 2.2.0, kept for its branding: slate ink, the cobalt accent with its gradient, "now." in blue, the soft glow and faint grid behind every page, the glowing upload card, and the always-dark mac-style terminal window. On top of it: a larger headline and promise line, the 2.2.0 file illustration in the empty drop zone, options that are on in the primary cobalt (the option toggles), helper text at 14 / 20 in a darker meta colour, no `fyl rm` sample in the companion (so *How it works* sits higher), and every terminal (companion, CLI dialog, the recipient's "Download in a terminal") in the same dark window.
+**The design.** The layout, components, copy and behaviour, dressed in fyl.at's original palette, kept for its branding: slate ink, the cobalt accent with its gradient, "now." in blue, the soft glow and faint grid behind every page, the glowing upload card, and the always-dark mac-style terminal window. On top of it: a larger headline and promise line, the 2.2.0 file illustration in the empty drop zone, options that are on in the primary cobalt (the option toggles), helper text at 14 / 20 in a darker meta colour, no `fyl rm` sample in the companion (so *How it works* sits higher), and every terminal (companion, CLI dialog, the recipient's "Download in a terminal") in the same dark window.
 
 All colours are tokens at the top of `dist/styles.css`. They are defined three times: light on `:root`, dark on `:root[data-theme="dark"]`, and dark again under `@media (prefers-color-scheme: dark)` scoped to `:root:not([data-theme="light"])`. Components use tokens only; the terminal window redefines the few it uses (see *Terminal*).
 
@@ -44,7 +44,7 @@ All colours are tokens at the top of `dist/styles.css`. They are defined three t
 | Secondary text | `--ink-2` | `#334155` | `#cbd5e1` | 9.48 : 1 / 12.59 : 1 on well |
 | Meta text (hints, descriptions, meta lines, footnotes, captions) | `--ink-3` | `#4b5870` | `#9aa8bd` | light 7.17 : 1 on surface, 6.98 on the panel's bottom, 6.68 on ground, 6.56 on well, 6.04 on well-2, 6.41 on the accent wash, 5.64 on ground under the cobalt glow; dark 7.20 on surface, 7.02 / 7.62 on the panel's top / bottom, 8.16 on ground, 7.75 on well, 6.36 on well-2, 6.07 on the accent wash, 6.00 under the glow (was `#526079` / `#94a3b8`, lowest 4.99 / 5.64 : 1) |
 | Primary fill (buttons, expiry pill) | `--accent-fill` / `--accent-fill-hover` | `linear-gradient(180deg, #3f6ef5, #2f5ee8 62%)` / `#3567f0 → #2552d6` | same | white under the label at least 4.76 : 1; `#3f6ef5` alone is 4.41 : 1, so the gradient reaches `#2f5ee8` (5.40 : 1) at 62 % of the height |
-| Accent (solid: caret, checkboxes, skip link) | `--accent` / `--accent-hover` | `#2f5ee8` / `#2552d6` | same | white 5.40 : 1 / 6.45 : 1 |
+| Accent (solid: caret, checkboxes, skip link) | `--accent` | `#2f5ee8` | same | white 5.40 : 1 |
 | Bright accent (wordmark dot, middle of "now.", the drop-zone arrow) | `--accent-bright` | `#3f6ef5` | `#5b8cff` | logo, 44 px heading and illustration only |
 | Accent text, links, focus ring | `--accent-ink` | `#2851d6` | `#9db9ff` | 6.49 : 1 / 8.95 : 1 |
 | Key after `#` in a link | `--accent-ink` on `--accent-wash` | `#2851d6` on `#eef2fe` | `#9db9ff` on `#192847` | 5.80 : 1 / 7.53 : 1 |
@@ -68,7 +68,7 @@ All colours are tokens at the top of `dist/styles.css`. They are defined three t
 | Card glow (tool panel, download card) | `--shadow-card` | depth plus `0 0 80px -30px` of `--accent-glow` `rgb(47 94 232/.45)` | the same with `rgb(63 110 245/.9)` | |
 | Backdrop | `--glow-a` / `--glow-b` / `--grid` | `rgb(63 110 245/.14)` / `rgb(34 197 94/.06)` / `rgb(15 23 42/.045)` | `rgb(63 110 245/.28)` / `rgb(34 197 94/.07)` / `rgb(148 163 184/.05)` | |
 
-Supporting tokens, defined in the same three places: `--on-accent` (text on the accent), `--accent-line`, `--accent-soft`, `--violet` (`#6d4cf5` / `#7c5cff`, only at the end of "now."), `--ok-line`, `--warn-ink`, `--toast-ink`, and the drop-zone illustration's tones from 2.2.0, `--art-back` / `--art-back-line` / `--art-sheet` / `--art-fold` / `--art-edge` / `--art-lines` (light `#e6ecf7` / `#c9d5ea` / `#ffffff` / `#e7eefc` / `#93a6c8` / `#c1cee6`; dark `#1b2742` / `#2c3b5c` / `#22304f` / `#2c3d63` / `#4b6190` / `#3d5280`), so the sheet sits lighter than the well in light and as a raised slate sheet in dark. `--brand-fill` (`linear-gradient(140deg, #5b8cff, #3f6ef5)`) is the wordmark tile.
+Supporting tokens, defined in the same three places: `--on-accent` (text on the accent), `--accent-soft`, `--violet` (`#6d4cf5` / `#7c5cff`, only at the end of "now."), `--ok-line`, `--warn-ink`, `--toast-ink`, and the drop-zone illustration's tones from 2.2.0, `--art-back` / `--art-back-line` / `--art-sheet` / `--art-fold` / `--art-edge` / `--art-lines` (light `#e6ecf7` / `#c9d5ea` / `#ffffff` / `#e7eefc` / `#93a6c8` / `#c1cee6`; dark `#1b2742` / `#2c3b5c` / `#22304f` / `#2c3d63` / `#4b6190` / `#3d5280`), so the sheet sits lighter than the well in light and as a raised slate sheet in dark. `--brand-fill` (`linear-gradient(140deg, #5b8cff, #3f6ef5)`) is the wordmark tile.
 
 Each colour has one meaning, and it carries no other:
 
@@ -81,7 +81,7 @@ The rest of the surface rules:
 
 - Option toggles take the primary fill when on (it fades in, with a soft cobalt glow under it) and their icon becomes a check.
 - Shadows: floating things (menu, toast, dialog), the cobalt glow under primary buttons, the card glow under the tool panel and the download card, and the terminal windows' drop shadow (not on the download page's window, which sits inside a disclosure). Every shadow has an offset or a blur.
-- Gradients only where 2.2.0 had them: the primary fill, the expiry pill and the option toggles that are on, the wordmark tile and favicon, "now." in the headline (cobalt to violet), the cobalt wash at the top of the drop zone, and a faint top-to-bottom fill on panels and dialogs.
+- Gradients only where the original design had them: the primary fill, the expiry pill and the option toggles that are on, the wordmark tile and favicon, "now." in the headline (cobalt to violet), the cobalt wash at the top of the drop zone, and a faint top-to-bottom fill on panels and dialogs.
 - Behind every page: a soft cobalt glow at the top right, a faint green one on the left, and a 56 px grid that fades out towards the bottom (`body::before` and `body::after`, fixed, decorative). No glass, no gradient borders.
 - Every terminal is the same always-dark window, in both themes, like a real terminal: the companion beside the tool, the commands in the CLI dialog, and the recipient's "Download in a terminal" once opened (see *Terminal*).
 - The favicon and the wordmark tile use the cobalt gradient `#5b8cff → #3f6ef5` with a white mark: a file whose top-right corner leaves as an arrow (filled sheet, 2.4-unit arrow stroke on a 24-unit grid; 18 px in the 28 px wordmark tile). Link previews use `dist/og/<lang>.jpg` and `dist/apple-touch-icon.png`, both rendered by `scripts/og_images.mjs`.
@@ -159,7 +159,6 @@ Rules:
 | Wells, menus, toast, `.btn-lg` | `--r-well` 12 |
 | Controls | `--r-ctl` 10 |
 | Option toggles, the expiry pill | 9 |
-| Small parts | `--r-sm` 6 |
 | Status chip, badges | 999 |
 
 **The lifetime line.**
@@ -179,7 +178,7 @@ Rules:
 - Under the download card, the trust line and *Report this file* start and end on the card's outer edge.
 - Columns side by side share one gap: the report form's category list and the name / email pair both use 16 px, so their second columns line up.
 - In every terminal window, text has one column (`--tw-x`, 18 px from the frame; see *Terminal*).
-- Measured, not eyeballed: a Playwright audit (kept out of the repository) collects the left and right edges of everything visible in each panel (painted boxes, icon ink, line starts) for every home state, the CLI dialog, the expiry dialog, the download page states, report and privacy, at 360, 390, 768 and 1440 px in both themes, and flags any two edges 0.5 to 8.5 px apart. For 2.3.1 it went from 158 findings (state and pair of edges) to 23, all intended: the command rows' fill hanging 8 px into the terminal's gutter (their text is on the column), the download page's terminal on phones (rows 4 px from the frame, so a link's first line fits), the privacy page's wrapped row of contents links (not a column), and the custom unit select's chevron meeting a switch track by chance at 360 px. The segmented controls' pills sit 3 px inside their well by design and are not measured.
+- Measured, not eyeballed: a Playwright measurement (run when the layout changes; the script is not part of the repository) collects the left and right edges of everything visible in each panel (painted boxes, icon ink, line starts) for every home state, the CLI dialog, the expiry dialog, the download page states, report and privacy, at 360, 390, 768 and 1440 px in both themes, and flags any two edges 0.5 to 8.5 px apart. For 2.3.1 it went from 158 findings (state and pair of edges) to 23, all intended: the command rows' fill hanging 8 px into the terminal's gutter (their text is on the column), the download page's terminal on phones (rows 4 px from the frame, so a link's first line fits), the privacy page's wrapped row of contents links (not a column), and the custom unit select's chevron meeting a switch track by chance at 360 px. The segmented controls' pills sit 3 px inside their well by design and are not measured.
 
 **Download page** (`i18n/templates/download.html`, built into `dist/<lang>/`, page styles in `download.css` on top of `styles.css`, behaviour in `download.js`):
 
@@ -203,7 +202,7 @@ Rules:
 
 **Drop zone.**
 
-- Empty, it shows the file illustration of 2.2.0: a sheet with a folded corner over a tilted back sheet, three text lines, a cobalt up arrow (`--accent-bright`) and a small green dot (`--life`), inline SVG in the 2.2.0 `--art-*` tones, 80 × 75 (56 × 52 on phones), over the cobalt wash at the top of the zone. It doesn't move, so reduced motion has nothing to remove.
+- Empty, it shows the original file illustration: a sheet with a folded corner over a tilted back sheet, three text lines, a cobalt up arrow (`--accent-bright`) and a small green dot (`--life`), inline SVG in the 2.2.0 `--art-*` tones, 80 × 75 (56 × 52 on phones), over the cobalt wash at the top of the zone. It doesn't move, so reduced motion has nothing to remove.
 - The whole zone is a native button: click, Enter or Space opens the picker.
 - Hover tint only on `(hover: hover) and (pointer: fine)`. Pressing scales it to `.99`.
 - Touch screens read "Choose a file"; fine pointers read "Drop, paste or choose a file" (the paste hint is desktop only).
@@ -241,7 +240,7 @@ Rules:
   - When it is on, the passphrase shows in full (three common words and two digits, such as `pilot-tide-arch-64`), with a 48 px "Make a new password" icon button.
   - Hint: "Send it separately from the link. It controls access; it doesn't encrypt."
   - The live command adds `--password`.
-- **Encryption** (2.4.0, on for everyone; `E2EE_ENABLED` only as an emergency switch; no "Preview" badge): the section's title is "End-to-end encryption (E2EE)", then "Encrypted in your browser. The key travels only in the link." The toggle and its section show while `/config.js` sets `e2ee: true` (see the top of this file); otherwise both are hidden and the section never opens.
+- **Encryption** (on for everyone; `E2EE_ENABLED` only as an emergency switch; no "Preview" badge): the section's title is "End-to-end encryption (E2EE)", then "Encrypted in your browser. The key travels only in the link." The toggle and its section show while `/config.js` sets `e2ee: true` (see the top of this file); otherwise both are hidden and the section never opens.
   - Under the description, a note: "Recipients need a browser or the fyl CLI; curl only gets encrypted data.", and under it the claims of docs/E2EE.md §1 as a hint: "Anyone with the full link can open it, and a lost key can't be recovered. In the browser, this relies on the code fyl.at serves." followed by the link *Why?* to `/privacy#encrypted` (accent ink, underlined; its 44 px target drawn by `::after`, so the line keeps its height). It opens in a new tab (`target="_blank" rel="noopener"`), so the chosen file and the options stay.
   - The live command adds `--encrypt`.
   - A browser without WebCrypto X25519 turns the toggle back off: "This browser can't encrypt files. Update it, or use the fyl tool with --encrypt." A file too large once encrypted (the limit counts stored bytes, 16 bytes more per 64 KiB): "This file is too large to encrypt. Turn encryption off, or choose a file a little smaller than 50 GB."
@@ -301,7 +300,7 @@ Rules:
   - *Terminal command without key*: "fyl download asks for the key."
 - Only what carries the key (the link, the key, the command with it, *Share*) counts as the key having left the tab for the warning before closing it.
 
-**Encrypted receipt** (2.4.0).
+**Encrypted receipt**.
 
 - The link with the key stays the one to share (like MEGA's export link). Under the actions (and the QR code when it is open) a note: "The key is only in this tab and in the link. fyl.at can’t show it again." It stays outside the block below, so whoever never opens that block still learns that closing the tab loses the key.
 - Under the note, at every width, one quiet line offers the parts: a shield icon (16 px, `--accent-ink`) and "Even safer: send the key separately" (`--t-small`, `--ink-2`), with a disclosure chevron at the line's end (`--ink-3`, turning 180° over `--d-base` when open). The whole line is one 44 px button with `aria-expanded` and `aria-controls`; hover (fine pointers) takes `--ink`. A new upload closes it again.
@@ -373,7 +372,7 @@ The private link is never shown in full on screen, including in the terminal com
 - **Waiting for the sender** (stalled):
   - "Waiting for the sender · 0.78 of 1.84 GB" and "Paused", over a grey line.
   - "The sender may have closed their tab. The upload continues if they resume it within 24 hours. Keep this page open."
-- **Encrypted** (2.4.0, `html[data-e2ee]`; `download.js` adds the state `key` and `data-key-error`).
+- **Encrypted** (`html[data-e2ee]`; `download.js` adds the state `key` and `data-key-error`).
   - **Address.** The key is read from the fragment once; the address becomes `/d/ID#KEY` (a crafted name or query in the path goes). The title stays "Encrypted file · fyl.at", every element and announcement with the decrypted name or the key (the terminal command; on the upload page the link, both values of the key block and the terminal command) has `translate="no"`, and the skip link moves focus without touching the fragment. A key sent in the path after `%23` is used, the address loses it, and a plain note says: "This key was sent to fyl.at in the address. For sensitive files, upload again and share the new link."
   - **Key missing:** the protected-card pattern with a key tile and "Key required", meta "size · Encrypted" (the file's own size, computed from the stored one).
     - "This link is missing its key. Paste the key the sender gave you." over a mono field (outside any form, no name, no autofill or spell check), then *Open file*.

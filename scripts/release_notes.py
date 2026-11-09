@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Print one version's CHANGELOG.md section as GitHub release notes.
 
-  python3 scripts/release_notes.py 2.3.0 [--link-base https://github.com/<owner>/<repo>/blob/<sha>]
+  python3 scripts/release_notes.py 1.0.1 [--link-base https://github.com/<owner>/<repo>/blob/<sha>]
 
 --link-base turns the changelog's repository-relative links (docs/CLI-API.md#…) into absolute ones, which a
 release page needs.

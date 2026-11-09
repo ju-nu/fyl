@@ -1,0 +1,22 @@
+name: Bug report
+description: Something on fyl.at, the fyl CLI or this code doesn't work as described.
+body:
+  - type: markdown
+    attributes:
+      value: "Never paste a management link, a decryption key (the part of a link after #) or a password here. Vulnerabilities go to the private advisory form, abusive files to https://report.fyl.at/."
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open https://fyl.at/en/ in …\n2. …"
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: Browser and OS, or `fyl --version` and OS.

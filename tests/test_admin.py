@@ -381,8 +381,8 @@ class AdminTests(unittest.TestCase):
         self.assertIn('Reports:   4 open', shown.stdout)
         self.assertIn('newCounter: bytes 1.00 MB', shown.stdout)
         self.assertNotIn('NETWORK_HASH_KEY', shown.stdout)
-        # The storage cap under another name, more network numbers, and a Worker that has no cap yet.
-        for network, line in (({'maxStoredBytes': 1024 ** 4, 'storedNetworks': 3, 'maxStoredWarnBytes': 1024 ** 3},
+        # The storage cap with more network numbers, and a Worker that has no cap yet.
+        for network, line in (({'maxStored': 1024 ** 4, 'storedNetworks': 3, 'maxStoredWarnBytes': 1024 ** 3},
                                '- running at once · 1.00 TB stored at once\n            storedNetworks 3 · maxStoredWarnBytes 1.00 GB\n'),
                               ({'maxBytes': 1024 ** 3, 'maxUploads': 5, 'maxActive': 2}, 'per day 1.00 GB and 5 uploads · 2 running at once · - stored at once\n')):
             self.routes[('GET', '/api/admin/uploads')] = (200, {**status, 'network': network})

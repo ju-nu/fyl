@@ -38,8 +38,8 @@ export const reportHostOf = (env: Pick<Env, 'REPORT_HOST'>) => String(env.REPORT
 export const devBypass = (env: Pick<Env, 'ADMIN_HOST' | 'ACCESS_TEAM_DOMAIN' | 'DEV_ACCESS_BYPASS'>) =>
   !String(env.ACCESS_TEAM_DOMAIN ?? '').trim() && env.DEV_ACCESS_BYPASS === '1' && /(?:^|\.)localhost$/.test(adminHostOf(env));
 
-const base64url = (text: string) => Uint8Array.from(atob(text.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - text.length % 4) % 4)), c => c.charCodeAt(0));
-const decoded = (text: string): unknown => { try { return JSON.parse(new TextDecoder().decode(base64url(text))); } catch { return null; } };
+const fromBase64urlText = (text: string) => Uint8Array.from(atob(text.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - text.length % 4) % 4)), c => c.charCodeAt(0));
+const decoded = (text: string): unknown => { try { return JSON.parse(new TextDecoder().decode(fromBase64urlText(text))); } catch { return null; } };
 
 /** The team's signing keys by kid, from the cache while fresh (or while a refetch for an unknown kid is too soon). */
 async function keysOf(team: string, kid: string) {
@@ -76,8 +76,8 @@ async function verify(env: Env, token: string): Promise<Access | string> {
   const parts = token.length <= 16384 ? /^([\w-]+)\.([\w-]+)\.([\w-]+)$/.exec(token) : null;
   const header = parts ? decoded(parts[1]) : null, claims = parts ? decoded(parts[2]) : null;
   // A segment of 4n + 1 characters is no base64url at all (atob throws): malformed, like an unreadable header.
-  let signature: ReturnType<typeof base64url> | null = null;
-  try { if (parts) signature = base64url(parts[3]); } catch { /* below */ }
+  let signature: ReturnType<typeof fromBase64urlText> | null = null;
+  try { if (parts) signature = fromBase64urlText(parts[3]); } catch { /* below */ }
   if (!parts || !signature || !isObject(header) || !isObject(claims)) return 'malformed';
   if (header.alg !== 'RS256' || typeof header.kid !== 'string') return 'algorithm';
   let keys: Map<string, CryptoKey>;

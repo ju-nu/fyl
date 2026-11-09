@@ -4,8 +4,8 @@
 # what fyl.at serves. Workers Builds deploys production minutes after the Deploy gate, and not at all when its build
 # fails: this waits up to 20 minutes and then fails. A release that exists already must carry exactly the committed
 # SHA256SUMS: published files never change. The bridge of the old numbering (build_cli.py BRIDGE), which fyl update
-# moves every fyl 2.5.0 onto, gets its release the same way, once, after the version it was deployed with and never
-# marked Latest.
+# moves every fyl 2.5.0 onto, gets no GitHub release: fyl.at serves it with its SHA256SUMS, and its binary must report
+# its version like this version's.
 #   sh scripts/release.sh SHA      (from a checkout of SHA; needs gh with GH_TOKEN, GITHUB_REPOSITORY,
 #                                   GITHUB_SERVER_URL and RUNNER_TEMP, and curl, as in GitHub Actions)
 set -eu
@@ -65,11 +65,4 @@ if ! published "$version"; then
     sleep 20
   done
   create "$version" "$RUNNER_TEMP/notes.md"
-fi
-# The bridge is in the deploy that serves this version, so fyl.at has it by now.
-if ! published "$bridge"; then
-  link="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$sha/docs/CLI.md#install-and-update"
-  printf '%s\n' "fyl $bridge is the bridge from the old version numbers (2.0.0 to $bridge) to the new ones, which started over at 1.0.0 with the public release. It takes 1.0.0 and every later release as newer, so \`fyl update\` carries a fyl 2.5.0 on to the current release ([the CLI]($link))." \
-    > "$RUNNER_TEMP/bridge.md"
-  create "$bridge" "$RUNNER_TEMP/bridge.md" --latest=false
 fi

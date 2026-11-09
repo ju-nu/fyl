@@ -2,46 +2,23 @@
 
 Anonymous, temporary file sharing. Drop a file, choose when the link expires, share the link. No accounts.
 
-**Live:** https://fyl.at · **Release:** 1.0.0 · **Stack:** Cloudflare Workers, R2, SQLite Durable Objects
+**Live:** https://fyl.at · **Release:** 1.0.1 · **Stack:** Cloudflare Workers, R2, SQLite Durable Objects
 
 ![fyl.at upload page](docs/fyl-at.png)
 
 ## What it does
 
-**Sharing**
-- **Up to 50 GB per file.** Uploads go in parts and resume where they stopped, even after a reload.
-- **Share while uploading.** The link works at once; recipients who open it early wait for the file.
-- **Links expire** after 5 minutes to 7 days (presets or a custom time), or after a single download.
-- **Drop, paste or choose a file.** A file pasted anywhere on the page is taken like a dropped one.
-- **Folders as one zip.** Drop or choose a folder (or `fyl ./folder`) and it goes as one uncompressed `<folder>.zip` with the files' dates, built on your device; it resumes, takes a password and encrypts like any file.
-- **Copy, share or scan.** Copy link (with a menu for the download command and, for encrypted files, the link without the key and the key alone), the system share sheet, and a QR code.
-- **Recent uploads on this device**, with their time left; "Forget this device" clears them.
+- **Files and folders up to 50 GB.** Uploads resume after a reload; a folder goes as one zip built on your device.
+- **Links that expire** after 5 minutes to 7 days, or after one download. The link works while the file still uploads.
+- **Optional password and end-to-end encryption.** Encrypted files are encrypted on your device; the key is the part
+  of the link after `#`, which never reaches fyl.at.
+- **A private management link** changes the expiry, lifts a password pause or deletes the file.
+- **Download page in browsers, the file in terminals,** with chat link previews and hotlink protection.
+- **The `fyl` CLI** for macOS and Linux, and [llms.txt](https://fyl.at/llms.txt) for agents (curl alone works too).
+- **No account, no tracking cookie,** fair-use limits per network, a [report form](https://report.fyl.at/) reviewed by
+  a person, five languages, light and dark theme.
 
-**Protection**
-- **Optional password.** Recipients type it on the download page, or curl asks for it; 5 wrong tries from one network pause the link for 15 minutes.
-- **Optional end-to-end encryption.** The file is encrypted on your device; the key is the part of the link after `#`, which never reaches fyl.at. "Even safer: send the key separately" splits the link and the key for two different apps.
-- **Private management link.** Change the expiry, lift a password pause or delete the file at once.
-
-**For recipients**
-- **Download page in browsers, the file in terminals.** The page warns about programs, waits for a running upload and never uses up a one-time link; encrypted files are decrypted and verified in the browser.
-- **Chat link previews.** A link shows its file's name, size and expiry in chat apps, and a picture up to 8 MB shows the picture (not for one-time links); protected and encrypted links show nothing about the file.
-- **Hotlink protection.** Files can't be embedded on other sites.
-
-**In the terminal**
-- **The `fyl` CLI** for macOS and Linux (x86_64 and arm64): upload a file or a folder with every option, `--json` for scripts, `--resume` after an interruption, `fyl download`, `fyl decrypt`, `fyl rm` and `fyl update`. Versioned binaries with published SHA-256 checksums; at most once a day fyl says when a newer one is out (`FYL_NO_UPDATE_CHECK=1` turns that off).
-- **The page shows the command** for the options you pick, ready to copy.
-
-**Safety and privacy**
-- **Reports are reviewed by a person.** The [report form](https://report.fyl.at/), guarded by Cloudflare Turnstile, files a case; a file under review can't be downloaded.
-- **Fair-use limits per network** keep one sender from filling the service.
-- **No account, no tracking cookie.** Files sit in a private bucket and are deleted when they expire; page views are counted without identifiers ([privacy](https://fyl.at/en/privacy)).
-
-**For agents**
-- **[llms.txt](https://fyl.at/llms.txt)** explains in Markdown how to upload, download and delete with the CLI and curl (curl alone uploads files up to 50 MiB); every footer links it as *For AI agents*.
-
-**Feel**
-- **In five languages** (English, German, Spanish, French, Dutch): `/` follows the browser's language, every page has its own address per language, and a menu in the footer switches without cookies.
-- Light and dark theme (automatic or chosen), keyboard and screen-reader friendly, smooth transitions that respect reduced motion.
+More in [PRODUCT.md](PRODUCT.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Use it
 
@@ -102,7 +79,7 @@ itself as fyl.at. Under the AGPL, a modified version offered as a network servic
 
 ## Release
 
-Current release: **1.0.0** ([CHANGELOG](CHANGELOG.md)). The version numbers started over at 1.0.0 with the public
+Current release: **1.0.1** ([CHANGELOG](CHANGELOG.md)). The version numbers started over at 1.0.0 with the public
 release; an installed fyl 2.x reaches it with `fyl update` (twice from 2.5.0) or by installing again
 ([CLI](docs/CLI.md#install-and-update)).
 

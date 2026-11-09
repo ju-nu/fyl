@@ -173,8 +173,8 @@ source (`sh scripts/build_native.sh --bridge`), carries the rule that a binary o
 outside it as newer. `/cli/version.json` answers a User-Agent `fyl-cli/2.0.0` to `fyl-cli/2.5.0` with the index of
 2.5.1 (`dist/cli/bridge.json`), and everyone else with the current version, so `fyl update` takes 2.5.0 to 2.5.1 and
 then to the current release. CLIs before 2.5.0 have no `fyl update` and install again with
-`curl -fsSL https://fyl.at/cli/install | sh`. `dist/cli/2.5.1/` stays for good, and the GitHub release `v2.5.1` carries
-the same files (published once, never marked Latest), so its checksums can be compared like any release's.
+`curl -fsSL https://fyl.at/cli/install | sh`. `dist/cli/2.5.1/` stays for good, with its `SHA256SUMS` beside the binaries; it has no
+GitHub release, since releases follow the new numbering only.
 
 ## Compatibility code
 
@@ -184,10 +184,8 @@ trigger and note the evidence (deploy time, an Analytics query) in the change th
 - **From 2026-11-28:** the Transfer constructor's shortening of tombstone purge dates set before 2.1.2
   (`LEGACY_TOMBSTONE_MS` in `src/transfer.ts`). Every such date has passed by 2026-11-27. The tombstone half of its
   test in `tests/worker.test.ts` goes with it; the takedown assertion stays.
-- **Once a rollback can't reach a Worker before 1.0.0** (it can't: `ROLLBACK_FLOOR` is 1.0.0 and the old numbering is
-  refused): the dashboard's fallbacks for answers of older Workers (`dist/admin/admin.js`, such as a `truncated` flag
-  given as a boolean, a missing `transfersWithDownloads`) may go once 1.0.0 has replaced every older version.
-- **Stays for good:** the constructor's purge of objects emptied before 2.1.2, the removal of one-time sessions from
+- **Stays for good:** the constructor's purge of objects emptied before 2.1.2, the purge date for records cleaned
+  before 2.0.0 (they had none), the removal of one-time sessions from
   clean records, `read()` dropping a `parts` field from the payload, and the key-only access of records from before
   2.1.2. Takedowns are kept for good and may carry those shapes. The bridge (`dist/cli/2.5.1/`, `bridged()`) stays as
   long as installed CLIs of the old numbering may ask for an update.

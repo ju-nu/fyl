@@ -66,7 +66,7 @@ def request(url, method="GET", data=None, headers=None, expected=200, body=None,
     the Access service token) never follows a redirect: urllib would resend them to wherever Location points, another
     host or plain HTTP included."""
     payload = json.dumps(data).encode() if data is not None else body
-    combined = {"User-Agent": "fyl-smoke/1.0.0", **(headers or {})}
+    combined = {"User-Agent": "fyl-smoke/1.0.1", **(headers or {})}
     if data is not None:
         combined["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=payload, method=method, headers=combined)

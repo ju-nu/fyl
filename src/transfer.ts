@@ -67,8 +67,8 @@ export class Transfer extends DurableObject<Env> {
     // Purges before 2.1.2 only emptied the table and kept its pages: drop them the way a purge does now. Such
     // objects stay until a request reaches them, so this stays for good.
     if (!previous && this.stored) ctx.blockConcurrencyWhile(() => this.purge());
-    // Records cleaned by 1.0/1.1 got no purge date: give them one when they next start. Only those few exist;
-    // without this they would keep answering 410. A takedown has none on purpose.
+    // Records cleaned before 2.0.0 of the old numbering got no purge date: give them one when they next start. Only
+    // those few exist; without this they would keep answering 410. A takedown has none on purpose. Stays for good.
     if (previous?.clean && !previous.purgeAt && previous.status !== 'removed') {
       previous.name = ''; previous.fingerprint = ''; previous.purgeAt = Date.now() + TOMBSTONE_TTL_MS;
       this.save(previous);
@@ -414,10 +414,9 @@ export class Transfer extends DurableObject<Env> {
 
   /**
    * The download page for a link opened in a browser (or by a link-preview bot); it never counts a download.
-   * `guesser` is the per-transfer hash password tries count for (an IPv6 subscriber's /56, see networkOf()); an
-   * older Worker sends none and counts them per `network`.
+   * `guesser` is the per-transfer hash password tries count for (an IPv6 subscriber's /56, see networkOf()).
    */
-  async page(network: string, guesser = network) {
+  async page(network: string, guesser: string) {
     return guarded(() => {
       const record = this.shown(network);
       return this.view(record, guesser, false, this.lock(record, guesser, this.holds(record, network)));
@@ -425,7 +424,7 @@ export class Transfer extends DurableObject<Env> {
   }
 
   /** The download page's password form: the page unlocked, or showing why not. */
-  async unlock(password: string, network: string, guesser = network) {
+  async unlock(password: string, network: string, guesser: string) {
     return guarded(async () => {
       const record = this.shown(network);
       if (!record.pwHash || this.pending(record)) return this.view(record, guesser);
