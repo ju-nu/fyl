@@ -106,7 +106,7 @@ describe('part attempts and final transfer states', () => {
     const session = await init(payload.length);
     try {
       for (let attempt = 0; attempt < 20; attempt++) await part(session, payload, 1);
-      // Final for this part, so clients stop instead of retrying (it was a retryable 429 before 2.3.0).
+      // Final for this part, so clients stop instead of retrying.
       const limited = await put(session, payload, 1);
       expect(limited.status).toBe(409);
       expect(await limited.json()).toEqual({ error: 'This part has reached its retry limit.', code: 'part_limit' });

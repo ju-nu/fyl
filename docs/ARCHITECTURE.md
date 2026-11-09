@@ -165,7 +165,8 @@ The public release started the numbering at **1.0.0** for the service (the Worke
 (`fyl 1.0.0`). Before it, fyl was developed privately and its Worker versions were tagged `v2.0.0` to `v2.5.1`;
 Cloudflare's deployment history still lists them. Those numbers are never used again: after 1.x comes 3.0.0, or 2.5.2
 at the earliest. `OLD_NUMBERING` in `scripts/rollback.py` refuses those tags as rollback targets, `scripts/build_cli.py`
-refuses them as a version, and the CLI 1.0.0 takes an offered 2.0.0 to 2.5.1 for an older version. Version numbers
+refuses them as a version. The CLI 1.0.0 binary also takes an offered 2.0.0 to 2.5.1 for an older version; from 1.0.1
+on the CLI compares versions plainly, so a reused number would still confuse 1.0.0 installs. Version numbers
 such as "since 2.4.0" in comments and older docs refer to those releases, which all came before 1.0.0.
 
 ## Compatibility code
@@ -180,11 +181,18 @@ evidence (deploy time, an Analytics query) in the change that removes it.
 - **Stays for good:** `alarm()` and `schedule()` in `src/transfer.ts` never purge a takedown, whatever purge date it
   carries. Takedowns made between 2026-10-28 11:32 and 16:55 UTC got one and cannot be ruled out; without the check
   such a link could be purged and take an upload again.
+- **Stays for good:** `Transfer.access()` takes only the management key for a record without `resumeHash`. Takedown
+  placeholders have none, and neither do records closed before 2026-10-28 16:55 UTC, which takedowns keep for good.
+  Likewise a record without `slots` (closed before 2026-10-30 16:40 UTC, or a placeholder) is never uploaded to.
+- **Stays for good:** the `Transfer` constructor clears the name, fingerprint and one-time session of a clean record
+  that still has them, and gives a clean record other than a takedown a purge date if it has none. Cleanups until
+  2026-10-27 kept the name and fingerprint and set no purge date, so no alarm reaches those records; cleanups before
+  2026-10-30 16:40 UTC kept the session. Takedowns keep such records for good, and the others stay until a request
+  reaches them, so it cannot be shown that none is left.
 
-Not compatibility code, though comments once tied them to releases: a record without `resumeHash`, `slots` or
-`client` is a takedown placeholder (an id nothing was stored for), and a raw record stores no `mode`. Records of
-earlier shapes that no request reaches stay as storage until their alarm (2026-11-27 at the latest for tombstones of
-the former 30-day rule) or, without one, until a request reaches them; they answer 404 or 410 and serve nothing.
+Not compatibility code: a record without `client` stored none (takedown placeholders, and cleanup drops it), and a raw
+record stores no `mode`. Tombstones of the former 30-day rule stay as storage until their alarm, 2026-11-27 at the
+latest; they answer 410 and serve nothing.
 
 ## Known limitations
 

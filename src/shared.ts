@@ -349,7 +349,10 @@ type TransferStatus = 'creating' | 'uploading' | 'completing' | 'ready' | 'consu
 export interface TransferRecord extends InitMetadata {
   id: string;
   keyHash: string;
-  /** Digest of the resume token; absent only on a takedown placeholder (see Transfer.access). */
+  /**
+   * Digest of the resume token; absent on a takedown placeholder and on records closed before 2026-10-28 16:55 UTC,
+   * which takedowns keep for good. Such a record takes the management key only (see Transfer.access).
+   */
   resumeHash?: string;
   objectKey: string;
   uploadId: string;
@@ -372,7 +375,8 @@ export interface TransferRecord extends InitMetadata {
   pwPausedUntil?: number;
   /**
    * R2 part numbers per part: part n writes to (n-1)*slots+1 … n*slots, each admitted attempt to its own. Every upload
-   * has them; a takedown placeholder, which is never uploaded to, has none.
+   * admitted from 2026-10-30 16:40 UTC on has them; a takedown placeholder and records closed before then (takedowns
+   * among them are kept for good) have none, and none of those is ever uploaded to.
    */
   slots?: number;
   /** When cleanup became due (for the cleanup_age metric) and its failed tries so far, which set the retry delay. */

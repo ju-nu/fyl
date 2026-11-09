@@ -501,7 +501,7 @@ class NativeClientTests(unittest.TestCase):
         self.assertNotIn('/abort', [r[0] for r in self.state.requests])
 
     def test_an_exhausted_part_is_never_retried(self):
-        # part_limit is final with any status, also the 429 servers before 2.3.0 sent; Retry-After doesn't change that.
+        # part_limit is final with any status, a 429 too; Retry-After doesn't change that.
         for status in (409, 429):
             self.state.failures = {'/part': [(status, 'part_limit')]}
             sent = len(self.state.requests)
@@ -1177,7 +1177,7 @@ class NativeClientTests(unittest.TestCase):
                               self.exposed() + "fyl: This key doesn't open this upload. Use the value its interrupted run printed.\n")]:
             refused = self.rerun(command, input=keyless + '\n', env=env)
             self.assertEqual((refused.returncode, refused.stdout, refused.stderr), (2, '', message), env)
-        # Without pins in the status (a server before 2.4.0, or a rollback), no resume.
+        # Without pins in the status (a server without them, such as another implementation), no resume.
         self.state.status_pins = False
         refused = self.rerun(command, input=value + '\n')
         self.assertEqual((refused.returncode, refused.stderr),
