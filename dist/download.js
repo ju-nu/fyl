@@ -75,7 +75,17 @@
     const brands = Array.isArray(nav?.userAgentData?.brands) ? nav.userAgentData.brands.map(item => String(item?.brand || '')) : [];
     return !!nav?.serviceWorker && !appleTouch(nav) && brands.includes('Chromium') && !brands.some(brand => /WebView/i.test(brand));
   };
-  globalThis.FylDownload = {nextDelay, clockOffset, validPassword, addressKey, plainSize, kind, basic, MEMORY_LIMIT, appleTouch, streams};
+  // The picture an image link shows on its page: the Worker's preview (`<link>?preview=1`, preview() in src/index.ts),
+  // for what it serves one: a ready raw file, neither protected nor one-time, at most 8 MiB (PREVIEW_BYTES in
+  // src/shared.ts), named as one of its image types. Only the path: the picture comes from this page's own origin.
+  // The Worker checks it again, and its first bytes; a file that isn't the picture it says gets no preview.
+  const PREVIEW_BYTES = 8 * 1048576;
+  const previewPath = page => {
+    if (page?.state !== 'ready' || page.mode === 'e2ee' || page.once || page.protected || !(page.size > 0 && page.size <= PREVIEW_BYTES)) return null;
+    if (!/\.(png|jpe?g|gif|webp|avif)$/i.test(page.name || '') || typeof page.url !== 'string') return null;
+    try { return new URL(page.url).pathname + '?preview=1'; } catch { return null; }
+  };
+  globalThis.FylDownload = {nextDelay, clockOffset, validPassword, addressKey, plainSize, kind, basic, MEMORY_LIMIT, appleTouch, streams, previewPath};
   if (typeof document === 'undefined') return; // tests load the helpers above without a page
 
   const $ = id => document.getElementById(id);
@@ -207,6 +217,7 @@
     $('key-exposed').hidden = !(E2EE && e.exposed && (state !== 'gone' || platform));
     renderKey(state);
     if (state === 'gone') {
+      $('preview').hidden = true; if ($('preview-dialog').open) $('preview-dialog').close();
       set('file-meta', t(CLOSED.includes(reason) ? 'download.metaClosed' : reason === 'quarantined' ? 'download.metaPaused' : 'download.metaLink'));
       set('gone-tag', gone[1]); set('gone-line', gone[2]); set('gone-text', gone[3]);
       $('tile-icon').setAttribute('href', '#i-' + gone[4]);
@@ -235,8 +246,27 @@
       set('download-label', begun ? t('download.onceAgain') : t('download.downloadSize', {size}));
     }
     renderCommand(state);
+    renderPreview(state);
     if (state === 'protected') renderPassword();
     tick();
+  }
+  // The picture's frame shows at once, at its fixed height (download.css), so nothing below it moves when the picture
+  // arrives; one that doesn't load (no preview for it) takes its frame away. `previewDone` settles once it loaded or
+  // failed.
+  let previewDone = Promise.resolve();
+  function renderPreview(state) {
+    const path = E2EE ? null : previewPath({...data, state}), box = $('preview'), image = $('preview-img');
+    if (!path) { box.hidden = true; return; }
+    if (image.dataset.src === path) return;
+    image.dataset.src = path;
+    image.alt = t('download.previewAlt', {name: data.name});
+    $('preview-open').setAttribute('aria-label', t('download.previewOpen', {name: data.name}));
+    previewDone = new Promise(resolve => {
+      image.onload = () => resolve();
+      image.onerror = () => { if (image.dataset.src === path) box.hidden = true; resolve(); };
+    });
+    box.hidden = false;
+    image.src = path;
   }
   // "Download in a terminal": curl for a raw link; fyl download for an encrypted one (curl would get only ciphertext),
   // with the key once it verified (or where this browser can't check it), otherwise without it, so the tool asks for it.
@@ -392,7 +422,12 @@
     if (data.protected || info.protected) { location.replace(location.pathname + location.search); return; }
     Object.assign(data, {name:info.name || data.name, size:info.size || data.size, expiresAt:info.expiresAt, once:info.once ?? data.once});
     setLine($('progress-fill'), 1); $('progress').classList.add('done');
-    setTimeout(() => { data.state = 'ready'; delay = 2000; render(); announce(t('download.readyFile')); start(); }, 450);
+    // The download starts once the picture (if any) loaded, at most 3 s later: a navigation begun earlier may cut that
+    // load short.
+    setTimeout(() => {
+      data.state = 'ready'; delay = 2000; render(); announce(t('download.readyFile'));
+      Promise.race([previewDone, new Promise(resolve => { setTimeout(resolve, 3000); })]).then(start);
+    }, 450);
   }
   function close(reason) {
     clearTimeout(pollTimer); pollTimer = null;
@@ -712,6 +747,15 @@
   });
   $('key').addEventListener('input', () => { if (e.error) { e.error = null; renderKey(view()); } });
   $('save').addEventListener('click', save);
+  // The picture, large: the same address, which the browser already has.
+  $('preview-open').addEventListener('click', () => {
+    const image = $('preview-img');
+    if (!image.dataset.src || $('preview').hidden) return;
+    Object.assign($('preview-full'), {src: image.dataset.src, alt: image.alt});
+    $('preview-dialog').showModal();
+  });
+  $('preview-dialog').addEventListener('click', () => $('preview-dialog').close());
+  $('preview-dialog').addEventListener('close', () => $('preview-open').focus());
   $('save-again').addEventListener('click', () => { if (blobURL) saveBlob(); });
   // A key changed in the address bar is read and checked again (§9.5).
   window.addEventListener('hashchange', () => {

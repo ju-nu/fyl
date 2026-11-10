@@ -44,6 +44,23 @@ html[data-platform] details.term[data-in]{display:block}
 .dl{display:grid;grid-template-columns:minmax(0,520px);justify-content:center;align-content:start;padding:32px 0 64px}
 .dl .panel{padding:28px;box-shadow:var(--shadow-card)}
 .dl-head{display:grid;grid-template-columns:48px minmax(0,1fr);gap:16px;align-items:center}
+/* An image link's picture (download.js, from <link>?preview=1): whole, on the well colour, in a frame of fixed height
+   that shows before the picture arrives, so the Download button below it never moves. */
+.dl-preview{margin:20px 0 0;height:300px;display:flex;justify-content:center;align-items:center;background:var(--well);border-radius:var(--r-well);overflow:hidden}
+.dl-preview[hidden]{display:none}
+@media (max-width:480px){.dl-preview{height:220px}}
+.dl-preview-open{display:flex;justify-content:center;align-items:center;width:100%;height:100%;padding:0;border:0;background:none;cursor:zoom-in;border-radius:inherit}
+.dl-preview img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+/* A click opens the picture as large as the window allows (never larger than it is); a click anywhere or Esc closes it. */
+.dl-zoom{max-width:none;max-height:none;width:100%;height:100%;margin:0;padding:16px;border:0;background:none;display:none;
+  align-items:center;justify-content:center;cursor:zoom-out;opacity:1;transition:opacity var(--d-base) ease,overlay var(--d-base) allow-discrete,display var(--d-base) allow-discrete}
+.dl-zoom[open]{display:flex}
+.dl-zoom:not([open]){opacity:0}
+@starting-style{.dl-zoom[open]{opacity:0}}
+.dl-zoom::backdrop{background:rgb(0 0 0 / .85)}
+.dl-zoom img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:var(--r-well);box-shadow:var(--shadow-dialog)}
+.dl-zoom-x{position:fixed;top:12px;right:12px;color:#fff;background:rgb(0 0 0 / .4)}
+@media (prefers-reduced-motion:reduce){.dl-zoom{transition:none}}
 .dl-head .file-ico{width:40px;height:48px;margin:0 0 0 5px}
 .dl-head .file-ico svg{width:40px;height:48px}
 .dl-head .ext{bottom:5px;left:-5px}

@@ -637,16 +637,20 @@ function sniffed(bytes: Uint8Array) {
 }
 
 /**
- * The picture a chat app shows for a link (og:image, see previewTags()), at /d/<id>/<name>?preview=1. Only link-preview
- * bots (PREVIEW_BOTS, GET or HEAD, never a browser navigation) get it, and only for a file Transfer.previewable() allows
+ * The picture a chat app shows for a link (og:image, see previewTags()), at /d/<id>/<name>?preview=1, which the download
+ * page shows too. Only link-preview bots (PREVIEW_BOTS) and the page's own image (pageImage(): same-origin, destination
+ * image) get it, GET or HEAD, never a browser navigation, and only for a file Transfer.previewable() allows
  * whose first bytes prove it a PNG, JPEG, GIF, WebP or AVIF image (a renamed archive, or SVG, never passes), served
  * inline as that type. It counts no download and opens no one-time session, and DOWNLOAD_RATE applies as to every /d/
- * request. Everybody else, and every file that doesn't qualify, gets 404: this is no second way to a file. Caches may
+ * request. Everybody else, and every file that doesn't qualify, gets 404: this is no second way to a file (one that
+ * previews can be downloaded from the link anyway, being neither protected nor one-time). Caches may
  * keep it 5 minutes at most, never past the expiry; the chat app's own copy can outlive the link (privacy page).
  */
+const pageImage = (request: Request) => request.headers.get('Sec-Fetch-Site') === 'same-origin' && request.headers.get('Sec-Fetch-Dest') === 'image';
 async function preview(request: Request, env: Env, id: string) {
   const none = () => json({ error: 'There is no preview for this link.', code: 'not_found' }, 404);
-  if (!['GET', 'HEAD'].includes(request.method) || request.headers.get('Sec-Fetch-Mode') === 'navigate' || !PREVIEW_BOTS.test(request.headers.get('User-Agent') || '')) return none();
+  const bot = PREVIEW_BOTS.test(request.headers.get('User-Agent') || '');
+  if (!['GET', 'HEAD'].includes(request.method) || request.headers.get('Sec-Fetch-Mode') === 'navigate' || !(bot || pageImage(request))) return none();
   const file = unwrap(await env.TRANSFERS.getByName(id).previewable());
   if (!file) return none();
   const head = request.method === 'HEAD';
@@ -655,11 +659,12 @@ async function preview(request: Request, env: Env, id: string) {
   if (!object) return none();
   const bytes = new Uint8Array(await object.arrayBuffer()), type = sniffed(bytes), seconds = Math.min(300, Math.floor((file.expiresAt - Date.now()) / 1000));
   if (!type || seconds < 1 || (!head && bytes.length !== file.size)) return none();
-  if (!head) metric(env, 'preview_served', type.slice(6), file.size);
+  // Counted for link-preview bots only: the page's own picture is part of its page view.
+  if (!head && bot) metric(env, 'preview_served', type.slice(6), file.size);
   return new Response(head ? null : bytes, { headers: {
     'Content-Type': type, 'Content-Length': String(file.size), 'Content-Disposition': 'inline', 'Cache-Control': `public, max-age=${seconds}`,
     'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Referrer-Policy': 'no-referrer',
-    'X-Robots-Tag': 'noindex, nofollow, noarchive', 'Cross-Origin-Resource-Policy': 'same-origin', Vary: 'User-Agent', ETag: object.httpEtag,
+    'X-Robots-Tag': 'noindex, nofollow, noarchive', 'Cross-Origin-Resource-Policy': 'same-origin', Vary: 'User-Agent, Sec-Fetch-Site, Sec-Fetch-Dest', ETag: object.httpEtag,
   } });
 }
 
