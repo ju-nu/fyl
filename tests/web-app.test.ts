@@ -1466,10 +1466,10 @@ describe('download page clock and polling on the page', () => {
     await until(() => expect(fetcher).toHaveBeenCalledTimes(1));
     await settle();
     expect([state(page), page.text('expires-in')]).toEqual(['ready', 'Expiring now']);
-    await vi.advanceTimersByTimeAsync(7500); await settle();
+    await vi.advanceTimersByTimeAsync(3000); await settle();
     expect([state(page), fetcher.mock.calls.length]).toEqual(['ready', 2]);
     reply = () => json(410, { error: 'This link has expired.', code: 'expired' });
-    await vi.advanceTimersByTimeAsync(11250); await settle();
+    await vi.advanceTimersByTimeAsync(4500); await settle();
     expect([state(page), page.text('file-title'), page.text('gone-tag'), fetcher.mock.calls.length]).toEqual(['gone', 'This link has expired', 'Expired', 3]);
     await vi.advanceTimersByTimeAsync(10 * MINUTE);
     expect(fetcher).toHaveBeenCalledTimes(3);
@@ -1508,16 +1508,21 @@ describe('download page clock and polling on the page', () => {
 
   it('polls an upload less often while nothing changes, waits as long as a 429 asks, and not at all while hidden', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    reply = () => json(200, status({ state: 'uploading', size: 1000 * MB, received: 0, updatedAt: NOW }));
+    let page = await openDownload({ state: 'uploading', id: D, size: 1000 * MB, received: 0, updatedAt: NOW, now: NOW });
+    const polls = async (ms: number) => { await vi.advanceTimersByTimeAsync(ms); await settle(); return fetcher.mock.calls.length; };
+    expect([await polls(1999), await polls(1)]).toEqual([0, 1]);
+    expect([await polls(2999), await polls(1)]).toEqual([1, 2]);
+    expect([await polls(4499), await polls(1)]).toEqual([2, 3]);
+    reply = () => json(429, { error: 'Too many requests.', code: 'rate_limited' }, { 'Retry-After': '120' });
+    expect([await polls(6749), await polls(1)]).toEqual([3, 4]);
+    expect([await polls(119999), await polls(1)]).toEqual([4, 5]);
+    // While the last four parts are open it asks at least every 3 s, so the download starts soon after the upload.
+    fetcher.mockClear();
     reply = () => json(200, status({ state: 'uploading', size: 100 * MB, received: 0, updatedAt: NOW }));
     const uploading = { state: 'uploading', id: D, size: 100 * MB, received: 0, updatedAt: NOW, now: NOW };
-    let page = await openDownload(uploading);
-    const polls = async (ms: number) => { await vi.advanceTimersByTimeAsync(ms); await settle(); return fetcher.mock.calls.length; };
-    expect([await polls(4999), await polls(1)]).toEqual([0, 1]);
-    expect([await polls(7499), await polls(1)]).toEqual([1, 2]);
-    expect([await polls(11249), await polls(1)]).toEqual([2, 3]);
-    reply = () => json(429, { error: 'Too many requests.', code: 'rate_limited' }, { 'Retry-After': '120' });
-    expect([await polls(16874), await polls(1)]).toEqual([3, 4]);
-    expect([await polls(119999), await polls(1)]).toEqual([4, 5]);
+    page = await openDownload(uploading);
+    expect([await polls(2000), await polls(3000), await polls(3000), await polls(3000)]).toEqual([1, 2, 3, 4]);
     fetcher.mockClear();
     page = await openDownload(uploading, true);
     expect(await polls(5 * MINUTE)).toBe(0);
