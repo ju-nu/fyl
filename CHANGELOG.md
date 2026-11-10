@@ -12,6 +12,9 @@ Server and repository only; the CLI is unchanged.
 - **Pages:** every indexed page carries `og:title`, `og:description` and `og:type`, the privacy and report pages too.
   A browser opening a page address that doesn't exist (`/faq`, `/en/nonexistent`) goes to the home page of its
   language instead of an empty 404.
+- **Download page:** a page waiting for an upload asks every 2 s instead of 5 s, backs off to 15 s instead of a
+  minute while nothing changes, and asks at most every 3 s while the last four parts are open, so progress shows
+  sooner and the download starts within seconds of the upload's end.
 - **API:** `HEAD /api/health` answers like `GET`, without a body.
 - **Report host:** `report.fyl.at` serves `/.well-known/security.txt`, which names both canonical addresses.
 - **Deploys:** the Worker version message names the commit (`fyl <version> <commit>`), so builds that share a tag

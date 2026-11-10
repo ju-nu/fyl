@@ -6,10 +6,14 @@
 // and the download starts only on a click.
 (() => {
   'use strict';
-  // Status polls: every 5 s, then 1.5 times longer up to 60 s while nothing changes, back to 5 s on progress, and at
-  // least 60 s (longer if Retry-After says so) after a 429. Callers add ±20 % jitter.
-  const nextDelay = (delay, {changed = false, status = 200, retryAfter = null} = {}) => status === 429
-    ? Math.max(60000, Math.min(600000, (Number(retryAfter) || 0) * 1000)) : changed ? 5000 : Math.min(60000, Math.round(delay * 1.5));
+  // Status polls: every 2 s, then 1.5 times longer up to 15 s while nothing changes, back to 2 s on progress, at most
+  // 3 s while the last four parts are open (`ending`), so the download starts soon after the upload, and at least
+  // 60 s (longer if Retry-After says so) after a 429. Callers add ±20 % jitter.
+  const nextDelay = (delay, {changed = false, ending = false, status = 200, retryAfter = null} = {}) => status === 429
+    ? Math.max(60000, Math.min(600000, (Number(retryAfter) || 0) * 1000))
+    : changed ? 2000 : Math.min(ending ? 3000 : 15000, Math.round(delay * 1.5));
+  // Upload parts are 50 MiB (PART_BYTES in src/shared.ts); received grows by whole parts.
+  const PART = 50 * 1024 * 1024;
   // The server's clock minus this device's, from a server time read at `local`; 0 without one.
   const clockOffset = (server, local) => Number.isFinite(server) ? server - local : 0;
   // The server's password rule (validPassword in src/shared.ts): 6 to 200 code points after NFC, no control characters
@@ -101,7 +105,7 @@
   const link = (E2EE ? null : data.url) || location.origin + '/d/' + transferId;
   const first = {received: data.received || 0, at: data.updatedAt || 0};
   let longest = 0, stalled = false, started = false, submitting = false, toastTimer = null, begun = false;
-  let delay = 5000, pollTimer = null, polling = false, lastPoll = 0;
+  let delay = 2000, pollTimer = null, polling = false, lastPoll = 0;
   // A raw file asked for with a key: a link with a key never yields an unencrypted file (§13 mode_mismatch).
   if (!E2EE && data.state !== 'gone' && address.key) data = {state: 'gone', reason: 'mismatch'};
   // No Referer from an encrypted page (§2.2, §15.3), whose address may still hold a key sent after %23. The page's meta
@@ -366,7 +370,8 @@
       } else if (response.ok && Number.isFinite(info.expiresAt)) { data.expiresAt = info.expiresAt; tick(); }
     } catch {} finally { polling = false; }
     if (data.state === 'gone') return;
-    delay = nextDelay(delay, {changed, status, retryAfter});
+    const ending = data.state === 'uploading' && (data.size || 0) - (data.received || 0) <= 4 * PART;
+    delay = nextDelay(delay, {changed, ending, status, retryAfter});
     if (data.state === 'uploading' || expired()) schedule(delay);
   }
   document.addEventListener('visibilitychange', () => {
@@ -381,13 +386,13 @@
       Object.assign(data, {state: data.protected || info.protected ? 'protected' : 'ready', expiresAt: info.expiresAt, once: info.once ?? data.once, size: info.size || data.size});
       if (data.state === 'ready' && !e.blobs && info.e2ee?.head && info.e2ee?.meta) { e.blobs = {head: info.e2ee.head, meta: info.e2ee.meta}; check(); }
       setLine($('progress-fill'), 1); $('progress').classList.add('done');
-      setTimeout(() => { delay = 5000; render(); announce(t('download.readyDownload')); }, 450);
+      setTimeout(() => { delay = 2000; render(); announce(t('download.readyDownload')); }, 450);
       return;
     }
     if (data.protected || info.protected) { location.replace(location.pathname + location.search); return; }
     Object.assign(data, {name:info.name || data.name, size:info.size || data.size, expiresAt:info.expiresAt, once:info.once ?? data.once});
     setLine($('progress-fill'), 1); $('progress').classList.add('done');
-    setTimeout(() => { data.state = 'ready'; delay = 5000; render(); announce(t('download.readyFile')); start(); }, 450);
+    setTimeout(() => { data.state = 'ready'; delay = 2000; render(); announce(t('download.readyFile')); start(); }, 450);
   }
   function close(reason) {
     clearTimeout(pollTimer); pollTimer = null;

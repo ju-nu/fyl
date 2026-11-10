@@ -4,7 +4,7 @@ import { englishText } from './english';
 // The DOM-free parts of the download page (dist/download.js) and the report form (dist/report.js). Both scripts
 // export them and stop before touching a page when there is none.
 interface Download {
-  nextDelay(delay: number, outcome?: { changed?: boolean; status?: number; retryAfter?: string | null }): number;
+  nextDelay(delay: number, outcome?: { changed?: boolean; ending?: boolean; status?: number; retryAfter?: string | null }): number;
   clockOffset(server: number | undefined, local: number): number;
   validPassword(text: string): boolean;
 }
@@ -32,11 +32,18 @@ beforeAll(async () => {
 afterAll(() => { vi.unstubAllGlobals(); });
 
 describe('download page polling and clock helpers', () => {
-  it('backs off from 5 s by half each time up to a minute while nothing changes, and starts over on progress', () => {
+  it('backs off from 2 s by half each time up to 15 s while nothing changes, and starts over on progress', () => {
     const delays: number[] = [];
-    for (let delay = 5000, step = 0; step < 9; step++) { delay = page.nextDelay(delay); delays.push(delay); }
-    expect(delays).toEqual([7500, 11250, 16875, 25313, 37970, 56955, 60000, 60000, 60000]);
-    expect(page.nextDelay(60000, { changed: true })).toBe(5000);
+    for (let delay = 2000, step = 0; step < 7; step++) { delay = page.nextDelay(delay); delays.push(delay); }
+    expect(delays).toEqual([3000, 4500, 6750, 10125, 15000, 15000, 15000]);
+    expect(page.nextDelay(15000, { changed: true })).toBe(2000);
+  });
+
+  it('polls at most every 3 s while the last parts are open, so the download starts soon after the upload', () => {
+    expect(page.nextDelay(2000, { ending: true })).toBe(3000);
+    expect(page.nextDelay(15000, { ending: true })).toBe(3000);
+    expect(page.nextDelay(3000, { ending: true, changed: true })).toBe(2000);
+    expect(page.nextDelay(3000, { ending: true, status: 429 })).toBe(60000);
   });
 
   it('waits at least a minute after a 429, longer when Retry-After asks, at most ten minutes', () => {
