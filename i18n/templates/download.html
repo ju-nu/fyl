@@ -7,7 +7,7 @@
 <title>{{download.title}}</title><link rel="icon" href="/favicon.svg" type="image/svg+xml" referrerpolicy="no-referrer"><link rel="apple-touch-icon" href="/apple-touch-icon.png" referrerpolicy="no-referrer"><link rel="describedby" type="text/markdown" href="/llms.txt" title="{{common.agentsTitle}}" referrerpolicy="no-referrer"><link rel="alternate" type="text/markdown" href="/llms.txt" title="{{common.agentsTitle}}" referrerpolicy="no-referrer"><link rel="preload" href="/fonts/plex-sans-600.woff2" as="font" type="font/woff2" crossorigin referrerpolicy="no-referrer"><link rel="stylesheet" href="/styles.css" referrerpolicy="no-referrer"><link rel="stylesheet" href="/download.css" referrerpolicy="no-referrer">{{@strings}}<script src="/theme.js" referrerpolicy="no-referrer"></script><script src="/i18n.js" defer referrerpolicy="no-referrer"></script><script src="/download.js" defer referrerpolicy="no-referrer"></script>
 </head>
 <body>
-<svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-icons="globe copy check file clock download trash key terminal sun moon monitor lock unlock eye eye-off chev alert info flag one pause shield refresh send">
+<svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-icons="globe copy check file clock download trash key terminal sun moon monitor lock unlock eye eye-off chev alert info flag one pause shield refresh send x">
 <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5Z"/></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
@@ -31,6 +31,7 @@
 <symbol id="i-one" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M10.5 9.5 12.5 8v8.5"/></symbol>
 <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 5 6v5.5c0 4.5 3 7.8 7 9 4-1.2 7-4.5 7-9V6l-7-2.5Z"/><path d="M9.5 12.5 11.3 14l3.2-3.5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11m0-11-11 11"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 11.5a7.5 7.5 0 1 0-2.2 5.3M19.5 4.5v7h-7"/></symbol>
 <symbol id="i-send" viewBox="0 0 24 24"><path class="fill" d="M5.5 6H10v4a2.5 2.5 0 0 0 2.5 2.5h3v6a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5v-10A2.5 2.5 0 0 1 5.5 6Z"/><path d="M14.5 8.5 20 3M15.5 3H20v4.5"/></symbol>
 </svg>
@@ -49,6 +50,7 @@
 <span class="tile dl-tile" data-in="protected uploading gone key" aria-hidden="true"><svg class="i"><use id="tile-icon" href="#i-lock"/></svg></span>
 <div class="minw0"><h1 id="file-title" tabindex="-1" dir="auto"></h1><p class="dl-meta" id="file-meta" data-in="ready protected unlocked uploading key gone"></p></div>
 </div>
+<figure class="dl-preview" id="preview" data-in="ready" hidden><button class="dl-preview-open" type="button" id="preview-open" aria-haspopup="dialog" aria-controls="preview-dialog"><img id="preview-img" alt="" decoding="async" referrerpolicy="no-referrer"></button></figure>
 
 <p class="note dl-exposed" id="key-exposed" hidden><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><span>{{download.keyExposed}}</span></p>
 <div class="keybox" id="key-box" hidden>
@@ -118,6 +120,7 @@
 <p><span data-in="ready protected unlocked uploading key" id="after-text">{{download.after}}</span><span data-in="gone">{{download.afterGone}}</span></p>
 <a class="report-link" id="report-link" data-in="ready protected unlocked uploading key" href="{{@report}}" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg>{{download.report}}</a>
 </div>
+<dialog class="dl-zoom" id="preview-dialog" aria-label="{{download.previewDialog}}"><img id="preview-full" alt="" referrerpolicy="no-referrer"><button class="btn btn-icon dl-zoom-x" type="button" id="preview-close" aria-label="{{common.close}}"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></dialog>
 </main>
 
 <footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="{{common.footerNav}}"><a href="{{@report}}" target="_blank" rel="noopener">{{common.reportFile}}</a><a href="{{@base}}/privacy">{{common.privacy}}</a><a href="/llms.txt" target="_blank" rel="noopener">{{common.forAgents}}</a><a href="{{@source}}" target="_blank" rel="noopener">{{common.source}}</a>{{@languageButton}}<button class="btn btn-icon" type="button" data-theme-trigger popovertarget="theme-menu" aria-haspopup="menu" aria-expanded="false" aria-label="{{common.theme}}" data-label="{{common.themeIs}}"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button></nav></footer>

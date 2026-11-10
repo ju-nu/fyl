@@ -15,6 +15,10 @@ Server and repository only; the CLI is unchanged.
 - **Download page:** a page waiting for an upload asks every 2 s instead of 5 s, backs off to 15 s instead of a
   minute while nothing changes, and asks at most every 3 s while the last four parts are open, so progress shows
   sooner and the download starts within seconds of the upload's end.
+- **Download page:** an image link shows its picture under the title: a ready PNG, JPEG, GIF, WebP or AVIF of at
+  most 8 MB that is neither protected, one-time nor encrypted, from the link-preview address `<link>?preview=1`,
+  which now also answers the page's own image request (same-origin). It counts no download; a file whose first bytes
+  are no such picture shows none.
 - **API:** `HEAD /api/health` answers like `GET`, without a body.
 - **Report host:** `report.fyl.at` serves `/.well-known/security.txt`, which names both canonical addresses.
 - **Deploys:** the Worker version message names the commit (`fyl <version> <commit>`), so builds that share a tag

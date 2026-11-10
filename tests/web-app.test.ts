@@ -1535,6 +1535,49 @@ describe('download page clock and polling on the page', () => {
   });
 });
 
+describe('download page image preview', () => {
+  const picture = (changes: Record<string, unknown> = {}) => ({ state: 'ready', id: D, name: 'holiday.png', ext: 'PNG', size: 2048,
+    url: `https://fyl.at/d/${D}/holiday.png`, once: false, protected: false, now: NOW, expiresAt: NOW + DAY, ...changes });
+  type Picture = { src: string; alt: string; hidden: boolean; onload?: () => void; onerror?: () => void };
+
+  it('shows a ready image link its picture from the preview address once it loaded, and none when it fails to load', async () => {
+    const page = await openDownload(picture()), image = page.el('preview-img') as unknown as Picture;
+    expect([image.src, image.alt]).toEqual([`/d/${D}/holiday.png?preview=1`, 'Preview of holiday.png']);
+    image.onload?.();
+    expect(page.el('preview').hidden).toBe(false);
+    expect(page.el('preview-open').getAttribute('aria-label')).toBe('Show holiday.png full size');
+    // A click shows it large, from the same address.
+    await page.el('preview-open').fire('click');
+    expect([page.el('preview-dialog').opened, (page.el('preview-full') as unknown as Picture).src]).toEqual([1, `/d/${D}/holiday.png?preview=1`]);
+    image.onerror?.();
+    expect(page.el('preview').hidden).toBe(true);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('starts the download of an image that finished uploading once its picture loaded, at most 3 s later', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    for (const outcome of ['load', 'error', 'timeout'] as const) {
+      reply = () => Response.json({ id: D, state: 'ready', name: 'holiday.png', size: 2048, once: false, protected: false });
+      const page = await openDownload(picture({ state: 'uploading', received: 0, updatedAt: NOW }));
+      const assign = ((globalThis as unknown as { location: unknown }).location as { assign: ReturnType<typeof vi.fn> }).assign;
+      await vi.advanceTimersByTimeAsync(2000 + 450); await settle();
+      const image = page.el('preview-img') as unknown as Picture;
+      expect([page.doc.documentElement.dataset.state, image.src, page.el('preview').hidden, assign.mock.calls.length], outcome).toEqual(['ready', `/d/${D}/holiday.png?preview=1`, false, 0]);
+      if (outcome === 'load') image.onload?.(); else if (outcome === 'error') image.onerror?.(); else await vi.advanceTimersByTimeAsync(3000);
+      await settle();
+      expect([assign.mock.calls.length, page.el('preview').hidden], outcome).toEqual([1, outcome === 'error']);
+    }
+  });
+
+  it('shows no picture for files the Worker serves none for: one-time, protected, encrypted, too big, other types, closed', async () => {
+    for (const changes of [{ once: true }, { protected: true }, { state: 'unlocked' }, { mode: 'e2ee' }, { size: 8 * 1048576 + 1 }, { size: 0 },
+      { name: 'drawing.svg' }, { name: 'photo.heic' }, { name: 'report.pdf' }, { state: 'gone', reason: 'expired' }, { url: null }]) {
+      const page = await openDownload(picture(changes));
+      expect([(page.el('preview-img') as unknown as Picture).src, page.el('preview').hidden], JSON.stringify(changes)).toEqual(['', true]);
+    }
+  });
+});
+
 describe('download page title', () => {
   it('lets a long name break at its separators before it breaks inside a word', async () => {
     const page = await openDownload({ state: 'ready', id: D, name: 'Jahresabschluss_überarbeitet-final.pdf', ext: 'PDF', size: 2048, url: `https://fyl.at/d/${D}/x.pdf`, once: false, protected: false, now: NOW, expiresAt: NOW + DAY });

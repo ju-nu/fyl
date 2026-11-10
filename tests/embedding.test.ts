@@ -216,15 +216,17 @@ describe('chat link previews', () => {
     expect(text).not.toContain('/static.png');
   });
 
-  it('serves the picture to link-preview bots only: sniffed, inline, for at most 5 minutes, without counting a download', async () => {
+  it('serves the picture to link-preview bots and the download page only: sniffed, inline, for at most 5 minutes, without counting a download', async () => {
     const picture = await upload('holiday.png', PNG);
-    for (const agent of BOTS) {
-      const response = await preview(picture.path, bot(agent));
+    // The download page's own <img>: same-origin, destination image, whatever the browser.
+    const page = { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0', Accept: 'image/avif,image/webp,*/*', 'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Dest': 'image', 'Sec-Fetch-Mode': 'no-cors' };
+    for (const [agent, headers] of [...BOTS.map(name => [name, bot(name)] as const), ['page', page] as const]) {
+      const response = await preview(picture.path, headers);
       expect(response.status, agent).toBe(200);
       expect(Object.fromEntries(['Content-Type', 'Content-Length', 'Content-Disposition', 'X-Content-Type-Options', 'Content-Security-Policy', 'Cache-Control', 'Vary',
         'Cross-Origin-Resource-Policy'].map(name => [name, response.headers.get(name)]))).toEqual({
         'Content-Type': 'image/png', 'Content-Length': String(PNG.length), 'Content-Disposition': 'inline', 'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': "default-src 'none'; sandbox", 'Cache-Control': 'public, max-age=300', Vary: 'User-Agent', 'Cross-Origin-Resource-Policy': 'same-origin',
+        'Content-Security-Policy': "default-src 'none'; sandbox", 'Cache-Control': 'public, max-age=300', Vary: 'User-Agent, Sec-Fetch-Site, Sec-Fetch-Dest', 'Cross-Origin-Resource-Policy': 'same-origin',
       });
       expect(await bytes(response)).toEqual(PNG);
     }
@@ -238,15 +240,18 @@ describe('chat link previews', () => {
       expect([page.status, page.headers.get('Content-Type')?.split(';')[0]], JSON.stringify(headers)).toEqual([200, 'text/html']);
       expect((await pageOf(page)).data).toMatchObject({ state: 'ready', name: 'holiday.png' });
     }
-    // Images the page loads, download tools and the CLI get 404, from this site and any other.
-    for (const headers of [{ 'User-Agent': 'Mozilla/5.0', 'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Dest': 'image' },
+    // Download tools, the CLI and this site's other requests (a fetch, a frame) get 404.
+    for (const headers of [{ 'User-Agent': 'Mozilla/5.0', 'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Dest': 'empty' },
+      { 'User-Agent': 'Mozilla/5.0', 'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Dest': 'iframe' }, { 'User-Agent': 'Mozilla/5.0', 'Sec-Fetch-Dest': 'image' },
       { 'User-Agent': 'curl/8.5.0', Accept: '*/*' }, { 'User-Agent': 'Wget/1.21.4' }, { 'User-Agent': 'fyl-cli/1.0.1' }, {}] as Record<string, string>[]) {
       const refused = await preview(picture.path, headers);
       expect([refused.status, (await refused.json<{ code: string }>()).code], JSON.stringify(headers)).toEqual([404, 'not_found']);
     }
     // Another site's page can't load it either, whatever User-Agent it claims.
-    const embedded = await preview(picture.path, { ...bot(), 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Dest': 'image' });
-    expect([embedded.status, await embedded.json()]).toEqual([403, HOTLINK]);
+    for (const site of ['cross-site', 'same-site']) {
+      const embedded = await preview(picture.path, { ...bot(), 'Sec-Fetch-Site': site, 'Sec-Fetch-Dest': 'image' });
+      expect([embedded.status, await embedded.json()], site).toEqual([403, HOTLINK]);
+    }
     expect(await record(picture.session.uploadId)).toMatchObject({ downloads: 0 });
     // Never cached past the expiry.
     await edit(picture.session.uploadId, stored => { stored.expiresAt = Date.now() + 100000; });
@@ -259,6 +264,11 @@ describe('chat link previews', () => {
     expect(counted.response.status).toBe(200);
     await counted.response.arrayBuffer();
     expect(points).toEqual([{ indexes: ['preview_served'], blobs: ['preview_served', 'png'], doubles: [PNG.length] }]);
+    // The page's own picture is part of its page view: no preview_served.
+    const shown = await direct(picture.path + '?preview=1', { METRICS: { writeDataPoint: (point?: AnalyticsEngineDataPoint) => { if (point) points.push(point); } } }, { headers: page });
+    expect(shown.response.status).toBe(200);
+    await shown.response.arrayBuffer();
+    expect(points).toHaveLength(1);
     const limited = await direct(picture.path + '?preview=1', { DOWNLOAD_RATE: { limit: async () => ({ success: false }) } as unknown as RateLimit }, { headers: bot() });
     expect(limited.response.status).toBe(429);
     await limited.response.text();
