@@ -1547,7 +1547,9 @@ describe('download page image preview', () => {
     expect(page.el('preview').hidden).toBe(false);
     expect(page.el('preview-open').getAttribute('aria-label')).toBe('Show holiday.png full size');
     // A click shows it large, from the same address.
+    const focused = vi.spyOn(page.el('preview-dialog'), 'focus');
     await page.el('preview-open').fire('click');
+    expect(focused).toHaveBeenCalledTimes(1);
     expect([page.el('preview-dialog').opened, (page.el('preview-full') as unknown as Picture).src]).toEqual([1, `/d/${D}/holiday.png?preview=1`]);
     image.onerror?.();
     expect(page.el('preview').hidden).toBe(true);

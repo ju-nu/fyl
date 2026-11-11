@@ -752,7 +752,9 @@
     const image = $('preview-img');
     if (!image.dataset.src || $('preview').hidden) return;
     Object.assign($('preview-full'), {src: image.dataset.src, alt: image.alt});
+    // The dialog itself takes focus, not the close button: no ring on × after a click; Tab still reaches it.
     $('preview-dialog').showModal();
+    $('preview-dialog').focus();
   });
   $('preview-dialog').addEventListener('click', () => $('preview-dialog').close());
   $('preview-dialog').addEventListener('close', () => $('preview-open').focus());
