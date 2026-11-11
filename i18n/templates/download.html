@@ -120,7 +120,7 @@
 <p><span data-in="ready protected unlocked uploading key" id="after-text">{{download.after}}</span><span data-in="gone">{{download.afterGone}}</span></p>
 <a class="report-link" id="report-link" data-in="ready protected unlocked uploading key" href="{{@report}}" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg>{{download.report}}</a>
 </div>
-<dialog class="dl-zoom" id="preview-dialog" aria-label="{{download.previewDialog}}"><img id="preview-full" alt="" referrerpolicy="no-referrer"><button class="btn btn-icon dl-zoom-x" type="button" id="preview-close" aria-label="{{common.close}}"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></dialog>
+<dialog class="dl-zoom" id="preview-dialog" tabindex="-1" aria-label="{{download.previewDialog}}"><img id="preview-full" alt="" referrerpolicy="no-referrer"><button class="btn btn-icon dl-zoom-x" type="button" id="preview-close" aria-label="{{common.close}}"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></dialog>
 </main>
 
 <footer class="site-footer"><span class="footer-brand"><b>fyl.at</b> · Fyl for now.</span><nav aria-label="{{common.footerNav}}"><a href="{{@report}}" target="_blank" rel="noopener">{{common.reportFile}}</a><a href="{{@base}}/privacy">{{common.privacy}}</a><a href="/llms.txt" target="_blank" rel="noopener">{{common.forAgents}}</a><a href="{{@source}}" target="_blank" rel="noopener">{{common.source}}</a>{{@languageButton}}<button class="btn btn-icon" type="button" data-theme-trigger popovertarget="theme-menu" aria-haspopup="menu" aria-expanded="false" aria-label="{{common.theme}}" data-label="{{common.themeIs}}"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button></nav></footer>
