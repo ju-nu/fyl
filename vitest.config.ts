@@ -53,6 +53,9 @@ export default defineConfig({
     provide: { i18nProblems: problems(), bench: Boolean(process.env.FYL_BENCH) },
     // Several tests move real 50 MiB parts, which takes well over 5 s on a shared CI runner.
     testTimeout: 60_000,
+    // expect.poll waits on work a Worker finishes after its response (a one-time link marked used); 1 s, the default,
+    // ran out on a busy runner.
+    expect: { poll: { timeout: 10_000 } },
     // In watch mode a change to a script or stylesheet in dist/ reruns the shipped tests too, on a fresh build.
     watchTriggerPatterns: [{ pattern: /\/dist\/.+\.(?:js|css)$/, testsToRun: () => shipped }],
     projects: [
